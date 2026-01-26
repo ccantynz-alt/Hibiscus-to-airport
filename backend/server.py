@@ -15,6 +15,15 @@ load_dotenv(ROOT_DIR / '.env')
 # Create the main app without a prefix
 app = FastAPI(title="Hibiscus to Airport Booking API")
 
+
+@app.get("/debug/stamp")
+async def debug_stamp():
+    return {"stamp": "RENDER_STAMP_20260127_113814"}
+
+@api_router.get("/debug/stamp")
+async def api_debug_stamp():
+    return {"stamp": "RENDER_STAMP_20260127_113814"}
+
 
 from fastapi.responses import JSONResponse
 
@@ -152,11 +161,11 @@ async def send_day_before_reminders():
                 formatted_date = format_date_nz(booking['date'])
                 
                 # Send reminder email
-                subject = f"â° Reminder: Your Airport Transfer Tomorrow - {booking_ref}"
+                subject = f"Ã¢ÂÂ° Reminder: Your Airport Transfer Tomorrow - {booking_ref}"
                 body = f"""
                 <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
                   <div style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-                    <h1 style="margin: 0; font-size: 24px;">â° Transfer Reminder</h1>
+                    <h1 style="margin: 0; font-size: 24px;">Ã¢ÂÂ° Transfer Reminder</h1>
                     <p style="margin: 8px 0 0; color: #f59e0b;">Your transfer is tomorrow!</p>
                   </div>
                   <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
@@ -169,7 +178,7 @@ async def send_day_before_reminders():
                       <p><strong>Drop-off:</strong> {booking['dropoffAddress']}</p>
                     </div>
                     <p style="background: #fef3c7; padding: 15px; border-radius: 8px;">
-                      ðŸ“Œ <strong>Please be ready 5-10 minutes before your pickup time.</strong>
+                      Ã°Å¸â€œÅ’ <strong>Please be ready 5-10 minutes before your pickup time.</strong>
                     </p>
                     <p>Questions? Contact us at 021 743 321 or bookings@bookaride.co.nz</p>
                   </div>
