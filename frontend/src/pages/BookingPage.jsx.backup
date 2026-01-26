@@ -1,0 +1,426 @@
+import React, { useState } from 'react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import { Phone, Mail, MapPin, Calculator, Loader2 } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
+import axios from 'axios';
+import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const libraries = ['places'];
+
+const BookingPage = () => {
+  const { toast } = useToast();
+  const [calculating, setCalculating] = useState(false);
+  const [pricing, setPricing] = useState(null);
+  const [bookingId, setBookingId] = useState(null);
+  const [pickupAutocomplete, setPickupAutocomplete] = useState(null);
+  const [dropoffAutocomplete, setDropoffAutocomplete] = useState(null);
+  
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    libraries,
+  });
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    pickupAddress: '',
+    dropoffAddress: '',
+    date: '',
+    time: '',
+    passengers: '1',
+    notes: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const onPickupLoad = (autocomplete) => {
+    setPickupAutocomplete(autocomplete);
+  };
+
+  const onPickupPlaceChanged = () => {
+    if (pickupAutocomplete !== null) {
+      const place = pickupAutocomplete.getPlace();
+      setFormData({
+        ...formData,
+        pickupAddress: place.formatted_address || place.name
+      });
+    }
+  };
+
+  const onDropoffLoad = (autocomplete) => {
+    setDropoffAutocomplete(autocomplete);
+  };
+
+  const onDropoffPlaceChanged = () => {
+    if (dropoffAutocomplete !== null) {
+      const place = dropoffAutocomplete.getPlace();
+      setFormData({
+        ...formData,
+        dropoffAddress: place.formatted_address || place.name
+      });
+    }
+  };
+
+  const calculatePrice = async () => {
+    if (!formData.pickupAddress || !formData.dropoffAddress) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter pickup and dropoff addresses",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCalculating(true);
+    try {
+      const response = await axios.post(`${BACKEND_URL}/api/calculate-price`, {
+        pickupAddress: formData.pickupAddress,
+        dropoffAddress: formData.dropoffAddress,
+        passengers: parseInt(formData.passengers)
+      });
+      
+      setPricing(response.data);
+      toast({
+        title: "Price Calculated!",
+        description: `Total: $${response.data.totalPrice.toFixed(2)} NZD`,
+      });
+    } catch (error) {
+      toast({
+        title: "Calculation Error",
+        description: error.response?.data?.detail || "Could not calculate distance. Please check addresses.",
+        variant: "destructive"
+      });
+    } finally {
+      setCalculating(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!pricing) {
+      toast({
+        title: "Calculate Price First",
+        description: "Please calculate the price before booking",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Create booking
+      const bookingResponse = await axios.post(`${BACKEND_URL}/api/bookings`, {
+        ...formData,
+        pricing: pricing
+      });
+      
+      const newBookingId = bookingResponse.data.booking_id;
+      setBookingId(newBookingId);
+      
+      // Create Stripe checkout
+      const checkoutResponse = await axios.post(`${BACKEND_URL}/api/payment/create-checkout`, {
+        booking_id: newBookingId
+      });
+      
+      // Redirect to Stripe
+      window.location.href = checkoutResponse.data.url;
+      
+    } catch (error) {
+      toast({
+        title: "Booking Error",
+        description: error.response?.data?.detail || "Failed to create booking",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-gold animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      {/* Hero */}
+      <section className="relative pt-24 pb-12 bg-white border-b">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            Book Your Ride
+          </h1>
+          <p className="text-lg text-gray-600">
+            Get instant pricing with our live calculator
+          </p>
+        </div>
+      </section>
+      
+      {/* Booking Form */}
+      <section className="py-10 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Main Form */}
+            <div className="lg:col-span-2">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Trip Details Section */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Trip Details</h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                    <Input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="John Smith"
+                      required
+                      className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900 placeholder:text-gray-400"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                    <Input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="john@example.com"
+                      required
+                      className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900 placeholder:text-gray-400"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                  <Input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+64 21 123 4567"
+                    required
+                    className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900 placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+              
+              {/* Trip Details */}
+              <div className="border-b border-gold/30 pb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  <span className="text-gold">🚗</span> Trip Details
+                </h3>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Address *</label>
+                    <Autocomplete
+                      onLoad={onPickupLoad}
+                      onPlaceChanged={onPickupPlaceChanged}
+                      options={{
+                        componentRestrictions: { country: 'nz' },
+                        fields: ['formatted_address', 'name']
+                      }}
+                    >
+                      <Input
+                        type="text"
+                        name="pickupAddress"
+                        value={formData.pickupAddress}
+                        onChange={handleChange}
+                        placeholder="123 Main Street, Orewa"
+                        required
+                        className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900 placeholder:text-gray-400"
+                      />
+                    </Autocomplete>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Dropoff Address *</label>
+                    <Autocomplete
+                      onLoad={onDropoffLoad}
+                      onPlaceChanged={onDropoffPlaceChanged}
+                      options={{
+                        componentRestrictions: { country: 'nz' },
+                        fields: ['formatted_address', 'name']
+                      }}
+                    >
+                      <Input
+                        type="text"
+                        name="dropoffAddress"
+                        value={formData.dropoffAddress}
+                        onChange={handleChange}
+                        placeholder="Auckland Airport"
+                        required
+                        className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900 placeholder:text-gray-400"
+                      />
+                    </Autocomplete>
+                  </div>
+                  
+                  <Button 
+                    type="button"
+                    onClick={calculatePrice}
+                    disabled={calculating}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg font-semibold"
+                  >
+                    {calculating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Calculating Distance...
+                      </>
+                    ) : (
+                      <>
+                        <Calculator className="w-5 h-5 mr-2" />
+                        Calculate Price
+                      </>
+                    )}
+                  </Button>
+                  
+                  {pricing && (
+                    <div className="bg-gradient-to-br from-gold/10 via-amber-50 to-gold/5 border-2 border-gold/40 rounded-xl p-6 shadow-lg">
+                      <h4 className="text-gold font-bold text-lg mb-4 flex items-center gap-2">
+                        💰 Pricing Breakdown
+                      </h4>
+                      <div className="space-y-3 text-gray-900">
+                        <div className="flex justify-between py-2 border-b border-gold/20">
+                          <span className="text-gray-600 font-medium">Distance:</span>
+                          <span className="font-semibold">{pricing.distance} km</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-gold/20">
+                          <span className="text-gray-600 font-medium">Base Price:</span>
+                          <span className="font-semibold">${pricing.basePrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-gold/20">
+                          <span className="text-gray-600 font-medium">Airport Fee:</span>
+                          <span className="font-semibold">${pricing.airportFee.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-gold/20">
+                          <span className="text-gray-600 font-medium">Passenger Fee:</span>
+                          <span className="font-semibold">${pricing.passengerFee.toFixed(2)}</span>
+                        </div>
+                        <div className="bg-gold/20 rounded-lg p-3 mt-3 flex justify-between text-2xl font-bold">
+                          <span className="text-gray-900">Total:</span>
+                          <span className="text-gold">${pricing.totalPrice.toFixed(2)} NZD</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
+                      <Input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleChange}
+                        required
+                        min={new Date().toISOString().split('T')[0]}
+                        className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Time *</label>
+                      <Input
+                        type="time"
+                        name="time"
+                        value={formData.time}
+                        onChange={handleChange}
+                        required
+                        className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Number of Passengers</label>
+                    <Input
+                      type="number"
+                      name="passengers"
+                      value={formData.passengers}
+                      onChange={handleChange}
+                      min="1"
+                      max="12"
+                      className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+                    <Textarea
+                      name="notes"
+                      value={formData.notes}
+                      onChange={handleChange}
+                      placeholder="Flight number, special requirements, etc."
+                      rows={4}
+                      className="bg-gray-50 border-gray-300 focus:border-gold focus:ring-gold text-gray-900 placeholder:text-gray-400"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={!pricing}
+                className="w-full bg-gold hover:bg-amber-500 text-black py-7 text-lg font-bold shadow-2xl shadow-gold/20 hover:scale-105 transition-all duration-300"
+              >
+                Proceed to Payment
+              </Button>
+              
+              <p className="text-center text-sm text-gray-600 mt-4">
+                🔒 Secure payment via Stripe • You'll receive confirmation via email & SMS
+              </p>
+            </form>
+          </div>
+          
+          {/* Contact Options */}
+          <div className="mt-12 grid md:grid-cols-3 gap-6">
+            <div className="bg-white border-2 border-gold/30 rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-shadow">
+              <Phone className="w-8 h-8 text-gold mx-auto mb-3" />
+              <h4 className="text-gray-900 font-bold mb-2">Call Us</h4>
+              <a href="tel:+64211234567" className="text-gray-600 hover:text-gold transition-colors font-medium">
+                021 123 4567
+              </a>
+            </div>
+            
+            <div className="bg-white border-2 border-gold/30 rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-shadow">
+              <Mail className="w-8 h-8 text-gold mx-auto mb-3" />
+              <h4 className="text-gray-900 font-bold mb-2">Email Us</h4>
+              <a href="mailto:info@bookaride.co.nz" className="text-gray-600 hover:text-gold transition-colors font-medium">
+                info@bookaride.co.nz
+              </a>
+            </div>
+            
+            <div className="bg-white border-2 border-gold/30 rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-shadow">
+              <MapPin className="w-8 h-8 text-gold mx-auto mb-3" />
+              <h4 className="text-gray-900 font-bold mb-2">Service Area</h4>
+              <p className="text-gray-600 text-sm font-medium">
+                Hibiscus Coast & Surrounding Areas
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default BookingPage;

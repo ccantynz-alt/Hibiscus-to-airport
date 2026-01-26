@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hibiscus to Airport Logo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #1f2937;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 40px;
+            background: #1f2937;
+        }
+        
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 1;
+        }
+        
+        .logo-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .logo-hibiscus {
+            font-size: 32px;
+            font-weight: 300;
+            color: white;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+        }
+        
+        .logo-separator {
+            width: 32px;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #f59e0b, transparent);
+            opacity: 0.6;
+        }
+        
+        .logo-airport {
+            font-size: 32px;
+            font-weight: 300;
+            color: white;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+        }
+        
+        .logo-tagline {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(251, 191, 36, 0.8);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        
+        /* White background version */
+        .white-bg {
+            background: white;
+        }
+        
+        .white-bg .logo-hibiscus,
+        .white-bg .logo-airport {
+            color: #1f2937;
+        }
+        
+        .white-bg .logo-tagline {
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <!-- Dark Background Logo -->
+    <div class="logo-container">
+        <div class="logo-text">
+            <div class="logo-main">
+                <span class="logo-hibiscus">Hibiscus</span>
+                <div class="logo-separator"></div>
+                <span class="logo-airport">Airport</span>
+            </div>
+            <div class="logo-tagline">Premium Transport</div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Hibiscus to Airport - Robots.txt
+User-agent: *
+Allow: /
+
+# Disallow admin pages
+Disallow: /admin/
+Disallow: /payment/
+
+# Sitemap location
+Sitemap: https://hibiscustoairport.co.nz/sitemap.xml
