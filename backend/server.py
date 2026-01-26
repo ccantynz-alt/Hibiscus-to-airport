@@ -15,6 +15,54 @@ load_dotenv(ROOT_DIR / '.env')
 # Create the main app without a prefix
 app = FastAPI(title="Hibiscus to Airport Booking API")
 
+
+from fastapi.responses import JSONResponse
+
+@app.get("/debug/mongo")
+async def debug_mongo():
+    try:
+        db = None
+        err = None
+
+        try:
+            from database import db as _db  # type: ignore
+            db = _db
+        except Exception as e1:
+            err = str(e1)
+            try:
+                from backend.database import db as _db  # type: ignore
+                db = _db
+            except Exception as e2:
+                err = err + " | " + str(e2)
+
+        if db is None:
+            return JSONResponse(
+                status_code=500,
+                content={"ok": False, "error": "Could not import db object", "details": err},
+            )
+
+        info = {}
+
+        try:
+            info["database_name"] = getattr(db, "name", None)
+        except Exception:
+            info["database_name"] = None
+
+        try:
+            client = getattr(db, "client", None)
+            info["client"] = str(client)
+        except Exception:
+            info["client"] = None
+
+        try:
+            cols = await db.list_collection_names()
+            info["collections"] = cols
+        except Exception as e:
+            info["collections_error"] = str(e)
+
+        return {"ok": True, **info}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
 # CRITICAL: Middleware to prevent Cloudflare/CDN caching of API responses
 class NoCacheMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
