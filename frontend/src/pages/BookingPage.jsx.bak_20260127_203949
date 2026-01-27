@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -8,13 +8,9 @@ import AIChatbot from '../components/AIChatbot';
 import { Loader2, MapPin, Calendar, Clock, Users, Mail, Phone, User, FileText, Globe, DollarSign, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
-
-// Safety: prevent hung requests (no UI change)
-axios.defaults.timeout = 15000;
-
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://hibiscus-to-airport-1.onrender.com';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const libraries = ['places'];
 
 // Compact Date Picker Modal - Clean iOS-style
@@ -302,7 +298,7 @@ const BookingPage = () => {
       
       setPromoDiscount(response.data);
       toast({ 
-        title: 'ðŸŽ‰ Promo Code Applied!', 
+        title: '🎉 Promo Code Applied!', 
         description: `You saved $${response.data.discount_amount.toFixed(2)}!` 
       });
     } catch (error) {
@@ -446,7 +442,6 @@ const BookingPage = () => {
       // Create booking first
       const bookingResponse = await axios.post(`${BACKEND_URL}/api/bookings`, {
         ...formData,
-          passengers: String(formData.passengers),
         pricing: pricing,
         payment_method: 'stripe',
         payment_status: 'pending'
@@ -488,13 +483,13 @@ const BookingPage = () => {
             <span className="font-medium">International Bookings Welcome</span>
           </div>
           <div className="flex items-center gap-1 text-gray-300">
-            <span className="text-gold">âœ“</span> 6 Languages
+            <span className="text-gold">✓</span> 6 Languages
           </div>
           <div className="flex items-center gap-1 text-gray-300">
-            <span className="text-gold">âœ“</span> 7 Currencies
+            <span className="text-gold">✓</span> 7 Currencies
           </div>
           <div className="flex items-center gap-1 text-gray-300">
-            <span className="text-gold">âœ“</span> Worldwide Payment
+            <span className="text-gold">✓</span> Worldwide Payment
           </div>
         </div>
       </div>
@@ -508,7 +503,7 @@ const BookingPage = () => {
             Book Your Transfer
           </h1>
           <p className="text-gray-600">
-            Get instant pricing â€¢ Secure payment â€¢ Confirmation in seconds
+            Get instant pricing • Secure payment • Confirmation in seconds
           </p>
         </div>
       </section>
@@ -595,7 +590,7 @@ const BookingPage = () => {
                           size="sm"
                           className="h-11 px-3 border-red-300 text-red-600 hover:bg-red-50"
                         >
-                          âœ•
+                          ✕
                         </Button>
                       </div>
                     ))}
@@ -807,7 +802,7 @@ const BookingPage = () => {
                           <p className="text-xs text-gray-500">We&apos;ll contact you to arrange return details</p>
                         </div>
                       </div>
-                      <span className="font-semibold text-gold">Ã—2</span>
+                      <span className="font-semibold text-gold">×2</span>
                     </label>
                   </div>
                 </div>
@@ -920,7 +915,7 @@ const BookingPage = () => {
                       {pricing.returnTrip && (
                         <div className="flex justify-between py-2 border-b border-gray-100">
                           <span className="text-gray-600">Return Trip:</span>
-                          <span className="font-semibold text-green-600">Ã—2</span>
+                          <span className="font-semibold text-green-600">×2</span>
                         </div>
                       )}
                     </div>
@@ -938,7 +933,7 @@ const BookingPage = () => {
                         {promoDiscount ? (
                           <div className="space-y-2">
                             <div className="flex justify-between items-center text-green-600">
-                              <span className="text-sm font-medium">ðŸŽ‰ {promoDiscount.code}</span>
+                              <span className="text-sm font-medium">🎉 {promoDiscount.code}</span>
                               <span>-${promoDiscount.discount_amount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center">
@@ -977,14 +972,14 @@ const BookingPage = () => {
                           </div>
                         )}
                       </div>
-                      <p className="text-xs text-gray-600 mt-2">NZD â€¢ Price includes GST</p>
+                      <p className="text-xs text-gray-600 mt-2">NZD • Price includes GST</p>
                     </div>
 
                     {/* Payment Info - Stripe Only */}
                     <div className="mt-6">
                       <div className="flex items-center p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl">
                         <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center mr-4">
-                          <span className="text-white text-lg">ðŸ’³</span>
+                          <span className="text-white text-lg">💳</span>
                         </div>
                         <div>
                           <span className="font-semibold text-gray-900">Secure Card Payment</span>
@@ -1011,7 +1006,7 @@ const BookingPage = () => {
                       Processing...
                     </>
                   ) : (
-                    <>ðŸ’³ Pay with Card</>
+                    <>💳 Pay with Card</>
                   )}
                 </Button>
               </div>
@@ -1062,4 +1057,3 @@ const BookingPage = () => {
 };
 
 export default BookingPage;
-
