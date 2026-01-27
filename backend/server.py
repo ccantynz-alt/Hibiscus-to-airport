@@ -1,4 +1,6 @@
-﻿from fastapi import FastAPI, APIRouter, Request
+﻿from urllib.parse import urlparse
+import socket
+from fastapi import FastAPI, APIRouter, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -18,6 +20,51 @@ load_dotenv(ROOT_DIR / ".env")
 # --------------------
 app = FastAPI(title="Hibiscus to Airport Booking API")
 
+# -------------------------------
+# DIAGNOSTICS (SAFE / NO SECRETS)
+# -------------------------------
+
+@app.get("/api/health")
+def api_health():
+    return {"ok": True, "service": "hibiscus-to-airport", "status": "running"}
+
+@app.get("/api/debug/mongo")
+def debug_mongo():
+    uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or os.getenv("DATABASE_URL") or ""
+    dbname = os.getenv("MONGODB_DB") or os.getenv("DB_NAME") or "hibiscus_to_airport"
+
+    parsed = None
+    host = None
+    scheme = None
+    if uri:
+        try:
+            parsed = urlparse(uri)
+            scheme = parsed.scheme
+            host = parsed.hostname
+        except Exception:
+            scheme = None
+            host = None
+
+    # DNS check (fast, best-effort)
+    dns_ok = None
+    dns_error = None
+    if host:
+        try:
+            socket.getaddrinfo(host, 27017)
+            dns_ok = True
+        except Exception as e:
+            dns_ok = False
+            dns_error = str(e)
+
+    return {
+        "hasUri": bool(uri),
+        "scheme": scheme,
+        "host": host,
+        "db": dbname,
+        "dnsOk": dns_ok,
+        "dnsError": dns_error,
+        "note": "Does not expose username/password."
+    }
 # --------------------
 # API Router (MUST be defined before any @api_router decorators)
 # --------------------
@@ -237,3 +284,4 @@ async def start_scheduler():
 async def shutdown_scheduler():
     scheduler.shutdown()
     logger.info("Scheduler shutdown")
+
