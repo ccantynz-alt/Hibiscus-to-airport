@@ -1,3 +1,4 @@
+from agent_routes import router as agents_router
 from urllib.parse import urlparse
 import socket
 from fastapi import FastAPI, APIRouter, Request
@@ -154,6 +155,7 @@ async def health():
 # Include booking routes under /api
 api_router.include_router(booking_router, tags=["bookings"])
 
+api_router.include_router(agents_router, tags=["agents"])
 # Attach router
 app.include_router(api_router)
 
