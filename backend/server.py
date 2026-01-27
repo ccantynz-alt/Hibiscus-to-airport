@@ -18,7 +18,7 @@ load_dotenv(ROOT_DIR / ".env")
 # --------------------
 # App
 # --------------------
-app = FastAPI(title="Hibiscus to Airport Booking API")
+app = FastAPI(title="Hibiscus to Airport Booking API STAMP_2026-01-27_19-46-46")
 
 # -------------------------------
 # DIAGNOSTICS (SAFE / NO SECRETS)
@@ -145,7 +145,7 @@ app.add_middleware(NoCacheMiddleware)
 # --------------------
 @api_router.get("/")
 async def root():
-    return {"message": "Hibiscus to Airport Booking API", "status": "running"}
+    return {"message": "Hibiscus to Airport Booking API STAMP_2026-01-27_19-46-46", "status": "running"}
 
 @api_router.get("/health")
 async def health():
@@ -284,4 +284,5 @@ async def start_scheduler():
 async def shutdown_scheduler():
     scheduler.shutdown()
     logger.info("Scheduler shutdown")
+
 
