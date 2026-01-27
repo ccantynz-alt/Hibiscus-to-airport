@@ -157,8 +157,12 @@ api_router.include_router(booking_router, tags=["bookings"])
 
 api_router.include_router(agents_router, tags=["agents"])
 # Attach router
+# --- Deploy/version stamp (safe) ---
+@app.get("/api/version")
+def api_version():
+    return {"ok": True, "git": "e27b4315e32db3a713cf7374395422aaad4661ff"}
+# -----------------------------------
 app.include_router(api_router)
-
 # --------------------
 # CORS Middleware
 # --------------------
