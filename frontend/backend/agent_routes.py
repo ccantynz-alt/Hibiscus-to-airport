@@ -1,4 +1,4 @@
-import os
+﻿import os
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import HTMLResponse
@@ -50,7 +50,7 @@ def agent_cockpit():
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agent Cockpit — Hibiscus</title>
+  <title>Agent Cockpit â€” Hibiscus</title>
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background:#0b0b0f; color:#fff; }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 20px; }
@@ -92,7 +92,7 @@ def agent_cockpit():
           </select>
         </div>
         <div style="display:flex; align-items:end; gap:10px;">
-          <button id="mic">🎙️ Start Mic</button>
+          <button id="mic">ðŸŽ™ï¸ Start Mic</button>
           <button id="send">Run Agent</button>
         </div>
       </div>
@@ -101,7 +101,7 @@ def agent_cockpit():
         <label>Your instruction</label>
         <textarea id="msg" placeholder="Speak or type what you want the agent to do..."></textarea>
         <div class="muted" style="margin-top:8px;">
-          Tip: Start with “What’s blocking bookings?” or “Fix Mongo on Render using my current env vars.”
+          Tip: Start with â€œWhatâ€™s blocking bookings?â€ or â€œFix Mongo on Render using my current env vars.â€
         </div>
       </div>
     </div>
@@ -136,7 +136,7 @@ def agent_cockpit():
     if (rec) {
       rec.stop();
       rec = null;
-      micBtn.textContent = "🎙️ Start Mic";
+      micBtn.textContent = "ðŸŽ™ï¸ Start Mic";
       return;
     }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -154,9 +154,9 @@ def agent_cockpit():
       if (finalText) msgEl.value = (msgEl.value + " " + finalText).trim();
     };
     rec.onerror = () => {};
-    rec.onend = () => { rec = null; micBtn.textContent = "🎙️ Start Mic"; };
+    rec.onend = () => { rec = null; micBtn.textContent = "ðŸŽ™ï¸ Start Mic"; };
     rec.start();
-    micBtn.textContent = "⏹ Stop Mic";
+    micBtn.textContent = "â¹ Stop Mic";
   });
 
   async function run() {
