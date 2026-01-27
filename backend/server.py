@@ -18,7 +18,7 @@ load_dotenv(ROOT_DIR / ".env")
 # --------------------
 # App
 # --------------------
-app = FastAPI(title="Hibiscus to Airport Booking API STAMP_2026-01-27_19-46-46")
+app = FastAPI(title="Hibiscus to Airport API OPENAPI_STAMP_2026-01-27_19-47-59")
 
 # -------------------------------
 # DIAGNOSTICS (SAFE / NO SECRETS)
@@ -284,5 +284,6 @@ async def start_scheduler():
 async def shutdown_scheduler():
     scheduler.shutdown()
     logger.info("Scheduler shutdown")
+
 
 
