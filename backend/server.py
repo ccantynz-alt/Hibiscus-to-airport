@@ -1,4 +1,4 @@
-﻿from urllib.parse import urlparse
+from urllib.parse import urlparse
 import socket
 from fastapi import FastAPI, APIRouter, Request
 from dotenv import load_dotenv
