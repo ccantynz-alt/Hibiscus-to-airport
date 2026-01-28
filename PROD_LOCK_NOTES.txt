@@ -1,0 +1,23 @@
+﻿PROD LOCK NOTES — HibiscusToAirport
+==================================
+
+Goal: Keep the production website EXACTLY as customers expect.
+Rule: No changes unless explicitly planned and reversible.
+
+Last confirmed LIVE OK:
+- Time (NZ): 2026-01-29 07:10:28
+- Git commit (local HEAD): e918767
+- Domain checks:
+  - https://hibiscustoairport.co.nz = 200
+  - https://www.hibiscustoairport.co.nz = 200
+
+Freeze rules:
+- Do NOT run: npm install, npm audit fix, dependency upgrades
+- Do NOT run: vercel --prod --force
+- Do NOT change: Vercel domains for hibiscustoairport.co.nz
+- Do NOT mix with Dominat8 repo
+
+If something breaks:
+- Go to Vercel project 'hibiscus-to-airport'
+- Redeploy the last known good Production deployment
+- Re-run the two 200 checks above
