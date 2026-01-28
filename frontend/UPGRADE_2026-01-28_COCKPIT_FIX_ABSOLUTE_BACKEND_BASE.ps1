@@ -1,4 +1,4 @@
-﻿# UPGRADE_2026-01-28_COCKPIT_FIX_ABSOLUTE_BACKEND_BASE.ps1
+# UPGRADE_2026-01-28_COCKPIT_FIX_ABSOLUTE_BACKEND_BASE.ps1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -39,9 +39,9 @@ foreach ($path in $files) {
 
   $new = $new -replace '"/api/api/agents','"' + $abs
   $new = $new -replace "'/api/api/agents","'" + $abs
-  $new = $new -replace '"/api/agents','"' + $abs
-  $new = $new -replace "'/api/agents","'" + $abs
-  $new = $new -replace 'calls your backend at /api/agents/\*','calls your backend at ' + $abs + '/*'
+  $new = $new -replace '"/api/api/agents','"' + $abs
+  $new = $new -replace "'/api/api/agents","'" + $abs
+  $new = $new -replace 'calls your backend at /api/api/agents/\*','calls your backend at ' + $abs + '/*'
 
   if ($new -ne $orig) {
     Copy-Item $path "$path.bak_$stamp"
