@@ -46,14 +46,18 @@ jobs:
           echo "branch=$b" >> $GITHUB_OUTPUT
           git checkout -b "$b"
 
-      - name: Download patch
+      - name: Download patch (verbose)
         run: |
-          curl -fsSL "${{ inputs.patch_url }}" -o agent.patch
+          echo "PATCH_URL=${{ inputs.patch_url }}"
+          code=$(curl -sS -L -w "%{http_code}" -o agent.patch "${{ inputs.patch_url }}" || true)
+          echo "HTTP_CODE=$code"
+          ls -la agent.patch || true
+          head -n 40 agent.patch || true
           test -s agent.patch
 
-      - name: Apply patch
+      - name: Apply patch (show errors)
         run: |
-          git apply --whitespace=nowarn agent.patch
+          git apply --whitespace=nowarn agent.patch || (echo "git apply failed" && git apply --reject --whitespace=nowarn agent.patch && exit 1)
 
       - name: Commit changes
         run: |
@@ -104,3 +108,4 @@ jobs:
       - name: Print PR URL
         run: |
           echo "PR: ${{ steps.pr.outputs.url }}"
+
