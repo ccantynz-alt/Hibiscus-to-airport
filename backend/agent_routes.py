@@ -49,3 +49,4 @@ def agent_cockpit():
         return HTMLResponse(content="Missing backend/agent_cockpit.html", status_code=500)
     html = p.read_text(encoding="utf-8")
     return HTMLResponse(content=html, status_code=200)
+

@@ -1,4 +1,4 @@
-# UPGRADE_2026-01-28_COCKPIT_FIX_ABSOLUTE_BACKEND_BASE.ps1
+﻿# UPGRADE_2026-01-28_COCKPIT_FIX_ABSOLUTE_BACKEND_BASE.ps1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -53,3 +53,4 @@ foreach ($path in $files) {
 }
 
 Ok "DONE"
+
