@@ -1,4 +1,5 @@
-﻿from fastapi import APIRouter, HTTPException, Depends, Response, Request
+from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Depends, Response, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -3521,3 +3522,63 @@ async def admin_test_write(x_admin_token: str | None = None):
     return {"ok": True, "insertedId": str(r.inserted_id), "test_id": test_doc["id"]}
 # === /DOMINAT8_ADMIN_DIAGNOSTICS_V1 ===
 
+# === HTA BREAK-GLASS ADMIN BOOTSTRAP (token-gated) ===
+# POST /api/admin/bootstrap
+# Header: x-admin-token: <ADMIN_TOKEN>
+# Body: { "username": "...", "password": "..." }
+import os
+from typing import Optional
+
+try:
+    from pydantic import BaseModel
+except Exception:
+    BaseModel = object
+
+try:
+    # Prefer shared hashing from auth.py to match existing login verification
+    from auth import hash_password as _hash_password  # type: ignore
+except Exception:
+    try:
+        from auth import get_password_hash as _hash_password  # type: ignore
+    except Exception:
+        _hash_password = None
+
+from pymongo import MongoClient
+
+class _BootstrapBody(BaseModel):
+    username: str
+    password: str
+
+def _get_db():
+    mongo_url = (os.getenv("MONGO_URL") or "").strip()
+    db_name = (os.getenv("DB_NAME") or "hibiscustoairport").strip()
+    if not mongo_url:
+        raise RuntimeError("MONGO_URL is not set")
+    client = MongoClient(mongo_url)
+    return client[db_name]
+
+@router.post("/api/admin/bootstrap")
+async def admin_bootstrap(body: _BootstrapBody, x_admin_token: Optional[str] = None):
+    expected = (os.getenv("ADMIN_TOKEN") or "").strip()
+    provided = (x_admin_token or "").strip()
+    if (not expected) or (provided != expected):
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+
+    if _hash_password is None:
+        return JSONResponse(status_code=500, content={"detail": "Password hashing not configured (auth.py hash function not found)"})
+
+    db = _get_db()
+    admins = db["admins"]
+
+    pwd_hash = _hash_password(body.password)
+    now = datetime.utcnow()
+
+    admins.update_one(
+        {"username": body.username},
+        {$set: {"username": body.username, "password_hash": pwd_hash, "updated_at": now},
+         $setOnInsert: {"created_at": now}},
+        upsert=True
+    )
+
+    return {"ok": True, "username": body.username}
+# === END BREAK-GLASS ADMIN BOOTSTRAP ===
