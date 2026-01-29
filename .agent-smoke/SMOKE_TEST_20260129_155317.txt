@@ -1,0 +1,4 @@
+﻿HIBISCUS_AGENT_PIPELINE_SMOKE_TEST
+timestamp=20260129_155317
+repo=ccantynz-alt/Hibiscus-to-airport
+note=This file is intentionally harmless and should not affect prod.
