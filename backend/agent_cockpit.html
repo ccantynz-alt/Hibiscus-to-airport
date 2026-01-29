@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agent Cockpit — Hibiscus</title>
+  <title>Agent Cockpit â€” Hibiscus</title>
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background:#0b0b0f; color:#fff; }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 20px; }
@@ -45,7 +45,7 @@
           </select>
         </div>
         <div style="display:flex; align-items:end; gap:10px;">
-          <button id="mic">🎙️ Start Mic</button>
+          <button id="mic">ðŸŽ™ï¸ Start Mic</button>
           <button id="send">Run Agent</button>
         </div>
       </div>
@@ -54,7 +54,7 @@
         <label>Your instruction</label>
         <textarea id="msg" placeholder="Speak or type what you want the agent to do..."></textarea>
         <div class="muted" style="margin-top:8px;">
-          Tip: Start with “What’s blocking bookings?” or “Fix Mongo on Render using my current env vars.”
+          Tip: Start with â€œWhatâ€™s blocking bookings?â€ or â€œFix Mongo on Render using my current env vars.â€
         </div>
       </div>
     </div>
@@ -81,7 +81,7 @@
 
   micBtn.addEventListener("click", () => {
     if (!supportsSpeech()) { alert("Speech Recognition not supported in this browser. Use Chrome/Edge."); return; }
-    if (rec) { rec.stop(); rec = null; micBtn.textContent = "🎙️ Start Mic"; return; }
+    if (rec) { rec.stop(); rec = null; micBtn.textContent = "ðŸŽ™ï¸ Start Mic"; return; }
 
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     rec = new SR();
@@ -97,9 +97,9 @@
       }
       if (finalText) msgEl.value = (msgEl.value + " " + finalText).trim();
     };
-    rec.onend = () => { rec = null; micBtn.textContent = "🎙️ Start Mic"; };
+    rec.onend = () => { rec = null; micBtn.textContent = "ðŸŽ™ï¸ Start Mic"; };
     rec.start();
-    micBtn.textContent = "⏹ Stop Mic";
+    micBtn.textContent = "â¹ Stop Mic";
   });
 
   async function run() {
@@ -114,7 +114,7 @@
 
     const body = JSON.stringify({ agentId, message, context: { page: "agent-cockpit" } });
 
-    const res = await fetch("/api/agents/run", { method:"POST", headers, body });
+    const res = await fetch("/api/api/agents/run", { method:"POST", headers, body });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch { data = text; }

@@ -1,4 +1,4 @@
-import os
+﻿import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -23,11 +23,11 @@ class AgentRunIn(BaseModel):
     message: str
     context: Dict[str, Any] = {}
 
-@router.get("/api/agents/ping")
+@router.get("/api/api/agents/ping")
 def agents_ping():
     return {"ok": True, "service": "agents", "note": "Set OPENAI_API_KEY for real runs."}
 
-@router.post("/api/agents/run")
+@router.post("/api/api/agents/run")
 def agents_run(body: AgentRunIn, x_admin_token: Optional[str] = Header(default=None, convert_underscores=False)):
     require_admin_token(x_admin_token)
     return run_agent_openai(body.agentId, body.message, body.context)
@@ -36,7 +36,7 @@ class ChatIn(BaseModel):
     message: str
     context: Dict[str, Any] = {}
 
-@router.post("/api/agents/chat")
+@router.post("/api/api/agents/chat")
 def agents_chat(body: ChatIn, x_admin_token: Optional[str] = Header(default=None, convert_underscores=False)):
     require_admin_token(x_admin_token)
     return run_agent_openai("01_dispatcher", body.message, body.context)
