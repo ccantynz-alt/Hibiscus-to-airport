@@ -1,12 +1,11 @@
-# ===== HIBISCUS_COCKPIT_002_20260201_190341 =====
+# ===== HIBISCUS_COCKPIT_006_FIXED =====
 from fastapi import APIRouter, Request
-from .cockpit_routes import cockpit_router
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from typing import Any, Dict, Optional
-import time, uuid, os
+import time, uuid
 
-router = APIRouter()
+cockpit_router = APIRouter()
 _JOBS = []  # newest first
 
 class CockpitRun(BaseModel):
@@ -14,15 +13,16 @@ class CockpitRun(BaseModel):
     prompt: Optional[str] = ""
     meta: Optional[Dict[str, Any]] = None
 
-def _now(): return int(time.time())
+def _now() -> int:
+    return int(time.time())
 
-@router.get("/__cockpit_stamp__")
+@cockpit_router.get("/__cockpit_stamp__")
 def cockpit_stamp():
-    return {"ok": True, "stamp": "HIBISCUS_COCKPIT_002_20260201_190341", "ts": _now()}
+    return {"ok": True, "stamp": "HIBISCUS_COCKPIT_006_FIXED", "ts": _now()}
 
-@router.get("/agent-cockpit", response_class=HTMLResponse)
+@cockpit_router.get("/agent-cockpit", response_class=HTMLResponse)
 def agent_cockpit():
-    html = r\"\"\"
+    html = r"""
 <!doctype html><html><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Hibiscus Cockpit</title>
@@ -45,8 +45,8 @@ background:linear-gradient(180deg,#60A5FA,#3B82F6)}
 .job{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:10px}
 </style></head>
 <body>
-<div class="card" data-stamp="HIBISCUS_COCKPIT_002_20260201_190341">
-  <div class="small">api.hibiscustoairport.co.nz • HIBISCUS_COCKPIT_002_20260201_190341</div>
+<div class="card" data-stamp="HIBISCUS_COCKPIT_006_FIXED">
+  <div class="small">api.hibiscustoairport.co.nz • HIBISCUS_COCKPIT_006_FIXED</div>
   <h1>What would you like to run?</h1>
   <div class="bar">
     <input id="p" placeholder="repair failing CI, build patch, run SEO..."/>
@@ -91,25 +91,34 @@ async function run(action){
   const payload = {action, prompt, meta:{from:'cockpit'}};
   const r = await api('/api/cockpit/run',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
   await refresh();
-  if(!r.ok) alert('Run failed: '+r.status+'\\n'+(r.text||''));
+  if(!r.ok) alert('Run failed: '+r.status+'\n'+(r.text||''));
 }
 document.getElementById('go').onclick=()=>run('repair_pack');
 refresh(); setInterval(refresh, 5000);
 </script>
 </body></html>
-\"\"\"
+"""
     return HTMLResponse(html)
 
-@router.get("/api/cockpit/state")
+@cockpit_router.get("/api/cockpit/state")
 def state():
-    return JSONResponse({"ok": True, "ts": _now(), "jobs": _JOBS[:15], "jobsCount": len(_JOBS),
-                         "agents": {"ping": "/api/agents/ping", "repair": "/api/agents/repair", "patchBuilder": "/api/agents/patch-builder"}})
+    return JSONResponse({
+        "ok": True,
+        "ts": _now(),
+        "jobs": _JOBS[:15],
+        "jobsCount": len(_JOBS),
+        "agents": {"ping": "/api/agents/ping", "repair": "/api/agents/repair", "patchBuilder": "/api/agents/patch-builder"},
+    })
 
-@router.post("/api/cockpit/run")
+@cockpit_router.post("/api/cockpit/run")
 async def run(body: CockpitRun, request: Request):
-    job = {"id": str(uuid.uuid4()), "ts": _now(), "kind": body.action, "payload": {"prompt": body.prompt or "", "meta": body.meta or {}}, "status":"queued"}
-    _JOBS.insert(0, job); del _JOBS[50:]
+    job = {
+        "id": str(uuid.uuid4()),
+        "ts": _now(),
+        "kind": body.action,
+        "payload": {"prompt": body.prompt or "", "meta": body.meta or {}},
+        "status": "queued",
+    }
+    _JOBS.insert(0, job)
+    del _JOBS[50:]
     return JSONResponse({"ok": True, "job": job})
-
-app.include_router(cockpit_router)
-
