@@ -1,7 +1,8 @@
 from agent_routes import router as agents_router
 from urllib.parse import urlparse
 import socket
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, Request
+from backend.cockpit_routes import router as cockpit_router
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -20,7 +21,10 @@ load_dotenv(ROOT_DIR / ".env")
 # App
 # --------------------
 app = FastAPI(title="Hibiscus to Airport API OPENAPI_STAMP_2026-01-27_19-47-59")
+
 
+# ===== HIBISCUS_COCKPIT_MOUNT_001 =====
+app.include_router(cockpit_router)
 # -------------------------------
 # DIAGNOSTICS (SAFE / NO SECRETS)
 # -------------------------------
