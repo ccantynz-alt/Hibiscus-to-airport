@@ -1,7 +1,8 @@
 from agent_routes import router as agents_router
 from urllib.parse import urlparse
 import socket
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI
+from .cockpit_routes import cockpit_router, APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 import time
 from backend.cockpit_routes import router as cockpit_router
@@ -318,6 +319,7 @@ async def start_scheduler():
 async def shutdown_scheduler():
     scheduler.shutdown()
     logger.info("Scheduler shutdown")
+
 
 
 
