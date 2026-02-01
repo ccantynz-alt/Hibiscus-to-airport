@@ -1,0 +1,51 @@
+warning: in the working copy of 'backend/cockpit_routes.py', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/backend/agent_routes.py b/backend/agent_routes.py[m
+[1mindex 339ee9f..cca77d5 100644[m
+[1m--- a/backend/agent_routes.py[m
+[1m+++ b/backend/agent_routes.py[m
+[36m@@ -1,8 +1,10 @@[m
+[31m-﻿import os[m
+[32m+[m[32mimport os[m
+ from pathlib import Path[m
+ from typing import Any, Dict, Optional[m
+ [m
+ from fastapi import APIRouter, Header, HTTPException[m
+[32m+[m[32mfrom .cockpit_routes import cockpit_router[m
+[32m+[m[32mimport time[m
+ from fastapi.responses import HTMLResponse[m
+ from pydantic import BaseModel[m
+ [m
+[36m@@ -51,3 +53,12 @@[m [mdef agent_cockpit():[m
+     return HTMLResponse(content=html, status_code=200)[m
+ [m
+ [m
+[32m+[m
+[32m+[m
+[32m+[m[32mapp.include_router(cockpit_router)[m
+[32m+[m
+[32m+[m
+[32m+[m[32m@app.get("/__cockpit_stamp__")[m
+[32m+[m[32mdef __cockpit_stamp__():[m
+[32m+[m[32m    return {"cockpit_stamp":"COCKPIT_APP_WIRED","ts": int(time.time())}[m
+[32m+[m
+[1mdiff --git a/backend/cockpit_routes.py b/backend/cockpit_routes.py[m
+[1mindex 8d7142b..b09b30b 100644[m
+[1m--- a/backend/cockpit_routes.py[m
+[1m+++ b/backend/cockpit_routes.py[m
+[36m@@ -1,5 +1,6 @@[m
+ # ===== HIBISCUS_COCKPIT_002_20260201_190341 =====[m
+ from fastapi import APIRouter, Request[m
+[32m+[m[32mfrom .cockpit_routes import cockpit_router[m
+ from fastapi.responses import HTMLResponse, JSONResponse[m
+ from pydantic import BaseModel[m
+ from typing import Any, Dict, Optional[m
+[36m@@ -108,4 +109,7 @@[m [mdef state():[m
+ async def run(body: CockpitRun, request: Request):[m
+     job = {"id": str(uuid.uuid4()), "ts": _now(), "kind": body.action, "payload": {"prompt": body.prompt or "", "meta": body.meta or {}}, "status":"queued"}[m
+     _JOBS.insert(0, job); del _JOBS[50:][m
+[31m-    return JSONResponse({"ok": True, "job": job})[m
+\ No newline at end of file[m
+[32m+[m[32m    return JSONResponse({"ok": True, "job": job})[m
+[32m+[m
+[32m+[m[32mapp.include_router(cockpit_router)[m
+[41m+[m

@@ -1,8 +1,10 @@
-﻿import os
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Header, HTTPException
+from .cockpit_routes import cockpit_router
+import time
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -50,4 +52,13 @@ def agent_cockpit():
     html = p.read_text(encoding="utf-8")
     return HTMLResponse(content=html, status_code=200)
 
+
+
+
+app.include_router(cockpit_router)
+
+
+@app.get("/__cockpit_stamp__")
+def __cockpit_stamp__():
+    return {"cockpit_stamp":"COCKPIT_APP_WIRED","ts": int(time.time())}
 
