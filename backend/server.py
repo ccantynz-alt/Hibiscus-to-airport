@@ -1,7 +1,9 @@
 from agent_routes import router as agents_router
 from urllib.parse import urlparse
 import socket
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+import time
 from backend.cockpit_routes import router as cockpit_router
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -23,6 +25,28 @@ load_dotenv(ROOT_DIR / ".env")
 app = FastAPI(title="Hibiscus to Airport API OPENAPI_STAMP_2026-01-27_19-47-59")
 
 
+
+
+@app.get("/__cockpit_stamp__")
+def __cockpit_stamp__():
+    return JSONResponse({"cockpit_stamp":"COCKPIT_APP_WIRED","ts": int(time.time())})
+
+@app.get("/agent-cockpit", response_class=HTMLResponse)
+def agent_cockpit():
+    return HTMLResponse("""
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Agent Cockpit</title></head>
+  <body style="font-family: system-ui; padding: 16px;">
+    <h1>Agent Cockpit (LIVE)</h1>
+    <p>If you can see this, the cockpit routes are mounted in the live FastAPI app.</p>
+    <ul>
+      <li><code>/__cockpit_stamp__</code> (proof)</li>
+      <li><code>/api/agents/ping</code> (agents)</li>
+    </ul>
+  </body>
+</html>
+""")
 # ===== HIBISCUS_COCKPIT_MOUNT_001 =====
 app.include_router(cockpit_router)
 # -------------------------------
@@ -294,6 +318,7 @@ async def start_scheduler():
 async def shutdown_scheduler():
     scheduler.shutdown()
     logger.info("Scheduler shutdown")
+
 
 
 

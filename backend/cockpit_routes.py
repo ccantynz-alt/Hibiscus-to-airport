@@ -1,5 +1,6 @@
 # ===== HIBISCUS_COCKPIT_002_20260201_190341 =====
 from fastapi import APIRouter, Request
+from .cockpit_routes import cockpit_router
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from typing import Any, Dict, Optional
@@ -109,3 +110,6 @@ async def run(body: CockpitRun, request: Request):
     job = {"id": str(uuid.uuid4()), "ts": _now(), "kind": body.action, "payload": {"prompt": body.prompt or "", "meta": body.meta or {}}, "status":"queued"}
     _JOBS.insert(0, job); del _JOBS[50:]
     return JSONResponse({"ok": True, "job": job})
+
+app.include_router(cockpit_router)
+
