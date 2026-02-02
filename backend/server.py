@@ -2,6 +2,7 @@ from agent_routes import router as agents_router
 from urllib.parse import urlparse
 import socket
 from fastapi import FastAPI
+from backend.cockpit_routes import cockpit_router
 from .cockpit_routes import cockpit_router, APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 import time
@@ -105,7 +106,7 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260127_113814"}
+    return {"stamp": "RENDER_STAMP_20260202_180301"}
 
 @app.get("/debug/mongo")
 async def debug_mongo():
@@ -319,6 +320,7 @@ async def start_scheduler():
 async def shutdown_scheduler():
     scheduler.shutdown()
     logger.info("Scheduler shutdown")
+
 
 
 
