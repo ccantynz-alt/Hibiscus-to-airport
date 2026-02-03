@@ -1,3 +1,12 @@
+# ===== D8_AUTO_AGENT_IMPORTS_START =====
+# Required for cockpit/agents automation
+import os
+import json
+from typing import Any, Dict, Optional, List
+from fastapi import Request, Header
+from fastapi.responses import PlainTextResponse
+# ===== D8_AUTO_AGENT_IMPORTS_END =====
+
 from agent_routes import router as agents_router
 from urllib.parse import urlparse
 import socket
@@ -106,7 +115,7 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260203_145933"}
+    return {"stamp": "RENDER_STAMP_20260203_150524"}
 
 @app.get("/debug/mongo")
 async def debug_mongo():
@@ -321,9 +330,72 @@ async def shutdown_scheduler():
     scheduler.shutdown()
     logger.info("Scheduler shutdown")
 
+# ===== D8_AUTO_AGENT_HELPERS_START =====
+# ---- Automation guard + lightweight state ----
 
+def _d8_now_ts() -> int:
+    return int(time.time())
 
+def _d8_require_admin_key(x_admin_key: Optional[str]) -> Optional[JSONResponse]:
+    """
+    If ADMIN_API_KEY is set, require it via header X-Admin-Key.
+    If not set, allow (useful for initial bring-up).
+    """
+    expected = os.environ.get("ADMIN_API_KEY", "").strip()
+    if not expected:
+        return None
+    if (x_admin_key or "").strip() != expected:
+        return JSONResponse(status_code=401, content={"ok": False, "error": "unauthorized"})
+    return None
 
+# in-memory state (resets on deploy; enough for automation/proof)
+_D8_STATE: Dict[str, Any] = {
+    "boot_ts": _d8_now_ts(),
+    "last_action_ts": None,
+    "last_action": None,
+    "actions": [],  # list of {ts, kind, payload}
+}
 
+def _d8_log_action(kind: str, payload: Any) -> None:
+    entry = {"ts": _d8_now_ts(), "kind": kind, "payload": payload}
+    _D8_STATE["last_action_ts"] = entry["ts"]
+    _D8_STATE["last_action"] = entry
+    _D8_STATE["actions"].append(entry)
+    # cap log to prevent runaway memory
+    if len(_D8_STATE["actions"]) > 200:
+        _D8_STATE["actions"] = _D8_STATE["actions"][-200:]
+# ===== D8_AUTO_AGENT_HELPERS_END =====
 
+# ===== D8_AUTO_ADMIN_COCKPIT_START =====
+# ---- Admin: cockpit embedded page ----
+
+@app.get("/admin/cockpit", response_class=HTMLResponse)
+async def admin_cockpit(request: Request, x_admin_key: Optional[str] = Header(default=None, convert_underscores=False)):
+    deny = _d8_require_admin_key(x_admin_key)
+    if deny:
+        # show a tiny HTML so browsers don’t just download JSON
+        return HTMLResponse("<h1>401</h1><p>Missing/invalid X-Admin-Key</p>", status_code=401)
+
+    # Embed the existing cockpit page. Keep it simple and fast.
+    return HTMLResponse(f"""
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin Cockpit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body style="margin:0; font-family: system-ui;">
+    <div style="padding:12px; border-bottom:1px solid #ddd;">
+      <strong>Admin Cockpit</strong>
+      <span style="margin-left:10px; color:#666;">/agent-cockpit embedded</span>
+    </div>
+    <iframe
+      src="/agent-cockpit"
+      style="width:100%; height: calc(100vh - 49px); border:0;"
+      title="Agent Cockpit"></iframe>
+  </body>
+</html>
+""")
+# ===== D8_AUTO_ADMIN_COCKPIT_END =====
 
