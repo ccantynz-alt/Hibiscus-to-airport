@@ -116,7 +116,128 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260203_192939"}
+    return {"stamp": "RENDER_STAMP_20260203_195601"}
+
+# ===== BREAKGLASS_ADMIN_START =====
+# --- BREAKGLASS ADMIN DOOR (key-protected) ---
+# Uses ADMIN_API_KEY from environment. Send header: X-Admin-Key: <key>
+
+def _bg_require_admin(x_admin_key: str = ""):
+    expected = (os.environ.get("ADMIN_API_KEY") or "").strip()
+    if not expected:
+        # If you forgot to set ADMIN_API_KEY in Render env vars, lock this down immediately.
+        return JSONResponse(status_code=500, content={"ok": False, "error": "ADMIN_API_KEY not set in environment"})
+    if (x_admin_key or "").strip() != expected:
+        return JSONResponse(status_code=401, content={"ok": False, "error": "unauthorized"})
+    return None
+
+@app.get("/debug/whoami")
+async def bg_debug_whoami():
+    # no secrets
+    return {
+        "ok": True,
+        "ts": int(time.time()),
+        "file": __file__,
+        "module": __name__,
+        "app_title": getattr(app, "title", None),
+        "bg_stamp": "RENDER_STAMP_20260203_195601",
+    }
+
+@app.get("/admin", response_class=HTMLResponse)
+async def bg_admin_home(x_admin_key: str = Header(default="")):
+    deny = _bg_require_admin(x_admin_key)
+    if deny:
+        return HTMLResponse("<h1>401</h1><p>Missing/invalid X-Admin-Key</p>", status_code=401)
+
+    return HTMLResponse(f\"\"\"
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Admin Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body style="font-family: system-ui; padding: 16px;">
+    <h1>Admin Home (Breakglass)</h1>
+    <p><b>Proof stamp:</b> RENDER_STAMP_20260203_195601</p>
+    <ul>
+      <li><a href="/admin/status">/admin/status</a> (API status)</li>
+      <li><a href="/admin/cockpit">/admin/cockpit</a> (cockpit embed)</li>
+      <li><a href="/agent-cockpit">/agent-cockpit</a> (raw cockpit)</li>
+      <li><a href="/__cockpit_stamp__">/__cockpit_stamp__</a> (proof)</li>
+      <li><a href="/debug/stamp">/debug/stamp</a> (stamp)</li>
+      <li><a href="/debug/whoami">/debug/whoami</a> (whoami)</li>
+      <li><a href="/api/agents/ping">/api/agents/ping</a> (agents ping)</li>
+      <li><a href="/api/cockpit/state">/api/cockpit/state</a> (cockpit state)</li>
+    </ul>
+    <p style="color:#666; font-size: 13px;">Requires header <code>X-Admin-Key</code>.</p>
+  </body>
+</html>
+\"\"\")
+
+@app.get("/admin/status", response_class=HTMLResponse)
+async def bg_admin_status(x_admin_key: str = Header(default="")):
+    deny = _bg_require_admin(x_admin_key)
+    if deny:
+        return HTMLResponse("<h1>401</h1><p>Missing/invalid X-Admin-Key</p>", status_code=401)
+
+    return HTMLResponse(f\"\"\"
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Admin Status</title><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
+  <body style="font-family: system-ui; padding: 16px;">
+    <h1>Admin Status</h1>
+    <pre id="out">Loading...</pre>
+    <script>
+      async function go() {{
+        const hdr = {{ "X-Admin-Key": "REDACTED" }};
+        const endpoints = [
+          "/debug/stamp",
+          "/debug/whoami",
+          "/__cockpit_stamp__",
+          "/api/agents/ping",
+          "/api/cockpit/state"
+        ];
+        let txt = "";
+        for (const ep of endpoints) {{
+          try {{
+            const r = await fetch(ep, {{ headers: {{ "X-Admin-Key": "" }} }});
+            txt += ep + " -> " + r.status + "\\n";
+            const j = await r.text();
+            txt += j.slice(0, 400) + "\\n\\n";
+          }} catch (e) {{
+            txt += ep + " -> ERROR " + e + "\\n\\n";
+          }}
+        }}
+        document.getElementById("out").textContent = txt;
+      }}
+      go();
+    </script>
+    <p style="color:#666; font-size: 13px;">If /api endpoints 404, you're still on an old app build.</p>
+  </body>
+</html>
+\"\"\")
+
+@app.get("/admin/cockpit", response_class=HTMLResponse)
+async def bg_admin_cockpit(x_admin_key: str = Header(default="")):
+    deny = _bg_require_admin(x_admin_key)
+    if deny:
+        return HTMLResponse("<h1>401</h1><p>Missing/invalid X-Admin-Key</p>", status_code=401)
+
+    return HTMLResponse(\"\"\"
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Admin Cockpit</title><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
+  <body style="margin:0; font-family: system-ui;">
+    <div style="padding:12px; border-bottom:1px solid #ddd;">
+      <strong>Admin Cockpit</strong>
+      <span style="margin-left:10px; color:#666;">embedded /agent-cockpit</span>
+    </div>
+    <iframe src="/agent-cockpit" style="width:100%; height: calc(100vh - 49px); border:0;" title="Agent Cockpit"></iframe>
+  </body>
+</html>
+\"\"\")
+# ===== BREAKGLASS_ADMIN_END =====
 
 # ===== HIBISCUS_WHOAMI_START =====
 # --- Proof endpoint to confirm which code is running in prod ---
@@ -661,4 +782,6 @@ async def admin_cockpit(request: Request, x_admin_key: Optional[str] = Header(de
 
 import os
 
+
+import os
 
