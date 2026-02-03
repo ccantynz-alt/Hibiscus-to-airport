@@ -1,124 +1,73 @@
-# ===== HIBISCUS_COCKPIT_006_FIXED =====
+# backend/cockpit_routes.py
+# FINISH_TODAY_C_COCKPIT
+
+import os
+from datetime import datetime
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel
-from typing import Any, Dict, Optional
-import time, uuid
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 
 cockpit_router = APIRouter()
-_JOBS = []  # newest first
 
-class CockpitRun(BaseModel):
-    action: str
-    prompt: Optional[str] = ""
-    meta: Optional[Dict[str, Any]] = None
+ADMIN_COOKIE = "d8_admin"
+ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "").strip()
 
-def _now() -> int:
-    return int(time.time())
+def _is_authed(req: Request) -> bool:
+    if ADMIN_API_KEY == "":
+        return False
+    h = (req.headers.get("X-Admin-Key") or "").strip()
+    if h and h == ADMIN_API_KEY:
+        return True
+    c = (req.cookies.get(ADMIN_COOKIE) or "").strip()
+    return c == ADMIN_API_KEY
 
-@cockpit_router.get("/__cockpit_stamp__")
-def cockpit_stamp():
-    return {"ok": True, "stamp": "HIBISCUS_COCKPIT_006_FIXED", "ts": _now()}
+@cockpit_router.get("/admin/cockpit", response_class=HTMLResponse)
+def cockpit(req: Request):
+    if not _is_authed(req):
+        return RedirectResponse(url="/admin/login", status_code=302)
 
-@cockpit_router.get("/agent-cockpit", response_class=HTMLResponse)
-def agent_cockpit():
-    html = r"""
-<!doctype html><html><head><meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Hibiscus Cockpit</title>
-<style>
-body{margin:0;font-family:system-ui;background:#070A12;color:#fff;display:flex;justify-content:center;padding:24px}
-.card{width:min(980px,96vw);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);
-border-radius:22px;padding:18px 18px 14px}
-h1{margin:10px 0 14px;text-align:center;font-size:40px}
-.bar{display:flex;gap:10px;align-items:center;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.10);
-border-radius:999px;padding:12px 12px}
-input{flex:1;background:transparent;border:0;outline:none;color:#fff;font-size:16px;padding:6px 8px}
-button{border:0;border-radius:999px;padding:10px 18px;font-weight:700;color:#fff;cursor:pointer;
-background:linear-gradient(180deg,#60A5FA,#3B82F6)}
-.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px}
-.box{background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:12px}
-.row{display:flex;justify-content:space-between;gap:10px;padding:10px;border-radius:14px}
-.row:hover{background:rgba(255,255,255,.04)}
-.small{color:rgba(255,255,255,.55);font-size:12px}
-.jobs{max-height:240px;overflow:auto;display:flex;flex-direction:column;gap:8px}
-.job{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:10px}
-</style></head>
+    return HTMLResponse(f\"\"\"<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cockpit</title>
+  <style>
+    body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; padding:18px;}}
+    .row{{display:flex; gap:10px; flex-wrap:wrap;}}
+    button{{padding:10px 12px; border-radius:10px; border:1px solid #e5e7eb; background:#111827; color:#fff; cursor:pointer;}}
+    pre{{background:#0b1020; color:#e5e7eb; padding:12px; border-radius:12px; overflow:auto;}}
+    .card{{border:1px solid #e5e7eb; border-radius:14px; padding:14px; margin-top:12px;}}
+    .meta{{color:#6b7280; font-size:13px;}}
+  </style>
+</head>
 <body>
-<div class="card" data-stamp="HIBISCUS_COCKPIT_006_FIXED">
-  <div class="small">api.hibiscustoairport.co.nz • HIBISCUS_COCKPIT_006_FIXED</div>
-  <h1>What would you like to run?</h1>
-  <div class="bar">
-    <input id="p" placeholder="repair failing CI, build patch, run SEO..."/>
-    <button id="go">GENERATE</button>
+  <h2>Agent Cockpit</h2>
+  <div class="meta">Boot is green. This panel checks core endpoints and prepares agent automation.</div>
+
+  <div class="row" style="margin-top:10px;">
+    <button onclick="hit('/debug/stamp')">/debug/stamp</button>
+    <button onclick="hit('/api/agents/ping')">/api/agents/ping</button>
+    <button onclick="hit('/healthz')">/healthz</button>
   </div>
-  <div class="grid">
-    <div class="box">
-      <div class="row"><div><b>Repair Pack</b><div class="small">9 agents</div></div><button onclick="run('repair_pack')">Run</button></div>
-      <div class="row"><div><b>Patch Builder</b><div class="small">unified diff</div></div><button onclick="run('patch_builder')">Run</button></div>
-      <div class="row"><div><b>PR Dispatch</b><div class="small">Agent PR workflow</div></div><button onclick="run('dispatch_pr')">Run</button></div>
-      <div class="row"><div><b>SEO / Website</b><div class="small">only if endpoint exists</div></div><button onclick="run('seo_run')">Run</button></div>
-    </div>
-    <div class="box">
-      <b>Activity</b>
-      <div class="jobs" id="jobs"></div>
-    </div>
+
+  <div class="card">
+    <div style="font-weight:700;">Output</div>
+    <pre id="out">(click a button)</pre>
   </div>
-</div>
+
 <script>
-async function api(path, opts){
-  const u = path + (path.includes('?')?'&':'?') + 'ts=' + Math.floor(Date.now()/1000);
-  const r = await fetch(u, opts||{});
-  const t = await r.text();
-  let j=null; try{ j=JSON.parse(t);}catch{}
-  return {ok:r.ok, status:r.status, json:j, text:t};
-}
-function render(list){
-  const root=document.getElementById('jobs'); root.innerHTML='';
-  if(!list || !list.length){ root.innerHTML='<div class="job"><b>No jobs yet</b><div class="small">Run something.</div></div>'; return; }
-  for(const x of list){
-    const d=document.createElement('div'); d.className='job';
-    d.innerHTML = '<b>'+x.kind+'</b> • '+x.status+'<div class="small">'+JSON.stringify(x.payload).slice(0,180)+'</div>';
-    root.appendChild(d);
-  }
-}
-async function refresh(){
-  const s = await api('/api/cockpit/state');
-  if(s.ok && s.json) render(s.json.jobs||[]);
-}
-async function run(action){
-  const prompt = (document.getElementById('p').value||'');
-  const payload = {action, prompt, meta:{from:'cockpit'}};
-  const r = await api('/api/cockpit/run',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
-  await refresh();
-  if(!r.ok) alert('Run failed: '+r.status+'\n'+(r.text||''));
-}
-document.getElementById('go').onclick=()=>run('repair_pack');
-refresh(); setInterval(refresh, 5000);
+async function hit(path){{
+  const out=document.getElementById('out');
+  out.textContent='Loading '+path+' ...';
+  try {{
+    const r = await fetch(path+'?ts='+(Date.now()));
+    const t = await r.text();
+    out.textContent = 'HTTP '+r.status+'\\n\\n'+t;
+  }} catch(e) {{
+    out.textContent = 'ERROR: '+String(e);
+  }}
+}}
 </script>
-</body></html>
-"""
-    return HTMLResponse(html)
 
-@cockpit_router.get("/api/cockpit/state")
-def state():
-    return JSONResponse({
-        "ok": True,
-        "ts": _now(),
-        "jobs": _JOBS[:15],
-        "jobsCount": len(_JOBS),
-        "agents": {"ping": "/api/agents/ping", "repair": "/api/agents/repair", "patchBuilder": "/api/agents/patch-builder"},
-    })
-
-@cockpit_router.post("/api/cockpit/run")
-async def run(body: CockpitRun, request: Request):
-    job = {
-        "id": str(uuid.uuid4()),
-        "ts": _now(),
-        "kind": body.action,
-        "payload": {"prompt": body.prompt or "", "meta": body.meta or {}},
-        "status": "queued",
-    }
-    _JOBS.insert(0, job)
-    del _JOBS[50:]
-    return JSONResponse({"ok": True, "job": job})
+</body>
+</html>\"\"\")
