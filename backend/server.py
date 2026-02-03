@@ -115,7 +115,7 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260203_150524"}
+    return {"stamp": "RENDER_STAMP_20260203_150934"}
 
 @app.get("/debug/mongo")
 async def debug_mongo():
@@ -398,4 +398,5 @@ async def admin_cockpit(request: Request, x_admin_key: Optional[str] = Header(de
 </html>
 """)
 # ===== D8_AUTO_ADMIN_COCKPIT_END =====
+
 
