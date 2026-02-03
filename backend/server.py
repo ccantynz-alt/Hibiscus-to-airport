@@ -1,3 +1,4 @@
+import os
 # ===== D8_AUTO_AGENT_IMPORTS_START =====
 # Required for cockpit/agents automation
 import os
@@ -115,7 +116,69 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260203_150934"}
+    return {"stamp": "RENDER_STAMP_20260203_151156"}
+
+# ===== D8_APPLEVEL_COCKPIT_API_START =====
+# App-level cockpit endpoints (no router ambiguity)
+
+def _d8_require_admin_key(x_admin_key: str = ""):
+    expected = (os.environ.get("ADMIN_API_KEY") or "").strip()
+    if not expected:
+        return None
+    if (x_admin_key or "").strip() != expected:
+        return JSONResponse(status_code=401, content={"ok": False, "error": "unauthorized"})
+    return None
+
+_D8_ACTIONS = []
+
+@app.get("/api/agents/ping")
+async def d8_agents_ping():
+    return {"ok": True, "agents": "online", "ts": int(time.time())}
+
+@app.get("/api/cockpit/state")
+async def d8_cockpit_state(x_admin_key: str = Header(default="")):
+    deny = _d8_require_admin_key(x_admin_key)
+    if deny:
+        return deny
+    last = _D8_ACTIONS[-1] if _D8_ACTIONS else None
+    return {"ok": True, "ts": int(time.time()), "actions_count": len(_D8_ACTIONS), "last_action": last}
+
+@app.post("/api/agents/run")
+async def d8_agents_run(request: Request, x_admin_key: str = Header(default="")):
+    deny = _d8_require_admin_key(x_admin_key)
+    if deny:
+        return deny
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    action = (body.get("action") or "noop").strip().lower()
+    payload = body.get("payload")
+    entry = {"ts": int(time.time()), "action": action, "payload": payload}
+    _D8_ACTIONS.append(entry)
+    if len(_D8_ACTIONS) > 200:
+        del _D8_ACTIONS[0:len(_D8_ACTIONS)-200]
+    return {"ok": True, "entry": entry}
+
+@app.get("/admin/cockpit", response_class=HTMLResponse)
+async def d8_admin_cockpit(x_admin_key: str = Header(default="")):
+    deny = _d8_require_admin_key(x_admin_key)
+    if deny:
+        return HTMLResponse("<h1>401</h1><p>Missing/invalid X-Admin-Key</p>", status_code=401)
+    return HTMLResponse(\"\"\"
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Admin Cockpit</title><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
+  <body style="margin:0; font-family: system-ui;">
+    <div style="padding:12px; border-bottom:1px solid #ddd;">
+      <strong>Admin Cockpit</strong>
+      <span style="margin-left:10px; color:#666;">/agent-cockpit embedded</span>
+    </div>
+    <iframe src="/agent-cockpit" style="width:100%; height: calc(100vh - 49px); border:0;" title="Agent Cockpit"></iframe>
+  </body>
+</html>
+\"\"\")
+# ===== D8_APPLEVEL_COCKPIT_API_END =====
 
 @app.get("/debug/mongo")
 async def debug_mongo():
@@ -398,5 +461,6 @@ async def admin_cockpit(request: Request, x_admin_key: Optional[str] = Header(de
 </html>
 """)
 # ===== D8_AUTO_ADMIN_COCKPIT_END =====
+
 
 
