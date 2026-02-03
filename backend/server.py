@@ -106,7 +106,7 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260202_180301"}
+    return {"stamp": "RENDER_STAMP_20260203_145933"}
 
 @app.get("/debug/mongo")
 async def debug_mongo():
@@ -320,6 +320,7 @@ async def start_scheduler():
 async def shutdown_scheduler():
     scheduler.shutdown()
     logger.info("Scheduler shutdown")
+
 
 
 
