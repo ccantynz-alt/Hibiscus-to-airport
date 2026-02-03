@@ -116,7 +116,86 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260203_172448"}
+    return {"stamp": "RENDER_STAMP_20260203_192925"}
+
+# ===== HIBISCUS_ADMIN_ENTRYPOINT_START =====
+# --- Admin guard (X-Admin-Key) + Admin API + Admin HTML entrypoint ---
+
+def _hib_require_admin(x_admin_key: str = ""):
+    expected = (os.environ.get("ADMIN_API_KEY") or "").strip()
+    if not expected:
+        # Bring-up mode if no key is set in Render env vars
+        return None
+    if (x_admin_key or "").strip() != expected:
+        return JSONResponse(status_code=401, content={"ok": False, "error": "unauthorized"})
+    return None
+
+@app.get("/api/admin/ping")
+async def api_admin_ping(x_admin_key: str = Header(default="")):
+    deny = _hib_require_admin(x_admin_key)
+    if deny:
+        return deny
+    return {"ok": True, "admin": "online", "ts": int(time.time())}
+
+@app.get("/api/admin/authcheck")
+async def api_admin_authcheck(x_admin_key: str = Header(default="")):
+    deny = _hib_require_admin(x_admin_key)
+    if deny:
+        return deny
+    return {"ok": True, "ts": int(time.time()), "note": "X-Admin-Key accepted"}
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_home(x_admin_key: str = Header(default="")):
+    deny = _hib_require_admin(x_admin_key)
+    if deny:
+        return HTMLResponse("<h1>401</h1><p>Missing/invalid X-Admin-Key</p>", status_code=401)
+
+    return HTMLResponse(f\"\"\"
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Admin</title><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
+  <body style="font-family: system-ui; padding: 16px;">
+    <h1>Admin (Backend)</h1>
+    <p>If you can see this, the admin entrypoint is live.</p>
+    <ul>
+      <li><a href="/admin/panel">/admin/panel</a> (panel)</li>
+      <li><a href="/admin/cockpit">/admin/cockpit</a> (cockpit embed)</li>
+      <li><a href="/agent-cockpit">/agent-cockpit</a> (raw cockpit)</li>
+      <li><code>/api/admin/ping</code> (proof)</li>
+      <li><code>/api/agents/ping</code> (agents)</li>
+      <li><code>/api/cockpit/state</code> (state)</li>
+      <li><code>/debug/stamp</code> (stamp)</li>
+    </ul>
+  </body>
+</html>
+\"\"\")
+
+@app.get("/admin/panel", response_class=HTMLResponse)
+async def admin_panel(x_admin_key: str = Header(default="")):
+    deny = _hib_require_admin(x_admin_key)
+    if deny:
+        return HTMLResponse("<h1>401</h1><p>Missing/invalid X-Admin-Key</p>", status_code=401)
+
+    return HTMLResponse(f\"\"\"
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Admin Panel</title><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
+  <body style="margin:0; font-family: system-ui;">
+    <div style="padding:12px; border-bottom:1px solid #ddd;">
+      <strong>Admin Panel</strong>
+      <span style="margin-left:10px; color:#666;">Backend-served</span>
+    </div>
+    <div style="padding:16px;">
+      <p><b>Status:</b> Use the links below to verify agents/cockpit.</p>
+      <ul>
+        <li><a href="/admin/cockpit">Open Admin Cockpit</a></li>
+        <li><a href="/agent-cockpit">Open Agent Cockpit</a></li>
+      </ul>
+    </div>
+  </body>
+</html>
+\"\"\")
+# ===== HIBISCUS_ADMIN_ENTRYPOINT_END =====
 
 # ===== HIBISCUS_ADMIN_API_START =====
 # ---- Admin Guard + Admin API (X-Admin-Key) ----
@@ -565,4 +644,6 @@ async def admin_cockpit(request: Request, x_admin_key: Optional[str] = Header(de
 
 
 
+
+import os
 
