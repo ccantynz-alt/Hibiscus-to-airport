@@ -116,7 +116,108 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260203_151156"}
+    return {"stamp": "RENDER_STAMP_20260203_172448"}
+
+# ===== HIBISCUS_ADMIN_API_START =====
+# ---- Admin Guard + Admin API (X-Admin-Key) ----
+
+def _hib_require_admin(x_admin_key: str = ""):
+    expected = (os.environ.get("ADMIN_API_KEY") or "").strip()
+    if not expected:
+        # If no key set, allow (bring-up mode). Set ADMIN_API_KEY in Render to lock this down.
+        return None
+    if (x_admin_key or "").strip() != expected:
+        return JSONResponse(status_code=401, content={"ok": False, "error": "unauthorized"})
+    return None
+
+@app.get("/api/admin/ping")
+async def admin_ping(x_admin_key: str = Header(default="")):
+    deny = _hib_require_admin(x_admin_key)
+    if deny:
+        return deny
+    return {"ok": True, "admin": "online", "ts": int(time.time())}
+
+@app.get("/api/admin/cockpit")
+async def admin_cockpit_info(x_admin_key: str = Header(default="")):
+    deny = _hib_require_admin(x_admin_key)
+    if deny:
+        return deny
+    return {
+        "ok": True,
+        "ts": int(time.time()),
+        "urls": {
+            "agent_cockpit": "/agent-cockpit",
+            "admin_cockpit": "/admin/cockpit",
+            "cockpit_state": "/api/cockpit/state",
+            "agents_ping": "/api/agents/ping"
+        }
+    }
+
+@app.get("/api/admin/bookings/count")
+async def admin_bookings_count(x_admin_key: str = Header(default="")):
+    deny = _hib_require_admin(x_admin_key)
+    if deny:
+        return deny
+
+    # Best-effort DB lookup without assumptions.
+    # Tries a couple common imports and returns helpful errors if not configured.
+    db = None
+    err = None
+    try:
+        from database import db as _db  # type: ignore
+        db = _db
+    except Exception as e1:
+        err = str(e1)
+        try:
+            from backend.database import db as _db  # type: ignore
+            db = _db
+        except Exception as e2:
+            err = (err + " | " + str(e2)) if err else str(e2)
+
+    if db is None:
+        return JSONResponse(status_code=500, content={
+            "ok": False,
+            "error": "db_not_available",
+            "details": err,
+            "hint": "Confirm Mongo URI/env vars and database module wiring."
+        })
+
+    # Try common collection names
+    for colname in ["bookings", "Bookings", "booking", "orders"]:
+        try:
+            col = db[colname]
+            n = await col.count_documents({})  # type: ignore
+            return {"ok": True, "collection": colname, "count": n, "ts": int(time.time())}
+        except Exception:
+            continue
+
+    return JSONResponse(status_code=500, content={
+        "ok": False,
+        "error": "no_known_booking_collection",
+        "hint": "Update this endpoint to point at your actual bookings collection name."
+    })
+
+# Lock down admin-facing HTML endpoint as well:
+@app.get("/admin/cockpit", response_class=HTMLResponse)
+async def admin_cockpit(x_admin_key: str = Header(default="")):
+    deny = _hib_require_admin(x_admin_key)
+    if deny:
+        return HTMLResponse("<h1>401</h1><p>Missing/invalid X-Admin-Key</p>", status_code=401)
+
+    return HTMLResponse(\"\"\"
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Admin Cockpit</title><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
+  <body style="margin:0; font-family: system-ui;">
+    <div style="padding:12px; border-bottom:1px solid #ddd;">
+      <strong>Admin Cockpit</strong>
+      <span style="margin-left:10px; color:#666;">/agent-cockpit embedded</span>
+    </div>
+    <iframe src="/agent-cockpit" style="width:100%; height: calc(100vh - 49px); border:0;" title="Agent Cockpit"></iframe>
+  </body>
+</html>
+\"\"\")
+# ===== HIBISCUS_ADMIN_API_END =====
 
 # ===== D8_APPLEVEL_COCKPIT_API_START =====
 # App-level cockpit endpoints (no router ambiguity)
@@ -461,6 +562,7 @@ async def admin_cockpit(request: Request, x_admin_key: Optional[str] = Header(de
 </html>
 """)
 # ===== D8_AUTO_ADMIN_COCKPIT_END =====
+
 
 
 
