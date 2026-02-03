@@ -1,6 +1,6 @@
 # ===== HIBISCUS_COCKPIT_002_20260201_190341 =====
 from fastapi import APIRouter, Request
-from .cockpit_routes import cockpit_router
+from backend.cockpit_routes import cockpit_router
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from typing import Any, Dict, Optional
@@ -112,5 +112,6 @@ async def run(body: CockpitRun, request: Request):
     return JSONResponse({"ok": True, "job": job})
 
 app.include_router(cockpit_router)
+
 
 
