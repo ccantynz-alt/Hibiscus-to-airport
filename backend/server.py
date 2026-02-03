@@ -116,7 +116,21 @@ api_router = APIRouter(prefix="/api")
 # --------------------
 @app.get("/debug/stamp")
 async def debug_stamp():
-    return {"stamp": "RENDER_STAMP_20260203_192925"}
+    return {"stamp": "RENDER_STAMP_20260203_192939"}
+
+# ===== HIBISCUS_WHOAMI_START =====
+# --- Proof endpoint to confirm which code is running in prod ---
+@app.get("/debug/whoami")
+async def debug_whoami():
+    return {
+        "ok": True,
+        "ts": int(time.time()),
+        "module": __name__,
+        "file": __file__,
+        "app_title": getattr(app, "title", None),
+        "debug_stamp": "RENDER_STAMP_20260203_192939"
+    }
+# ===== HIBISCUS_WHOAMI_END =====
 
 # ===== HIBISCUS_ADMIN_ENTRYPOINT_START =====
 # --- Admin guard (X-Admin-Key) + Admin API + Admin HTML entrypoint ---
@@ -646,4 +660,5 @@ async def admin_cockpit(request: Request, x_admin_key: Optional[str] = Header(de
 
 
 import os
+
 
