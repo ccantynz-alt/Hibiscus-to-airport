@@ -1,12 +1,14 @@
 # backend/server.py
-# FORCE_ADMIN_V1_20260204_172000
+# FORCE_ADMIN_SERVERPY_20260205_113208
 #
-# BOOT-FIRST + ADMIN-INLINE (guarantees /admin/* exists even if other routers are broken)
+# BOOT-FIRST FastAPI entrypoint for Render.
+# Guarantees admin + cockpit routes exist (no router imports, no relative import issues).
 
 import os
 import sys
 from datetime import datetime
 
+# Ensure import paths are sane no matter Render root dir
 HERE = os.path.dirname(os.path.abspath(__file__))  # .../backend
 ROOT = os.path.dirname(HERE)                       # repo root
 for p in (ROOT, HERE):
@@ -17,12 +19,16 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 
 app = FastAPI()
-BUILD_STAMP = "FORCE_ADMIN_V1_20260204_172000"
 
-ADMIN_COOKIE = "d8_admin"
+BUILD_STAMP = "FORCE_ADMIN_SERVERPY_20260205_113208"
+ADMIN_COOKIE = "hibiscus_admin"
 ADMIN_API_KEY = (os.environ.get("ADMIN_API_KEY") or "").strip()
 
+def _utc() -> str:
+    return datetime.utcnow().isoformat() + "Z"
+
 def _is_authed(req: Request) -> bool:
+    # Header auth OR cookie auth
     if ADMIN_API_KEY == "":
         return False
     h = (req.headers.get("X-Admin-Key") or "").strip()
@@ -31,20 +37,29 @@ def _is_authed(req: Request) -> bool:
     c = (req.cookies.get(ADMIN_COOKIE) or "").strip()
     return c == ADMIN_API_KEY
 
-# ---- Always-on diagnostics ----
+# -------------------------
+# Diagnostics (always-on)
+# -------------------------
+@app.get("/debug/which")
+def debug_which():
+    return {"module": "server", "stamp": BUILD_STAMP, "utc": _utc()}
+
 @app.get("/debug/stamp")
 def debug_stamp():
-    return {"stamp": BUILD_STAMP, "utc": datetime.utcnow().isoformat() + "Z"}
+    return {"stamp": BUILD_STAMP, "utc": _utc()}
 
 @app.get("/healthz")
 def healthz():
-    return {"ok": True, "stamp": BUILD_STAMP}
+    return {"ok": True, "stamp": BUILD_STAMP, "utc": _utc()}
 
 @app.get("/api/agents/ping")
 def agents_ping():
-    return {"ok": True, "stamp": BUILD_STAMP, "utc": datetime.utcnow().isoformat() + "Z"}
+    # Keep it ultra-stable: never depend on other imports
+    return {"ok": True, "stamp": BUILD_STAMP, "utc": _utc()}
 
-# ---- ADMIN: Edmund Login ----
+# -------------------------
+# Admin + Cockpit (inline)
+# -------------------------
 @app.get("/admin/login", response_class=HTMLResponse)
 def admin_login_get():
     return HTMLResponse(\"\"\"<!doctype html>
@@ -53,21 +68,26 @@ def admin_login_get():
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Edmund Admin Login</title>
 <style>
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:820px;margin:0 auto;}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:860px;margin:0 auto;}
+h1{margin:0 0 6px 0;}
+.meta{color:#6b7280;font-size:13px;margin-bottom:14px;}
 .card{border:1px solid #e5e7eb;border-radius:14px;padding:18px;}
-input{width:100%;padding:12px;border-radius:10px;border:1px solid #d1d5db;margin-top:8px;}
+label{display:block;font-size:13px;color:#374151;margin-bottom:6px;}
+input{width:100%;padding:12px;border-radius:10px;border:1px solid #d1d5db;}
 button{margin-top:12px;padding:12px 14px;border-radius:10px;border:0;background:#111827;color:#fff;cursor:pointer;}
-.hint{color:#6b7280;font-size:13px;margin-top:10px;}
+small{color:#6b7280;}
+code{background:#f3f4f6;padding:2px 6px;border-radius:8px;}
 </style>
 </head>
 <body>
 <h1>Edmund Admin</h1>
+<div class="meta">Login is backed by <code>ADMIN_API_KEY</code> in Render env vars.</div>
 <div class="card">
 <form method="post" action="/admin/login">
-<label>Admin Key</label>
-<input name="key" type="password" placeholder="paste ADMIN_API_KEY" autocomplete="current-password" />
-<button type="submit">Login</button>
-<div class="hint">ADMIN_API_KEY must be set in Render env vars.</div>
+  <label>Admin Key</label>
+  <input name="key" type="password" placeholder="paste ADMIN_API_KEY" autocomplete="current-password" />
+  <button type="submit">Login</button>
+  <div style="margin-top:10px;"><small>If you see 401, the key mismatched or env var is missing.</small></div>
 </form>
 </div>
 </body></html>\"\"\")
@@ -75,10 +95,19 @@ button{margin-top:12px;padding:12px 14px;border-radius:10px;border:0;background:
 @app.post("/admin/login")
 def admin_login_post(key: str = Form(...)):
     k = (key or "").strip()
-    if ADMIN_API_KEY == "" or k != ADMIN_API_KEY:
-        return HTMLResponse("<h3>401 Unauthorized</h3><p>Key mismatch or ADMIN_API_KEY missing.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
+    if ADMIN_API_KEY == "":
+        return HTMLResponse("<h3>401 Unauthorized</h3><p>ADMIN_API_KEY is missing in Render env vars.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
+    if k != ADMIN_API_KEY:
+        return HTMLResponse("<h3>401 Unauthorized</h3><p>Key mismatch.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
+
     resp = RedirectResponse(url="/admin", status_code=302)
-    resp.set_cookie(key=ADMIN_COOKIE, value=ADMIN_API_KEY, httponly=True, samesite="lax", secure=True)
+    resp.set_cookie(
+        key=ADMIN_COOKIE,
+        value=ADMIN_API_KEY,
+        httponly=True,
+        samesite="lax",
+        secure=True,
+    )
     return resp
 
 @app.get("/admin/logout")
@@ -88,7 +117,7 @@ def admin_logout():
     return resp
 
 @app.get("/admin", response_class=HTMLResponse)
-def admin_shell(req: Request):
+def admin_panel(req: Request):
     if not _is_authed(req):
         return RedirectResponse(url="/admin/login", status_code=302)
 
@@ -100,27 +129,26 @@ def admin_shell(req: Request):
 <style>
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e5e7eb;}
+.meta{color:#6b7280;font-size:13px;margin-top:2px;}
 .tabs{display:flex;gap:10px;padding:10px 18px;border-bottom:1px solid #e5e7eb;}
 .tab{padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;}
 .tab.active{background:#111827;color:#fff;border-color:#111827;}
 main{padding:0;height:calc(100vh - 110px);}
 iframe{width:100%;height:100%;border:0;}
-.right a{color:#111827;text-decoration:none;font-size:14px;}
-.meta{color:#6b7280;font-size:13px;}
+a{color:#111827;text-decoration:none;font-size:14px;}
 </style>
 </head>
 <body>
 <header>
   <div>
     <div style="font-weight:700;">Edmund Panel</div>
-    <div class="meta">Admin + Cockpit + Booking Form (today)</div>
+    <div class="meta">Cockpit + Admin tools</div>
   </div>
-  <div class="right"><a href="/admin/logout">Logout</a></div>
+  <div><a href="/admin/logout">Logout</a></div>
 </header>
 
 <div class="tabs">
   <button class="tab active" data-url="/admin/cockpit">Cockpit</button>
-  <button class="tab" data-url="/admin/booking-form">Booking Form</button>
   <button class="tab" data-url="/admin/status">Status</button>
 </div>
 
@@ -142,8 +170,8 @@ tabs.forEach(t=>{
 @app.get("/admin/status")
 def admin_status(req: Request):
     if not _is_authed(req):
-        return JSONResponse({"ok": False, "error":"unauthorized"}, status_code=401)
-    return JSONResponse({"ok": True, "stamp": BUILD_STAMP, "utc": datetime.utcnow().isoformat() + "Z"})
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    return {"ok": True, "stamp": BUILD_STAMP, "utc": _utc()}
 
 @app.get("/admin/cockpit", response_class=HTMLResponse)
 def admin_cockpit(req: Request):
@@ -156,32 +184,40 @@ def admin_cockpit(req: Request):
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Cockpit</title>
 <style>
-body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:18px;}}
+body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:18px;max-width:980px;margin:0 auto;}}
+h2{{margin:0 0 8px 0;}}
+.meta{{color:#6b7280;font-size:13px;margin-bottom:14px;}}
 .row{{display:flex;gap:10px;flex-wrap:wrap;}}
 button{{padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#111827;color:#fff;cursor:pointer;}}
 pre{{background:#0b1020;color:#e5e7eb;padding:12px;border-radius:12px;overflow:auto;}}
-.meta{{color:#6b7280;font-size:13px;}}
 .card{{border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-top:12px;}}
 </style>
 </head>
 <body>
 <h2>Agent Cockpit</h2>
-<div class="meta">This cockpit is inline in server.py (cannot 404 unless server.py isn't running).</div>
-<div class="row" style="margin-top:10px;">
+<div class="meta">Server stamp: <b>{BUILD_STAMP}</b></div>
+
+<div class="row">
   <button onclick="hit('/debug/stamp')">/debug/stamp</button>
+  <button onclick="hit('/debug/which')">/debug/which</button>
   <button onclick="hit('/api/agents/ping')">/api/agents/ping</button>
   <button onclick="hit('/healthz')">/healthz</button>
+  <button onclick="hit('/admin/status')">/admin/status</button>
 </div>
+
 <div class="card">
   <div style="font-weight:700;">Output</div>
   <pre id="out">(click a button)</pre>
 </div>
+
 <script>
 async function hit(p){{
   const out=document.getElementById('out');
   out.textContent='Loading '+p+'...';
   try {{
-    const r = await fetch(p+'?ts='+Date.now());
+    const r = await fetch(p+'?ts='+Date.now(), {{
+      headers: {{ 'cache-control':'no-cache', 'pragma':'no-cache' }}
+    }});
     const t = await r.text();
     out.textContent='HTTP '+r.status+'\\n\\n'+t;
   }} catch(e) {{
