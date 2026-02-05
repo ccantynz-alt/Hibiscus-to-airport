@@ -226,3 +226,14 @@ async function hit(p){{
 }}
 </script>
 </body></html>\"\"\")
+
+# --- commit beacon ---
+try:
+    from fastapi.responses import JSONResponse
+except Exception:
+    JSONResponse = None
+
+@app.get("/debug/beacon")
+def debug_beacon():
+    payload = {"module":"server","stamp":"BEACON_20260205_153300"}
+    return payload if JSONResponse is None else JSONResponse(payload)
