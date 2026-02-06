@@ -190,7 +190,7 @@ def admin_cockpit(req: Request):
     if not _is_authed(req):
         return RedirectResponse(url="/admin/login", status_code=302)
 
-    return HTMLResponse(f\"\"\"<!doctype html>
+    return HTMLResponse(f"""<!doctype html>
 <html><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -277,5 +277,6 @@ def debug_routes():
         if p:
             out.append({"path": p, "methods": methods})
     return {"count": len(out), "routes": out}
+
 
 
