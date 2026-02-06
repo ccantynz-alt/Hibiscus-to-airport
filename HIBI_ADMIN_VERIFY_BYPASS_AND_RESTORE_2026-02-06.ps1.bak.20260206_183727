@@ -1,0 +1,184 @@
+[CmdletBinding()]
+param(
+  [Parameter(Mandatory=$true)]
+  [string] $BaseUrl,
+
+  [Parameter(Mandatory=$false)]
+  [string] $AdminUsername = "admin",
+
+  [Parameter(Mandatory=$false)]
+  [string] $AdminEmail = "admin@hibiscustoairport.co.nz",
+
+  # IMPORTANT: Use the Render ENV value for ADMIN_BYPASS_KEY here
+  [Parameter(Mandatory=$true)]
+  [string] $AdminBypassKey,
+
+  # Optional: Use Render ENV ADMIN_API_KEY if your backend expects it for certain endpoints
+  [Parameter(Mandatory=$false)]
+  [string] $AdminApiKey = "",
+
+  # Prompted securely if not provided
+  [Parameter(Mandatory=$false)]
+  [string] $AdminPasswordPlain = "",
+
+  [Parameter(Mandatory=$false)]
+  [string] $CockpitPath = "/admin/ops"
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function Info($m){ Write-Host "INFO  $m" -ForegroundColor Cyan }
+function Ok($m){ Write-Host "OK    $m" -ForegroundColor Green }
+function Warn($m){ Write-Host "WARN  $m" -ForegroundColor Yellow }
+function Fail($m){ Write-Host "FAIL  $m" -ForegroundColor Red }
+
+function Try-Web {
+  param(
+    [ValidateSet("GET","POST","HEAD")]
+    [string] $Method,
+    [string] $Url,
+    [hashtable] $Headers = $null,
+    [Microsoft.PowerShell.Commands.WebRequestSession] $Session = $null,
+    [string] $ContentType = $null,
+    [string] $Body = $null,
+    [int] $TimeoutSec = 25
+  )
+  try {
+    $p = @{
+      UseBasicParsing = $true
+      Method = $Method
+      Uri = $Url
+      TimeoutSec = $TimeoutSec
+      ErrorAction = "Stop"
+    }
+    if ($Headers) { $p.Headers = $Headers }
+    if ($Session) { $p.WebSession = $Session }
+    if ($ContentType) { $p.ContentType = $ContentType }
+    if ($Body) { $p.Body = $Body }
+    $r = Invoke-WebRequest @p
+    return @{ ok=$true; status=[int]$r.StatusCode; r=$r }
+  } catch {
+    $code = $null
+    try {
+      if ($_.Exception.Response -and $_.Exception.Response.StatusCode) { $code = [int]$_.Exception.Response.StatusCode }
+    } catch {}
+    return @{ ok=$false; status=$code; err=$_.Exception.Message }
+  }
+}
+
+function Get-SecurePasswordPlain {
+  param([string] $Plain)
+  if ($Plain -and $Plain.Trim().Length -ge 8) { return $Plain }
+  Write-Host ""
+  Write-Host "Enter NEW admin password (min 8 chars). It will NOT be printed." -ForegroundColor Yellow
+  $sec = Read-Host -AsSecureString "Admin password"
+  $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
+  try { return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
+  finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+}
+
+$Base = $BaseUrl.TrimEnd("/")
+$ts = [int](Get-Date -UFormat %s)
+$pwd = Get-SecurePasswordPlain -Plain $AdminPasswordPlain
+
+Info "1) Preflight probes"
+foreach ($p in @("/healthz","/debug/stamp","/debug/routes")) {
+  $u = "$Base$p?ts=$ts"
+  $r = Try-Web -Method GET -Url $u
+  if ($r.ok) { Ok ("GET {0} -> {1}" -f $p, $r.status) } else { Warn ("GET {0} -> {1}" -f $p, ($r.status ?? "ERR")) }
+}
+
+Info "2) Bypass probe with X-Admin-Key"
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$hdr = @{ "X-Admin-Key" = $AdminBypassKey }
+
+$rAdmin = Try-Web -Method GET -Url "$Base/admin?ts=$ts" -Headers $hdr -Session $session
+if ($rAdmin.ok -and $rAdmin.status -ge 200 -and $rAdmin.status -lt 400) {
+  Ok ("Bypass OK: GET /admin -> {0}" -f $rAdmin.status)
+} else {
+  Fail ("Bypass FAILED: GET /admin -> {0}" -f ($rAdmin.status ?? "ERR"))
+  Warn "If this fails, the backend may use a different header name (e.g. X-Admin-Bypass, X-API-Key) or different path."
+  throw "Stopping: bypass did not work."
+}
+
+Info "3) Cockpit probe (best-effort)"
+$rOps = Try-Web -Method GET -Url "$Base$CockpitPath?ts=$ts" -Headers $hdr -Session $session
+if ($rOps.ok -and $rOps.status -ge 200 -and $rOps.status -lt 400) { Ok ("Cockpit OK: GET {0} -> {1}" -f $CockpitPath, $rOps.status) }
+else { Warn ("Cockpit probe not confirmed: GET {0} -> {1}" -f $CockpitPath, ($rOps.status ?? "ERR")) }
+
+Info "4) Attempt admin user restore/seed via common endpoints (using bypass header)"
+# We'll try a small set of likely endpoints. If your backend has a different one, /debug/routes should show it.
+$seedBody = @{
+  username = $AdminUsername
+  email    = $AdminEmail
+  password = $pwd
+  role     = "admin"
+} | ConvertTo-Json -Compress
+
+$seedCandidates = @(
+  "/admin/bootstrap",
+  "/admin/seed-admin",
+  "/admin/create",
+  "/admin/users",
+  "/admin/api/users"
+)
+
+$seeded = $false
+foreach ($p in $seedCandidates) {
+  $u = "$Base$p"
+  $r = Try-Web -Method POST -Url $u -Headers $hdr -ContentType "application/json" -Body $seedBody -Session $session
+  if ($r.ok -and $r.status -ge 200 -and $r.status -lt 300) {
+    Ok ("Seed OK: POST {0} -> {1}" -f $p, $r.status)
+    $seeded = $true
+    break
+  } else {
+    Warn ("Seed attempt: POST {0} -> {1}" -f $p, ($r.status ?? "ERR"))
+  }
+}
+
+if (-not $seeded) {
+  Warn "No seed endpoint succeeded. This is normal if seeding is only via DB script/migration."
+}
+
+Info "5) Verify login page is reachable"
+$lp = Try-Web -Method GET -Url "$Base/admin/login?ts=$ts"
+if ($lp.ok) { Ok ("GET /admin/login -> {0}" -f $lp.status) } else { Warn ("GET /admin/login -> {0}" -f ($lp.status ?? "ERR")) }
+
+Info "6) Attempt login using FORM + JSON (without bypass)"
+$loginOk = $false
+
+foreach ($p in @("/admin/login","/admin/auth/login","/admin/api/login","/token","/auth/token")) {
+  if ($loginOk) { break }
+
+  # JSON attempt
+  $jsonBody = @{ username=$AdminUsername; password=$pwd } | ConvertTo-Json -Compress
+  $rj = Try-Web -Method POST -Url "$Base$p" -ContentType "application/json" -Body $jsonBody
+  if ($rj.ok -and $rj.status -ge 200 -and $rj.status -lt 300) {
+    Ok ("Login OK (JSON): POST {0} -> {1}" -f $p, $rj.status)
+    $loginOk = $true
+    break
+  } else {
+    Warn ("Login JSON: POST {0} -> {1}" -f $p, ($rj.status ?? "ERR"))
+  }
+
+  # FORM attempt
+  $formBody = "username=$([uri]::EscapeDataString($AdminUsername))&password=$([uri]::EscapeDataString($pwd))"
+  $rf = Try-Web -Method POST -Url "$Base$p" -ContentType "application/x-www-form-urlencoded" -Body $formBody
+  if ($rf.ok -and $rf.status -ge 200 -and $rf.status -lt 300) {
+    Ok ("Login OK (FORM): POST {0} -> {1}" -f $p, $rf.status)
+    $loginOk = $true
+    break
+  } else {
+    Warn ("Login FORM: POST {0} -> {1}" -f $p, ($rf.status ?? "ERR"))
+  }
+}
+
+if (-not $loginOk) {
+  Warn "Login still not confirmed. If bypass works, you can still use admin while we wire true user auth."
+} else {
+  Ok "Login confirmed."
+}
+
+Write-Host ""
+Write-Host "DONE." -ForegroundColor White

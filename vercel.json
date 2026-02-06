@@ -1,0 +1,28 @@
+{
+    "rewrites":  [
+                     {
+                         "destination":  "https://api.hibiscustoairport.co.nz/admin/:path*",
+                         "source":  "/api/admin/:path*"
+                     },
+                     {
+                         "destination":  "https://api.hibiscustoairport.co.nz/admin/status",
+                         "source":  "/admin/status"
+                     },
+                     {
+                         "destination":  "https://api.hibiscustoairport.co.nz/admin/cockpit",
+                         "source":  "/admin/cockpit"
+                     },
+                     {
+                         "destination":  "https://api.hibiscustoairport.co.nz/admin/logout",
+                         "source":  "/admin/logout"
+                     },
+                     {
+                         "destination":  "https://api.hibiscustoairport.co.nz/debug/:path*",
+                         "source":  "/debug/:path*"
+                     },
+                     {
+                         "destination":  "https://api.hibiscustoairport.co.nz/healthz",
+                         "source":  "/healthz"
+                     }
+                 ]
+}
