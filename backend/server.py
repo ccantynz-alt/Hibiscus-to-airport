@@ -20,6 +20,18 @@ from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 
 app = FastAPI()
 
+# =========================
+# TEMP ADMIN BYPASS (DIAG ONLY)
+# =========================
+ADMIN_BYPASS_KEY = os.environ.get("ADMIN_BYPASS_KEY","dev-bypass-key")
+
+def admin_bypass(request: Request):
+    key = request.headers.get("X-Admin-Key","")
+    if key == ADMIN_BYPASS_KEY:
+        return True
+    return False
+
+
 BUILD_STAMP = "FORCE_ADMIN_SERVERPY_20260205_113208"
 ADMIN_COOKIE = "hibiscus_admin"
 ADMIN_API_KEY = (os.environ.get("ADMIN_API_KEY") or "").strip()
@@ -237,3 +249,4 @@ except Exception:
 def debug_beacon():
     payload = {"module":"server","stamp":"BEACON_20260205_153300"}
     return payload if JSONResponse is None else JSONResponse(payload)
+
