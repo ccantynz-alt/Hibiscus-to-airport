@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+export const config = {
+  matcher: ['/api/admin/:path*'],
+};
+
+export async function middleware(req: NextRequest) {
+  const url = req.nextUrl;
+  const path = url.pathname.replace(/^\/api\/admin/, '/admin');
+  const target = new URL('https://api.hibiscustoairport.co.nz' + path + url.search);
+
+  // Clone headers and forward (drop host to avoid backend mismatch)
+  const headers = new Headers(req.headers);
+  headers.delete('host');
+
+  // Forward request
+  const res = await fetch(target.toString(), {
+    method: req.method,
+    headers,
+    body: (req.method === 'GET' || req.method === 'HEAD') ? undefined : await req.arrayBuffer(),
+    redirect: 'manual',
+  });
+
+  // Build response (pass through headers/body)
+  const outHeaders = new Headers(res.headers);
+
+  // Ensure cookies set by backend are not blocked
+  // (domain will be www.hibiscustoairport.co.nz; backend cookie path=/ is fine)
+  return new NextResponse(res.body, {
+    status: res.status,
+    headers: outHeaders,
+  });
+}
