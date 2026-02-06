@@ -74,7 +74,7 @@ def agents_ping():
 # -------------------------
 @app.get("/admin/login", response_class=HTMLResponse)
 def admin_login_get():
-    return HTMLResponse(\"\"\"<!doctype html>
+    return HTMLResponse("""<!doctype html>
 <html><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -102,7 +102,7 @@ code{background:#f3f4f6;padding:2px 6px;border-radius:8px;}
   <div style="margin-top:10px;"><small>If you see 401, the key mismatched or env var is missing.</small></div>
 </form>
 </div>
-</body></html>\"\"\")
+</body></html>""")
 
 @app.post("/admin/login")
 def admin_login_post(key: str = Form(...)):
@@ -133,7 +133,7 @@ def admin_panel(req: Request):
     if not _is_authed(req):
         return RedirectResponse(url="/admin/login", status_code=302)
 
-    return HTMLResponse(\"\"\"<!doctype html>
+    return HTMLResponse("""<!doctype html>
 <html><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -177,7 +177,7 @@ tabs.forEach(t=>{
   });
 });
 </script>
-</body></html>\"\"\")
+</body></html>""")
 
 @app.get("/admin/status")
 def admin_status(req: Request):
@@ -237,7 +237,7 @@ async function hit(p){{
   }}
 }}
 </script>
-</body></html>\"\"\")
+</body></html>""")
 
 # --- commit beacon ---
 try:
@@ -277,4 +277,5 @@ def debug_routes():
         if p:
             out.append({"path": p, "methods": methods})
     return {"count": len(out), "routes": out}
+
 
