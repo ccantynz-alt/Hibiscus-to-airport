@@ -278,5 +278,13 @@ def debug_routes():
             out.append({"path": p, "methods": methods})
     return {"count": len(out), "routes": out}
 
+# HIBI_QUERY_BYPASS_V1
+# ====================
+# TEMP querystring admin bypass (diagnostic only)
+ADMIN_BYPASS_KEY = os.environ.get("ADMIN_BYPASS_KEY","dev-bypass-key")
 
+def _admin_bypass_ok(request: Request) -> bool:
+    key_header = request.headers.get("X-Admin-Key","")
+    key_query  = request.query_params.get("k","")
+    return (key_header == ADMIN_BYPASS_KEY) or (key_query == ADMIN_BYPASS_KEY)
 
