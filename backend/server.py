@@ -106,6 +106,12 @@ code{background:#f3f4f6;padding:2px 6px;border-radius:8px;}
 
 @app.post("/admin/login")
 def admin_login_post(key: str = Form(...)):
+    # HIBI_ADMIN_BYPASS_UNLOCK_V1
+    try:
+        if _admin_bypass_ok(request):
+            return True
+    except Exception:
+        pass
     # HIBI_BYPASS_SKIPS_ADMIN_API_KEY
     try:
         if _admin_bypass_ok(request):
