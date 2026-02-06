@@ -250,3 +250,31 @@ def debug_beacon():
     payload = {"module":"server","stamp":"BEACON_20260205_153300"}
     return payload if JSONResponse is None else JSONResponse(payload)
 
+# HIBI_TEMP_BYPASS_BLOCK_V1
+# =========================
+# TEMP DIAG BYPASS (proof-of-deploy + route discovery)
+# =========================
+ADMIN_BYPASS_KEY = os.environ.get("ADMIN_BYPASS_KEY","dev-bypass-key")
+
+def _bypass_ok(request: Request) -> bool:
+    return (request.headers.get("X-Admin-Key","") == ADMIN_BYPASS_KEY)
+
+@app.get("/debug/bypass")
+def debug_bypass(request: Request):
+    return {
+        "ok": _bypass_ok(request),
+        "need_header": "X-Admin-Key",
+        "stamp": "HIBI_BYPASS_V1"
+    }
+
+@app.get("/debug/routes")
+def debug_routes():
+    # List routes so we can find the real admin path in production
+    out = []
+    for r in app.routes:
+        p = getattr(r, "path", "")
+        methods = sorted(list(getattr(r, "methods", []) or []))
+        if p:
+            out.append({"path": p, "methods": methods})
+    return {"count": len(out), "routes": out}
+
