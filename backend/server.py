@@ -12,7 +12,10 @@ from datetime import datetime
 HERE = os.path.dirname(os.path.abspath(__file__))  # .../backend
 ROOT = os.path.dirname(HERE)                       # repo root
 for p in (ROOT, HERE):
-    if p and p not in sys.path:
+        # HIBI_KEY_MISMATCH_ACCEPTS_COOKIE_V1
+    if _admin_ok(request):
+        return True
+if p and p not in sys.path:
         sys.path.insert(0, p)
 
 from fastapi import FastAPI, Request, Form
@@ -121,7 +124,10 @@ def admin_login_post(key: str = Form(...)):
     k = (key or "").strip()
     if ADMIN_API_KEY == "":
         return HTMLResponse("<h3>401 Unauthorized</h3><p>ADMIN_API_KEY is missing in Render env vars.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
-    if k != ADMIN_API_KEY:
+        # HIBI_KEY_MISMATCH_ACCEPTS_COOKIE_V1
+    if _admin_ok(request):
+        return True
+if k != ADMIN_API_KEY:
         return HTMLResponse("<h3>401 Unauthorized</h3><p>Key mismatch.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
 
     resp = RedirectResponse(url="/admin", status_code=302)
@@ -299,4 +305,41 @@ def _admin_bypass_ok(request: Request) -> bool:
     key_header = request.headers.get("X-Admin-Key","")
     key_query  = request.query_params.get("k","")
     return (key_header == ADMIN_BYPASS_KEY) or (key_query == ADMIN_BYPASS_KEY)
+
+# HIBI_WEBSITE_ADMIN_LOGIN_V1
+# ===========================
+# Restore website admin login (username+password) using env vars:
+#   ADMIN_USERNAME (default: admin)
+#   ADMIN_API_KEY  (password)
+# Cookie session:
+#   d8_admin=1
+#
+# NOTE: This does not remove any existing auth. It adds a browser-friendly path.
+
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_API_KEY  = os.environ.get("ADMIN_API_KEY", "")
+
+def _admin_cookie_ok(request: Request) -> bool:
+    try:
+        return request.cookies.get("d8_admin","") == "1"
+    except Exception:
+        return False
+
+def _admin_key_ok(request: Request) -> bool:
+    # Header or querystring key (temporary support)
+    try:
+        key = request.headers.get("X-Admin-Key","")
+        if key and ADMIN_API_KEY and key == ADMIN_API_KEY:
+            return True
+        q = request.query_params.get("k","")
+        if q and ADMIN_API_KEY and q == ADMIN_API_KEY:
+            return True
+    except Exception:
+        pass
+    return False
+
+def _admin_ok(request: Request) -> bool:
+    # Browser session OR key-based
+    return _admin_cookie_ok(request) or _admin_key_ok(request)
+
 
