@@ -1,0 +1,19 @@
+name: HIBI Repair Lane (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why are we repairing?"
+        required: true
+        default: "backend boot crash"
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder
+        run: |
+          echo "Repair lane installed. Next step: wire Render log pull + auto-patch + PR."
+          echo "Reason: ${{ github.event.inputs.reason }}"

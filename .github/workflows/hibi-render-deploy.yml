@@ -15,10 +15,9 @@ jobs:
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
           if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
-            echo "Missing secrets."
+            echo "Missing secrets: RENDER_API_KEY / RENDER_SERVICE_ID"
             exit 1
           fi
-
           curl -sS -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
             -H "Accept: application/json" \
             -H "Authorization: Bearer ${RENDER_API_KEY}" \

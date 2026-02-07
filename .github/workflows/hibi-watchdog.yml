@@ -1,0 +1,28 @@
+name: HIBI Watchdog (BE/FE probes)
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe endpoints
+        run: |
+          set -e
+          BE1="https://api.hibiscustoairport.co.nz/debug/which"
+          BE2="https://api.hibiscustoairport.co.nz/debug/stamp"
+          FE="https://www.hibiscustoairport.co.nz/api/__ping"
+
+          echo "Probing $BE1"
+          curl -fsS "$BE1" >/dev/null
+
+          echo "Probing $BE2"
+          curl -fsS "$BE2" >/dev/null
+
+          echo "Probing $FE"
+          curl -fsS "$FE" >/dev/null
+
+          echo "GREEN"

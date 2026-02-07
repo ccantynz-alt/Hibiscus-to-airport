@@ -131,7 +131,7 @@ def admin_login_post(key: str = Form(...)):
 if k != ADMIN_API_KEY:
         return HTMLResponse("<h3>401 Unauthorized</h3><p>Key mismatch.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
 
-    resp = RedirectResponse(url="/admin", status_code=302)
+    return RedirectResponse(url="/admin", status_code=302)
     resp.set_cookie(
         key=ADMIN_COOKIE,
         value=ADMIN_API_KEY,
@@ -143,7 +143,7 @@ if k != ADMIN_API_KEY:
 
 @app.get("/admin/logout")
 def admin_logout():
-    resp = RedirectResponse(url="/admin/login", status_code=302)
+    return RedirectResponse(url="/admin/login", status_code=302)
     resp.delete_cookie(ADMIN_COOKIE)
     return resp
 
@@ -347,5 +347,5 @@ def _admin_ok(request: Request) -> bool:
 
 @app.get("/admin-redirect")
 def admin_redirect():
-    resp = RedirectResponse(url="/admin", status_code=302)
+    return RedirectResponse(url="/admin", status_code=302)
     return resp
