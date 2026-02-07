@@ -1,3 +1,4 @@
+from fastapi.responses import RedirectResponse
 # backend/server.py
 # FORCE_ADMIN_SERVERPY_20260205_113208
 #
@@ -343,3 +344,8 @@ def _admin_ok(request: Request) -> bool:
     return _admin_cookie_ok(request) or _admin_key_ok(request)
 
 
+
+@app.get("/admin-redirect")
+def admin_redirect():
+    resp = RedirectResponse(url="/admin", status_code=302)
+    return resp
