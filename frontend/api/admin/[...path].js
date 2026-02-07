@@ -1,50 +1,74 @@
+const { URL } = require('url');
+
+function getBackendOrigin() {
+  // Prefer explicit env var; fallback to REACT_APP_BACKEND_URL if you already use it.
+  return (
+    process.env.HIBI_BACKEND_ORIGIN ||
+    process.env.BACKEND_ORIGIN ||
+    process.env.REACT_APP_BACKEND_URL ||
+    "https://api.hibiscustoairport.co.nz"
+  ).replace(/\/+$/, "");
+}
+
 module.exports = async (req, res) => {
   try {
-    const path = (req.query && req.query.path) ? req.query.path : [];
-    const segs = Array.isArray(path) ? path : [path];
+    const origin = getBackendOrigin();
 
-    const backend = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
-    if (!backend) {
-      res.statusCode = 500;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok:false, error:"Missing BACKEND_URL/REACT_APP_BACKEND_URL", where:"frontend/api/admin/[...path].js" }));
-      return;
-    }
-
-    const url = backend.replace(/\/+$/,"") + "/admin/" + segs.map(encodeURIComponent).join("/");
-    const method = req.method || "GET";
+    // This function is mounted at /api/admin/[...path]
+    // We proxy to backend /admin/[...path]
+    const rawUrl = req.url || "";
+    const pathAfter = rawUrl.replace(/^\/api\/admin\/?/, ""); // strip /api/admin/
+    const target = new URL(origin + "/admin/" + pathAfter);
 
     const headers = {};
-    for (const [k,v] of Object.entries(req.headers || {})) {
+    for (const [k, v] of Object.entries(req.headers || {})) {
+      // Drop hop-by-hop headers
       if (!k) continue;
       const lk = String(k).toLowerCase();
-      if (lk === "host") continue;
-      if (lk === "content-length") continue;
+      if (lk === "host" || lk === "connection" || lk === "content-length") continue;
       headers[k] = v;
     }
 
-    const hasBody = !["GET","HEAD"].includes(method.toUpperCase());
-    const upstream = await fetch(url, {
+    const method = (req.method || "GET").toUpperCase();
+    const body = (method === "GET" || method === "HEAD") ? undefined : req;
+
+    const fetchImpl = global.fetch || require('node-fetch');
+
+    const resp = await fetchImpl(target.toString(), {
       method,
       headers,
-      body: hasBody ? req : undefined,
-      redirect: "manual"
+      body,
+      redirect: "manual",
     });
 
-    res.statusCode = upstream.status;
+    // Pass through status + headers (careful with set-cookie: Vercel supports multiple)
+    res.status(resp.status);
 
-    upstream.headers.forEach((v, k) => {
-      const lk = String(k).toLowerCase();
+    resp.headers.forEach((value, key) => {
+      const lk = key.toLowerCase();
       if (lk === "transfer-encoding") return;
       if (lk === "content-encoding") return;
-      res.setHeader(k, v);
+
+      if (lk === "set-cookie") {
+        // node-fetch may combine; Vercel wants array
+        const cookies = resp.headers.raw && resp.headers.raw()['set-cookie'];
+        if (cookies && Array.isArray(cookies)) res.setHeader('set-cookie', cookies);
+        else res.setHeader('set-cookie', value);
+        return;
+      }
+
+      res.setHeader(key, value);
     });
 
-    const buf = Buffer.from(await upstream.arrayBuffer());
-    res.end(buf);
+    // Stream back
+    if (resp.body && resp.body.pipe) {
+      resp.body.pipe(res);
+    } else {
+      const buf = Buffer.from(await resp.arrayBuffer());
+      res.end(buf);
+    }
   } catch (e) {
-    res.statusCode = 500;
-    res.setHeader("Content-Type","application/json");
-    res.end(JSON.stringify({ ok:false, error:String(e && e.message ? e.message : e), where:"frontend/api/admin/[...path].js" }));
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.status(500).json({ ok: false, error: String(e && e.message ? e.message : e) });
   }
 };

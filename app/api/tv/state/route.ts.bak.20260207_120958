@@ -1,0 +1,105 @@
+import { NextResponse } from "next/server";
+
+type ProbeResult = {
+  name: string;
+  url: string;
+  ok: boolean;
+  status: number | null;
+  ms: number;
+  error?: string;
+};
+
+function parseProbes(raw: string | undefined): Array<{ name: string; url: string }> {
+  const fallback = [
+    { name: "Dominat8.com", url: "https://www.dominat8.com/api/d8/health" },
+    { name: "Dominat8.io",  url: "https://dominat8.io/api/io/health" },
+  ];
+
+  if (!raw || !raw.trim()) return fallback;
+
+  const parts = raw.split(";").map(s => s.trim()).filter(Boolean);
+  const out: Array<{ name: string; url: string }> = [];
+
+  for (const p of parts) {
+    const eq = p.indexOf("=");
+    if (eq <= 0) continue;
+    const name = p.slice(0, eq).trim();
+    const url = p.slice(eq + 1).trim();
+    if (!name || !url) continue;
+    out.push({ name, url });
+  }
+
+  return out.length ? out : fallback;
+}
+
+async function probeOne(name: string, url: string, timeoutMs: number): Promise<ProbeResult> {
+  const start = Date.now();
+  let status: number | null = null;
+
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+
+    // Use GET (some endpoints don't support HEAD) with no-store
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" },
+      signal: controller.signal,
+    });
+
+    clearTimeout(t);
+    status = res.status;
+
+    const ms = Date.now() - start;
+    return { name, url, ok: res.ok, status, ms };
+  } catch (e: any) {
+    const ms = Date.now() - start;
+    const msg = (e && e.name === "AbortError") ? "timeout" : (e?.message || "unknown error");
+    return { name, url, ok: false, status, ms, error: msg };
+  }
+}
+
+function classify(results: ProbeResult[]) {
+  const total = results.length;
+  const okCount = results.filter(r => r.ok).length;
+  if (okCount === total) return "GREEN";
+  if (okCount === 0) return "RED";
+  return "YELLOW";
+}
+
+export async function GET() {
+  const timeoutMs = Number(process.env.D8_TV_TIMEOUT_MS || "6000");
+  const probes = parseProbes(process.env.D8_TV_PROBES);
+
+  const results = await Promise.all(
+    probes.map(p => probeOne(p.name, p.url, timeoutMs))
+  );
+
+  const status = classify(results);
+
+  // Agent states are placeholders for now.
+  // Next step: replace this with real telemetry from your control-plane / KV.
+  const agents = [
+    { name: "Dispatcher", state: "OK" },
+    { name: "API Engineer", state: "OK" },
+    { name: "DB Engineer", state: "OK" },
+    { name: "UI Engineer", state: "OK" },
+    { name: "Ops Doctor", state: "OK" },
+  ];
+
+  const body = {
+    ts: Date.now(),
+    status,
+    timeoutMs,
+    results,
+    agents,
+  };
+
+  return NextResponse.json(body, {
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "Pragma": "no-cache",
+    },
+  });
+}
