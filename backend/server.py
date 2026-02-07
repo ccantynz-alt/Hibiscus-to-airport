@@ -131,7 +131,7 @@ def admin_login_post(key: str = Form(...)):
 if k != ADMIN_API_KEY:
         return HTMLResponse("<h3>401 Unauthorized</h3><p>Key mismatch.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
 
-    return RedirectResponse(url="/admin", status_code=302)
+        return RedirectResponse(url="/admin", status_code=302)
     resp.set_cookie(
         key=ADMIN_COOKIE,
         value=ADMIN_API_KEY,
