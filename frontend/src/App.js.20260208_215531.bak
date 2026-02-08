@@ -6,16 +6,6 @@ import DairyFlatAirportShuttle from "./pages/DairyFlatAirportShuttle";
 import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
 import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
 
-function CockpitPage() {
-  return (
-    <div style={{ padding: 32, fontFamily: "system-ui, Segoe UI, Arial" }}>
-      <h1>Cockpit</h1>
-      <p><b>STAMP:</b> COCKPIT_FORCE_ROUTE_20260208</p>
-      <p>If you see this, /cockpit is a valid client route.</p>
-    </div>
-  );
-}
-
 function AdminPage() {
   return (
     <div style={{ padding: 32, fontFamily: "system-ui, Segoe UI, Arial" }}>
