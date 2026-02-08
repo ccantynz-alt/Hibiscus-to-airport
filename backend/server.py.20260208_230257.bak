@@ -8,12 +8,22 @@ if ROOT not in sys.path:
 
 app = FastAPI()
 
-BOOT_STAMP = os.environ.get("BOOT_STAMP", "HIBI_SLEDGEHAMMER_20260208_01")
-
 @app.get("/debug/which")
 def debug_which():
     return {"service": "hibiscus-backend", "root": ROOT}
 
 @app.get("/debug/stamp")
 def debug_stamp():
-    return {"stamp": BOOT_STAMP}
+    return {"stamp": "ADMIN_BOOT_OK"}
+
+# ---- TEMP ADMIN LOGIN ----
+@app.post("/admin/login")
+def admin_login():
+    return {
+        "ok": True,
+        "token": "TEMP_ADMIN_TOKEN",
+        "user": {
+            "email": "admin@local",
+            "role": "admin"
+        }
+    }
