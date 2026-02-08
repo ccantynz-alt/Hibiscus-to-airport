@@ -108,39 +108,11 @@ code{background:#f3f4f6;padding:2px 6px;border-radius:8px;}
 </div>
 </body></html>""")
 
-@app.post("/admin/login")
-def admin_login_post(key: str = Form(...)):
-    # HIBI_ADMIN_BYPASS_UNLOCK_V1
-    try:
-        if _admin_bypass_ok(request):
-            return True
-    except Exception:
-        pass
-    # HIBI_BYPASS_SKIPS_ADMIN_API_KEY
-    try:
-        if _admin_bypass_ok(request):
-            return True
-    except Exception:
-        pass
-    k = (key or "").strip()
-    if ADMIN_API_KEY == "":
-        return HTMLResponse("<h3>401 Unauthorized</h3><p>ADMIN_API_KEY is missing in Render env vars.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
-        # HIBI_KEY_MISMATCH_ACCEPTS_COOKIE_V1
-    if _admin_ok(request):
-        return True
-if k != ADMIN_API_KEY:
-        return HTMLResponse("<h3>401 Unauthorized</h3><p>Key mismatch.</p><p><a href='/admin/login'>Back</a></p>", status_code=401)
-
-    resp = RedirectResponse(url="/admin", status_code=302)
-    resp.set_cookie(
-        key=ADMIN_COOKIE,
-        value=ADMIN_API_KEY,
-        httponly=True,
-        samesite="lax",
-        secure=True,
-    )
-    return resp
-
+# ---- NUCLEAR REPLACEMENT: admin redirect handler (safe) ----
+@app.get("/admin-redirect")
+def admin_redirect():
+    return RedirectResponse(url="/admin", status_code=302)
+# -------------------------------------------------------------
 @app.get("/admin/logout")
 def admin_logout():
     resp = RedirectResponse(url="/admin/login", status_code=302)
