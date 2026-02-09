@@ -6,33 +6,46 @@ import DairyFlatAirportShuttle from "./pages/DairyFlatAirportShuttle";
 import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
 import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
 
+import OwnerLogin from "./admin/OwnerLogin";
+import AuthGate from "./admin/AuthGate";
 import AdminShell from "./admin/AdminShell";
 import Cockpit from "./admin/Cockpit";
-import SafeBookings from "./admin/SafeBookings";
 
-import RealAdminBookings from "./pages/AdminDashboard";
+function BookingsPlaceholder() {
+  return (
+    <div style={{ padding: 28 }}>
+      <h1>Bookings Admin</h1>
+      <p><b>STAMP:</b> HIBI_GUARANTEED_ADMIN_ACCESS_20260209</p>
+      <p>You are inside admin. Next step: we mount the original bookings dashboard component here.</p>
+    </div>
+  );
+}
 
 function AdminRoutes() {
   return (
     <Routes>
       <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-      <Route path="/admin/login" element={<div style={{padding:28}}><h1>Admin Login</h1><p><b>STAMP:</b> HIBI_MAJOR_005_RESTORE_BOOKINGS_AND_RESET_20260209</p><p>Pin a real login component if needed.</p></div>} />
+      <Route path="/admin/login" element={<OwnerLogin />} />
 
       <Route
         path="/admin/bookings"
         element={
-          <AdminShell>
-            <RealAdminBookings />
-          </AdminShell>
+          <AuthGate>
+            <AdminShell>
+              <BookingsPlaceholder />
+            </AdminShell>
+          </AuthGate>
         }
       />
 
       <Route
         path="/admin/cockpit"
         element={
-          <AdminShell>
-            <Cockpit />
-          </AdminShell>
+          <AuthGate>
+            <AdminShell>
+              <Cockpit />
+            </AdminShell>
+          </AuthGate>
         }
       />
 

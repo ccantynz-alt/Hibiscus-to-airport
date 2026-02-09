@@ -7,7 +7,7 @@ export default function SafeBookings({ mounted }) {
       <p><b>STAMP:</b> HIBI_MAJOR_005_RESTORE_BOOKINGS_AND_RESET_20260209</p>
       <p><b>Mounted target:</b> {mounted || "(none)"} </p>
       <p>Your real bookings dashboard component could not be detected or failed to load.</p>
-      <p>Pin Bookings to ./pages/AdminDashboard (detected) or paste candidates if it changes.</p>
+      <p>Paste the TOP BOOKINGS CANDIDATES table output and we will pin the exact file next.</p>
     </div>
   );
 }
