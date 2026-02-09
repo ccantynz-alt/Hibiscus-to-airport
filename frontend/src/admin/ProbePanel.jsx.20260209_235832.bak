@@ -2,49 +2,36 @@ import React, { useMemo, useState } from "react";
 
 export default function ProbePanel() {
   const [out, setOut] = useState("");
-  const [lastStatus, setLastStatus] = useState(null);
-
   const apiBase = useMemo(() => {
     return (process.env.REACT_APP_API_BASE || "https://api.hibiscustoairport.co.nz").replace(/\/+$/, "");
   }, []);
 
-  const healthPaths = ["/debug/which","/debug/stamp","/auth/health","/health","/admin/health"];
-  const resetPaths = ["/admin/reset-password","/auth/reset-password","/admin/request-password-reset","/auth/request-password-reset"];
-
   const hit = async (path, method="GET", body=null) => {
     setOut(method + " " + apiBase + path + " ...");
-    setLastStatus(null);
     try {
       const res = await fetch(apiBase + path, {
         method,
         headers: body ? { "Content-Type":"application/json" } : undefined,
         body: body ? JSON.stringify(body) : undefined
       });
-      setLastStatus(res.status);
       const txt = await res.text();
       setOut("HTTP " + res.status + "\\n" + txt);
-      return { ok: res.ok, status: res.status, text: txt };
     } catch (e) {
       setOut("ERROR: " + String(e));
-      return { ok: false, status: 0, text: String(e) };
     }
   };
 
   return (
     <div style={{ marginTop: 16, border: "1px solid #ddd", borderRadius: 12, padding: 14 }}>
       <div style={{ fontWeight: 800, marginBottom: 8 }}>Backend Probes</div>
-
-      <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 10 }}>
-        <div><b>STAMP:</b> HIBI_MEGA_PACK_001_FINISH_ADMIN_20260209</div>
-        <div><b>API Base:</b> <code>{apiBase}</code></div>
-        <div><b>Last status:</b> <code>{String(lastStatus ?? "")}</code></div>
+      <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 10 }}>
+        API Base: <code>{apiBase}</code>
       </div>
 
-      <div style={{ fontWeight: 700, marginTop: 6, marginBottom: 8 }}>Quick GET:</div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        {healthPaths.map((p) => (
-          <button key={p} onClick={()=>hit(p)} style={{ padding:"8px 10px", cursor:"pointer" }}>{p}</button>
-        ))}
+        <button onClick={()=>hit("/debug/which")} style={{ padding:"8px 10px", cursor:"pointer" }}>/debug/which</button>
+        <button onClick={()=>hit("/debug/stamp")} style={{ padding:"8px 10px", cursor:"pointer" }}>/debug/stamp</button>
+        <button onClick={()=>hit("/auth/health")} style={{ padding:"8px 10px", cursor:"pointer" }}>/auth/health</button>
       </div>
 
       <pre style={{ marginTop: 10, whiteSpace: "pre-wrap", background: "#111", color: "#fff", padding: 12, borderRadius: 10 }}>
