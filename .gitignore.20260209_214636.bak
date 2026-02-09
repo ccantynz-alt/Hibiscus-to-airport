@@ -110,8 +110,3 @@ frontend/node_modules/.cache/default-development/1.pack
 *.env.*
 *.bak_*
 .env*.local
-# --- HIBI: stop committing backups/logs ---
-*.bak.*
-*.log
-D8_CONTROL/
-RUN_LOGS/

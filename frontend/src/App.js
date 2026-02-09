@@ -1,121 +1,57 @@
 import React from "react";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  useLocation
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import ServiceAreas from "./pages/ServiceAreas";
 import DairyFlatAirportShuttle from "./pages/DairyFlatAirportShuttle";
 import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
 import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
 
-function AdminLoginPage() {
-  const login = () => {
-    localStorage.setItem("ADMIN_OWNER", "true");
-    window.location.href = "/admin/bookings";
-  };
+import ErrorBoundary from "./admin/ErrorBoundary";
+import AuthGate from "./admin/AuthGate";
+import AdminShell from "./admin/AdminShell";
+import Cockpit from "./admin/Cockpit";
+import SafeBookings from "./admin/SafeBookings";
+import RealAdminLogin from "./pages/AdminLogin";
+import RealAdminBookings from "./pages/AdminDashboard";
 
+function AdminRoutes() {
   return (
-    <div style={{ padding: 40, fontFamily: "system-ui" }}>
-      <h1>Admin Login</h1>
-      <p><b>STAMP:</b> HIBI_FINAL_FINISH_20260209</p>
-
-      <button
-        onClick={login}
-        style={{
-          padding: "14px 20px",
-          fontSize: 18,
-          cursor: "pointer",
-          marginTop: 20
-        }}
-      >
-        Enter Admin (Owner Bypass)
-      </button>
-    </div>
-  );
-}
-
-function AdminBookings() {
-  return (
-    <div style={{ padding: 40 }}>
-      <h1>Bookings Admin</h1>
-      <p><b>STAMP:</b> HIBI_FINAL_FINISH_20260209</p>
-
-      <div style={{ marginTop: 20 }}>
-        <a href="/admin/cockpit">Go to Cockpit</a>
-      </div>
-    </div>
-  );
-}
-
-function CockpitPage() {
-  return (
-    <div style={{ padding: 40 }}>
-      <h1>Cockpit</h1>
-      <p><b>STAMP:</b> HIBI_FINAL_FINISH_20260209</p>
-
-      <div style={{ marginTop: 20 }}>
-        <a href="/admin/bookings">Back to Bookings</a>
-      </div>
-    </div>
-  );
-}
-
-function AdminLayout({ children }) {
-  return (
-    <div style={{ fontFamily: "system-ui" }}>
-      <div style={{
-        display: "flex",
-        gap: 20,
-        padding: 16,
-        background: "#111",
-        color: "#fff"
-      }}>
-        <a href="/admin/bookings" style={{ color: "#fff" }}>Bookings</a>
-        <a href="/admin/cockpit" style={{ color: "#fff" }}>Cockpit</a>
-        <a href="/service-areas" style={{ color: "#fff" }}>Public Site</a>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function AppRoutes() {
-  const loc = useLocation();
-  const path = loc?.pathname || "/";
-
-  if (path.startsWith("/admin")) {
-    return (
+    <AuthGate LoginComponent={<RealAdminLogin />}>
       <Routes>
         <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-        <Route path="/admin/login" element={<AdminLoginPage />} />
+
+        {/* Login route always exists; AuthGate will show login if no token */}
+        <Route path="/admin/login" element={<Navigate to="/admin/bookings" replace />} />
 
         <Route
           path="/admin/bookings"
           element={
-            <AdminLayout>
-              <AdminBookings />
-            </AdminLayout>
+            <AdminShell>
+              <ErrorBoundary>
+                <RealAdminBookings />
+              </ErrorBoundary>
+            </AdminShell>
           }
         />
 
         <Route
           path="/admin/cockpit"
           element={
-            <AdminLayout>
-              <CockpitPage />
-            </AdminLayout>
+            <AdminShell>
+              <ErrorBoundary>
+                <Cockpit />
+              </ErrorBoundary>
+            </AdminShell>
           }
         />
 
-        <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
+        <Route path="/admin/*" element={<Navigate to="/admin/bookings" replace />} />
       </Routes>
-    );
-  }
+    </AuthGate>
+  );
+}
 
+function PublicRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/service-areas" replace />} />
@@ -128,10 +64,20 @@ function AppRoutes() {
   );
 }
 
+function RouterSwitch() {
+  const loc = useLocation();
+  const path = loc?.pathname || "/";
+
+  // ADMIN GUARD MODE: keep admin completely isolated from public redirects
+  if (path.startsWith("/admin")) return <AdminRoutes />;
+
+  return <PublicRoutes />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <RouterSwitch />
     </BrowserRouter>
   );
 }
