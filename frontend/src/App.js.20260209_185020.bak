@@ -64,7 +64,7 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-        <Route path="/admin/login" element={<RealAdminLogin />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/cockpit" element={<CockpitPage />} />
         {/* Admin fallback stays inside admin */}
         <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
