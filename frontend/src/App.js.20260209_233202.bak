@@ -6,51 +6,48 @@ import DairyFlatAirportShuttle from "./pages/DairyFlatAirportShuttle";
 import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
 import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
 
-import OwnerLogin from "./admin/OwnerLogin";
+import ErrorBoundary from "./admin/ErrorBoundary";
 import AuthGate from "./admin/AuthGate";
 import AdminShell from "./admin/AdminShell";
 import Cockpit from "./admin/Cockpit";
-
-function BookingsPlaceholder() {
-  return (
-    <div style={{ padding: 28 }}>
-      <h1>Bookings Admin</h1>
-      <p><b>STAMP:</b> HIBI_GUARANTEED_ADMIN_ACCESS_20260209</p>
-      <p>You are inside admin. Next step: we mount the original bookings dashboard component here.</p>
-    </div>
-  );
-}
+import SafeBookings from "./admin/SafeBookings";
+import RealAdminLogin from "./pages/AdminLogin";
+import RealAdminBookings from "./pages/AdminDashboard";
 
 function AdminRoutes() {
   return (
-    <Routes>
-      <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-      <Route path="/admin/login" element={<OwnerLogin />} />
+    <AuthGate LoginComponent={<RealAdminLogin />}>
+      <Routes>
+        <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
 
-      <Route
-        path="/admin/bookings"
-        element={
-          <AuthGate>
+        {/* Login route always exists; AuthGate will show login if no token */}
+        <Route path="/admin/login" element={<Navigate to="/admin/bookings" replace />} />
+
+        <Route
+          path="/admin/bookings"
+          element={
             <AdminShell>
-              <BookingsPlaceholder />
+              <ErrorBoundary>
+                <RealAdminBookings />
+              </ErrorBoundary>
             </AdminShell>
-          </AuthGate>
-        }
-      />
+          }
+        />
 
-      <Route
-        path="/admin/cockpit"
-        element={
-          <AuthGate>
+        <Route
+          path="/admin/cockpit"
+          element={
             <AdminShell>
-              <Cockpit />
+              <ErrorBoundary>
+                <Cockpit />
+              </ErrorBoundary>
             </AdminShell>
-          </AuthGate>
-        }
-      />
+          }
+        />
 
-      <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
-    </Routes>
+        <Route path="/admin/*" element={<Navigate to="/admin/bookings" replace />} />
+      </Routes>
+    </AuthGate>
   );
 }
 
@@ -70,7 +67,10 @@ function PublicRoutes() {
 function RouterSwitch() {
   const loc = useLocation();
   const path = loc?.pathname || "/";
+
+  // ADMIN GUARD MODE: keep admin completely isolated from public redirects
   if (path.startsWith("/admin")) return <AdminRoutes />;
+
   return <PublicRoutes />;
 }
 

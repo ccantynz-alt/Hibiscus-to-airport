@@ -9,7 +9,7 @@ export default function Cockpit() {
   const probe = async (path) => {
     setOut("Probing " + path + " ...");
     try {
-      const res = await fetch(apiBase + path);
+      const res = await fetch(apiBase + path, { method: "GET" });
       const txt = await res.text();
       setOut("HTTP " + res.status + "\n" + txt);
     } catch (e) {
@@ -20,7 +20,7 @@ export default function Cockpit() {
   return (
     <div style={{ padding: 28 }}>
       <h1>Cockpit</h1>
-      <p><b>STAMP:</b> HIBI_GUARANTEED_ADMIN_ACCESS_20260209</p>
+      <p><b>STAMP:</b> HIBI_FINAL_AUTH_REAL_BOOKINGS_COCKPIT_004_20260209</p>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
         <button onClick={()=>probe("/debug/which")} style={{ padding: "10px 12px", cursor: "pointer" }}>
