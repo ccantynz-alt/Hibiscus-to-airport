@@ -13,24 +13,39 @@ import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
 import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
 
 function AdminLoginPage() {
-  return (
-    <div style={{ padding: 32, fontFamily: "system-ui, Segoe UI, Arial" }}>
-      <h1>Admin Login</h1>
-      <p><b>STAMP:</b> ADMIN_GUARD_MODE_20260208</p>
-      <p>If you see this, /admin/login is protected from all site redirects.</p>
+  const login = () => {
+    localStorage.setItem("ADMIN_OWNER", "true");
+    window.location.href = "/admin/bookings";
+  };
 
-      <div style={{ marginTop: 16, padding: 16, border: "1px solid #ddd", borderRadius: 10, maxWidth: 520 }}>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Login (placeholder)</div>
-        <label style={{ display: "block", marginBottom: 6 }}>Email</label>
-        <input style={{ width: "100%", padding: 10, marginBottom: 12 }} placeholder="you@example.com" />
-        <label style={{ display: "block", marginBottom: 6 }}>Password</label>
-        <input style={{ width: "100%", padding: 10, marginBottom: 12 }} type="password" placeholder="••••••••" />
-        <button style={{ padding: "10px 14px", cursor: "pointer" }}>Sign in</button>
-      </div>
+  return (
+    <div style={{ padding: 40, fontFamily: "system-ui" }}>
+      <h1>Admin Login</h1>
+      <p><b>STAMP:</b> HIBI_FINAL_FINISH_20260209</p>
+
+      <button
+        onClick={login}
+        style={{
+          padding: "14px 20px",
+          fontSize: 18,
+          cursor: "pointer",
+          marginTop: 20
+        }}
+      >
+        Enter Admin (Owner Bypass)
+      </button>
+    </div>
+  );
+}
+
+function AdminBookings() {
+  return (
+    <div style={{ padding: 40 }}>
+      <h1>Bookings Admin</h1>
+      <p><b>STAMP:</b> HIBI_FINAL_FINISH_20260209</p>
 
       <div style={{ marginTop: 20 }}>
-        <a href="/admin/cockpit" style={{ marginRight: 14 }}>Go to Cockpit</a>
-        <a href="/service-areas">Go to Site</a>
+        <a href="/admin/cockpit">Go to Cockpit</a>
       </div>
     </div>
   );
@@ -38,53 +53,76 @@ function AdminLoginPage() {
 
 function CockpitPage() {
   return (
-    <div style={{ padding: 32, fontFamily: "system-ui, Segoe UI, Arial" }}>
+    <div style={{ padding: 40 }}>
       <h1>Cockpit</h1>
-      <p><b>STAMP:</b> ADMIN_GUARD_MODE_20260208</p>
-      <p>This is the cockpit route inside the protected admin namespace.</p>
+      <p><b>STAMP:</b> HIBI_FINAL_FINISH_20260209</p>
 
       <div style={{ marginTop: 20 }}>
-        <a href="/admin/login" style={{ marginRight: 14 }}>Back to Admin Login</a>
-        <a href="/service-areas">Go to Site</a>
+        <a href="/admin/bookings">Back to Bookings</a>
       </div>
+    </div>
+  );
+}
+
+function AdminLayout({ children }) {
+  return (
+    <div style={{ fontFamily: "system-ui" }}>
+      <div style={{
+        display: "flex",
+        gap: 20,
+        padding: 16,
+        background: "#111",
+        color: "#fff"
+      }}>
+        <a href="/admin/bookings" style={{ color: "#fff" }}>Bookings</a>
+        <a href="/admin/cockpit" style={{ color: "#fff" }}>Cockpit</a>
+        <a href="/service-areas" style={{ color: "#fff" }}>Public Site</a>
+      </div>
+      {children}
     </div>
   );
 }
 
 function AppRoutes() {
   const loc = useLocation();
-  const path = (loc && loc.pathname) ? loc.pathname : "/";
+  const path = loc?.pathname || "/";
 
-  // ============================
-  // ADMIN GUARD MODE (SLEDGEHAMMER)
-  // If /admin* then do NOT render the marketing site router at all.
-  // This prevents ANY existing redirects/useEffects from firing.
-  // ============================
   if (path.startsWith("/admin")) {
     return (
       <Routes>
-        <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-        <Route path="/admin/login" element={<RealAdminLogin />} />
-        <Route path="/admin/cockpit" element={<CockpitPage />} />
-        {/* Admin fallback stays inside admin */}
+        <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+
+        <Route
+          path="/admin/bookings"
+          element={
+            <AdminLayout>
+              <AdminBookings />
+            </AdminLayout>
+          }
+        />
+
+        <Route
+          path="/admin/cockpit"
+          element={
+            <AdminLayout>
+              <CockpitPage />
+            </AdminLayout>
+          }
+        />
+
         <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
       </Routes>
     );
   }
 
-  // ============================
-  // MARKETING SITE ROUTES
-  // ============================
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/service-areas" replace />} />
-
       <Route path="/service-areas" element={<ServiceAreas />} />
       <Route path="/dairy-flat-airport-shuttle" element={<DairyFlatAirportShuttle />} />
       <Route path="/late-night-airport-shuttle" element={<LateNightAirportShuttle />} />
       <Route path="/warkworth-airport-shuttle" element={<WarkworthAirportShuttle />} />
-
-      {/* Site fallback */}
       <Route path="*" element={<Navigate to="/service-areas" replace />} />
     </Routes>
   );
