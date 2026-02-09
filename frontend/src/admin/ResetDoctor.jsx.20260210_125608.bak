@@ -35,7 +35,7 @@ export default function ResetDoctor() {
   return (
     <div style={{ padding: 28 }}>
       <h1>Password Reset Doctor</h1>
-      <p><b>STAMP:</b> HIBI_MEGA_PACK_003_FINISH_OVERNIGHT_20260210</p>
+      <p><b>STAMP:</b> HIBI_MEGA_PACK_001_FINISH_ADMIN_20260209</p>
       <p><b>API Base:</b> <code>{apiBase}</code></p>
       <p><b>Last tried path:</b> <code>{lastPath}</code></p>
 

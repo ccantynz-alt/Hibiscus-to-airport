@@ -9,6 +9,7 @@ export default function ProbePanel() {
   }, []);
 
   const healthPaths = ["/debug/which","/debug/stamp","/auth/health","/health","/admin/health"];
+  const resetPaths = ["/admin/reset-password","/auth/reset-password","/admin/request-password-reset","/auth/request-password-reset"];
 
   const hit = async (path, method="GET", body=null) => {
     setOut(method + " " + apiBase + path + " ...");
@@ -34,7 +35,7 @@ export default function ProbePanel() {
       <div style={{ fontWeight: 800, marginBottom: 8 }}>Backend Probes</div>
 
       <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 10 }}>
-        <div><b>STAMP:</b> HIBI_MEGA_PACK_003_FINISH_OVERNIGHT_20260210</div>
+        <div><b>STAMP:</b> HIBI_MEGA_PACK_001_FINISH_ADMIN_20260209</div>
         <div><b>API Base:</b> <code>{apiBase}</code></div>
         <div><b>Last status:</b> <code>{String(lastStatus ?? "")}</code></div>
       </div>
