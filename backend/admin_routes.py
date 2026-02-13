@@ -33,7 +33,7 @@ def admin_login_get():
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Edmund Admin Login</title>
+  <title>Hibiscus Admin Login</title>
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; padding:24px; max-width:820px; margin:0 auto;}
     .card{border:1px solid #e5e7eb; border-radius:14px; padding:18px;}
@@ -43,7 +43,7 @@ def admin_login_get():
   </style>
 </head>
 <body>
-  <h1>Edmund Admin</h1>
+  <h1>Hibiscus Admin</h1>
   <div class="card">
     <form method="post" action="/admin/login">
       <label>Admin Key</label>
@@ -80,7 +80,7 @@ def admin_shell(req: Request):
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Edmund Panel</title>
+  <title>Hibiscus Panel</title>
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; margin:0;}
     header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #e5e7eb;}
@@ -96,7 +96,7 @@ def admin_shell(req: Request):
 <body>
   <header>
     <div>
-      <div style="font-weight:700;">Edmund Panel</div>
+      <div style="font-weight:700;">Hibiscus Panel</div>
       <div class="meta">Admin + Cockpit + Booking Form Editor</div>
     </div>
     <div class="right"><a href="/admin/logout">Logout</a></div>
