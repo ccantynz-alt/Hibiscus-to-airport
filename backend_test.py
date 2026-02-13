@@ -38,7 +38,7 @@ TEST_BOOKING_DATA = {
 
 ADMIN_CREDENTIALS = {
     'username': 'admin',
-    'password': 'Kongkong2025!@'
+    'password': 'Kongkon2025'
 }
 
 class TestResults:
@@ -3151,7 +3151,7 @@ def test_admin_dashboard_backend(test_results):
                 test_results.add_result(
                     "Admin Dashboard - Login", 
                     True, 
-                    "Admin login successful with provided credentials (admin/Kongkong2025!@)",
+                    "Admin login successful with provided credentials (admin/Kongkon2025)",
                     {'token_received': True}
                 )
             else:

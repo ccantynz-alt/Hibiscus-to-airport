@@ -8,16 +8,14 @@ import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
 
 import AdminShell from "./admin/AdminShell";
 import Cockpit from "./admin/Cockpit";
-import SafeBookings from "./admin/SafeBookings";
-
-
 import RealAdminBookings from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 
 function AdminRoutes() {
   return (
     <Routes>
       <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-      <Route path="/admin/login" element={<div style={{padding:28}}><h1>Admin Login</h1><p><b>STAMP:</b> HIBI_MEGA_PACK_003_FINISH_OVERNIGHT_20260210</p><p>Login component not pinned yet. Provide -PinLoginImport.</p></div>} />
+      <Route path="/admin/login" element={<AdminLogin />} />
 
       <Route
         path="/admin/bookings"
