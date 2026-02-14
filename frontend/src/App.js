@@ -11,13 +11,14 @@ import Cockpit from "./admin/Cockpit";
 import SafeBookings from "./admin/SafeBookings";
 
 
+import RealAdminLogin from "./pages/AdminLogin";
 import RealAdminBookings from "./pages/AdminDashboard";
 
 function AdminRoutes() {
   return (
     <Routes>
       <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-      <Route path="/admin/login" element={<div style={{padding:28}}><h1>Admin Login</h1><p><b>STAMP:</b> HIBI_MEGA_PACK_003_FINISH_OVERNIGHT_20260210</p><p>Login component not pinned yet. Provide -PinLoginImport.</p></div>} />
+      <Route path="/admin/login" element={<RealAdminLogin />} />
 
       <Route
         path="/admin/bookings"
