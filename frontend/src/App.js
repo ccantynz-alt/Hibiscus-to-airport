@@ -11,14 +11,14 @@ import Cockpit from "./admin/Cockpit";
 import SafeBookings from "./admin/SafeBookings";
 
 
-import RealAdminLogin from "./pages/AdminLogin";
+import PinLoginImport from "./pages/AdminLogin";
 import RealAdminBookings from "./pages/AdminDashboard";
 
 function AdminRoutes() {
   return (
     <Routes>
       <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-      <Route path="/admin/login" element={<RealAdminLogin />} />
+      <Route path="/admin/login" element={<PinLoginImport />} />
 
       <Route
         path="/admin/bookings"
