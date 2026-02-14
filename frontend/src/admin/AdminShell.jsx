@@ -2,6 +2,8 @@ import React from "react";
 
 export default function AdminShell({ children }) {
   const logout = () => {
+    // Support both legacy + current token keys.
+    localStorage.removeItem("admin_token");
     localStorage.removeItem("HIBI_ADMIN_TOKEN");
     window.location.href = "/admin/login";
   };

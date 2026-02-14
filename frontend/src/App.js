@@ -20,6 +20,7 @@ function AdminRoutes() {
     <Routes>
       <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
       <Route path="/admin/login" element={<PinLoginImport />} />
+      <Route path="/admin/dashboard" element={<Navigate to="/admin/bookings" replace />} />
 
       <Route
         path="/admin/bookings"
