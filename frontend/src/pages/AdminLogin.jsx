@@ -95,12 +95,12 @@ const AdminLogin = () => {
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     if (token && !hasSessionId) {
-      navigate('/admin/dashboard');
+      navigate('/admin/bookings');
     }
   }, [navigate, hasSessionId]);
 
   const handleAuthSuccess = (data) => {
-    navigate('/admin/dashboard');
+    navigate('/admin/bookings');
   };
 
   const handleAuthError = (message) => {
@@ -127,7 +127,7 @@ const AdminLogin = () => {
       const response = await axios.post(`${BACKEND_URL}/api/admin/login`, credentials);
       localStorage.setItem('admin_token', response.data.access_token);
       toast({ title: 'Login Successful!', description: 'Welcome back' });
-      navigate('/admin/dashboard');
+      navigate('/admin/bookings');
     } catch (error) {
       const message = error.response?.data?.detail || 'Invalid credentials';
       setAuthError(message);
