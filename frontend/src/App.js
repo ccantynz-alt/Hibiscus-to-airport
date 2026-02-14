@@ -11,6 +11,7 @@ import Cockpit from "./admin/Cockpit";
 import SafeBookings from "./admin/SafeBookings";
 
 
+// -PinLoginImport — STAMP: HIBI_MEGA_PACK_003_FINISH_OVERNIGHT_20260210
 import PinLoginImport from "./pages/AdminLogin";
 import RealAdminBookings from "./pages/AdminDashboard";
 
