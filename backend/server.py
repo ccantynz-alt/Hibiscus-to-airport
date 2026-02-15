@@ -50,7 +50,12 @@ logger = logging.getLogger(__name__)
 class NoCacheMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        if request.url.path.startswith("/api"):
+        # Prevent CDNs/browsers from caching admin/debug HTML too.
+        if (
+            request.url.path.startswith("/api")
+            or request.url.path.startswith("/admin")
+            or request.url.path.startswith("/debug")
+        ):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, private"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
