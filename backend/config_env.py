@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 MONGO_URL_ENV_CANDIDATES = (
     "MONGO_URL",
+    "MONGO_URI",
     "MONGODB_URI",
     "MONGODB_URL",
     "DATABASE_URL",

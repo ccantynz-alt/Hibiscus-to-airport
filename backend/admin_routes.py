@@ -325,7 +325,7 @@ async def admin_bookings_list(
                     "items": [],
                     "help": {
                         "message": "Set a MongoDB connection string in Render env vars.",
-                        "accepted_env_vars": ["MONGO_URL", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
+                        "accepted_env_vars": ["MONGO_URL", "MONGO_URI", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
                     },
                 }
             )
@@ -575,7 +575,7 @@ async def admin_mongo_scan(req: Request):
                     "error": "MONGO_URL not set",
                     "help": {
                         "message": "This backend cannot scan for bookings until a MongoDB connection string is configured.",
-                        "accepted_env_vars": ["MONGO_URL", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
+                        "accepted_env_vars": ["MONGO_URL", "MONGO_URI", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
                     },
                 },
                 status_code=400,
@@ -829,7 +829,7 @@ async def admin_diagnostics(req: Request):
         db_report = {
             "ok": False,
             "error": "MONGO_URL not set",
-            "accepted_env_vars": ["MONGO_URL", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
+            "accepted_env_vars": ["MONGO_URL", "MONGO_URI", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
         }
 
     return JSONResponse({"ok": True, "utc": datetime.utcnow().isoformat() + "Z", "config": config, "db": db_report})

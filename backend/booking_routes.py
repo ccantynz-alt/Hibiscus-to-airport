@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from motor.motor_asyncio import AsyncIOMotorClient
 from auth import get_current_user, verify_password, create_access_token, get_password_hash
+from config_env import get_db_name, get_mongo_url_with_source
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
@@ -42,9 +43,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url, _mongo_src = get_mongo_url_with_source()
+if not mongo_url:
+    raise RuntimeError("MongoDB connection string not configured (set MONGO_URL or MONGO_URI in env)")
+
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db_name = get_db_name()
+if not db_name:
+    try:
+        db_name = client.get_default_database().name
+    except Exception:
+        db_name = None
+if not db_name:
+    raise RuntimeError("DB_NAME not configured and Mongo URI has no default database")
+
+db = client[db_name]
 
 # Stripe setup
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
