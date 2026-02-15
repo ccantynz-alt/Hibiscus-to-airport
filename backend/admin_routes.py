@@ -28,7 +28,7 @@ def _require(req: Request):
 
 @router.get("/admin/login", response_class=HTMLResponse)
 def admin_login_get():
-    return HTMLResponse(\"\"\"<!doctype html>
+    return HTMLResponse("""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -53,7 +53,7 @@ def admin_login_get():
     </form>
   </div>
 </body>
-</html>\"\"\")
+</html>""")
 
 @router.post("/admin/login")
 def admin_login_post(key: str = Form(...)):
@@ -75,7 +75,7 @@ def admin_shell(req: Request):
     if not _require(req):
         return RedirectResponse(url="/admin/login", status_code=302)
 
-    return HTMLResponse(\"\"\"<!doctype html>
+    return HTMLResponse("""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -124,7 +124,7 @@ def admin_shell(req: Request):
   });
 </script>
 </body>
-</html>\"\"\")
+</html>""")
 
 @router.get("/admin/status")
 def admin_status(req: Request):

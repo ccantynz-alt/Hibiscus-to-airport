@@ -2,6 +2,7 @@ import React from "react";
 
 export default function AdminShell({ children }) {
   const logout = () => {
+    localStorage.removeItem("admin_token");
     localStorage.removeItem("HIBI_ADMIN_TOKEN");
     window.location.href = "/admin/login";
   };
