@@ -133,6 +133,11 @@ Once logged in, the bookings page should:
 
 ## Troubleshooting
 
+### Issue: "not authorized on config" / "not authorized on local"
+- Grant `read` on `config` and `local` databases in Atlas → Database Access → Edit user
+- Or add built-in role `clusterMonitor`
+- See `docs/MONGO_CONFIG_LOCAL_AUTH.md` for details
+
 ### Issue: Login returns 401
 - Check that `MONGO_URL` and `DB_NAME` are set in Render
 - Verify the database is accessible from Render
