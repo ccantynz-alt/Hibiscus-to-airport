@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -14,7 +14,7 @@ axios.defaults.timeout = 15000;
 
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://hibiscus-to-airport-1.onrender.com';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://api.hibiscustoairport.co.nz';
 const libraries = ['places'];
 
 // Compact Date Picker Modal - Clean iOS-style

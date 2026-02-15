@@ -1,12 +1,251 @@
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+# backend/server.py
+# Full Hibiscus to Airport backend - admin, bookings, cockpit, API
 
-app = FastAPI()
+import os
+import sys
+from datetime import datetime
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+for p in (ROOT, HERE):
+    if p and p not in sys.path:
+        sys.path.insert(0, p)
+
+from fastapi import FastAPI, Request, Form
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+
+app = FastAPI(title="Hibiscus to Airport API")
+
+# CORS - allow frontend (hibiscustoairport.co.nz, www, localhost)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://hibiscustoairport.co.nz",
+        "https://www.hibiscustoairport.co.nz",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+BUILD_STAMP = "HIBISCUS_FULL_20260215"
+ADMIN_COOKIE = "hibiscus_admin"
+ADMIN_API_KEY = (os.environ.get("ADMIN_API_KEY") or "").strip()
+
+
+def _utc() -> str:
+    return datetime.utcnow().isoformat() + "Z"
+
+
+def _is_authed(req: Request) -> bool:
+    if ADMIN_API_KEY == "":
+        return False
+    h = (req.headers.get("X-Admin-Key") or "").strip()
+    if h and h == ADMIN_API_KEY:
+        return True
+    c = (req.cookies.get(ADMIN_COOKIE) or "").strip()
+    return c == ADMIN_API_KEY
+
+
+# ========== Diagnostics (always-on) ==========
+@app.get("/debug/which")
+def debug_which():
+    return {"module": "server", "stamp": BUILD_STAMP, "utc": _utc()}
+
 
 @app.get("/debug/stamp")
 def debug_stamp():
-    return {"stamp": "ADMIN_BOOT_OK"}
+    return {"stamp": BUILD_STAMP, "utc": _utc()}
+
+
+@app.get("/healthz")
+def healthz():
+    return {"ok": True, "stamp": BUILD_STAMP, "utc": _utc()}
+
+
+# ========== Admin routes (cookie-based, for direct backend access) ==========
+@app.get("/admin/login", response_class=HTMLResponse)
+def admin_login_get():
+    return HTMLResponse("""<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hibiscus Admin Login</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:860px;margin:0 auto;}
+h1{margin:0 0 6px 0;}
+.meta{color:#6b7280;font-size:13px;margin-bottom:14px;}
+.card{border:1px solid #e5e7eb;border-radius:14px;padding:18px;}
+label{display:block;font-size:13px;color:#374151;margin-bottom:6px;}
+input{width:100%;padding:12px;border-radius:10px;border:1px solid #d1d5db;}
+button{margin-top:12px;padding:12px 14px;border-radius:10px;border:0;background:#111827;color:#fff;cursor:pointer;}
+small{color:#6b7280;}
+code{background:#f3f4f6;padding:2px 6px;border-radius:8px;}
+</style>
+</head>
+<body>
+<h1>Hibiscus to Airport Admin</h1>
+<div class="meta">Login uses <code>ADMIN_API_KEY</code> from Render env vars.</div>
+<div class="card">
+<form method="post" action="/admin/login">
+  <label>Admin Key</label>
+  <input name="key" type="password" placeholder="paste ADMIN_API_KEY" autocomplete="current-password" />
+  <button type="submit">Login</button>
+  <div style="margin-top:10px;"><small>If you see 401, the key is missing or mismatched.</small></div>
+</form>
+</div>
+</body></html>""")
+
 
 @app.post("/admin/login")
-def admin_login():
-    return {"token": "OWNER_BYPASS_TOKEN", "role": "owner"}
+def admin_login_post(key: str = Form(...)):
+    k = (key or "").strip()
+    if ADMIN_API_KEY == "":
+        return HTMLResponse(
+            "<h3>401 Unauthorized</h3><p>ADMIN_API_KEY is missing in Render env vars.</p><p><a href='/admin/login'>Back</a></p>",
+            status_code=401,
+        )
+    if k != ADMIN_API_KEY:
+        return HTMLResponse(
+            "<h3>401 Unauthorized</h3><p>Key mismatch.</p><p><a href='/admin/login'>Back</a></p>",
+            status_code=401,
+        )
+    resp = RedirectResponse(url="/admin", status_code=302)
+    resp.set_cookie(
+        key=ADMIN_COOKIE,
+        value=ADMIN_API_KEY,
+        httponly=True,
+        samesite="lax",
+        secure=True,
+    )
+    return resp
+
+
+@app.get("/admin/logout")
+def admin_logout():
+    resp = RedirectResponse(url="/admin/login", status_code=302)
+    resp.delete_cookie(ADMIN_COOKIE)
+    return resp
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_panel(req: Request):
+    if not _is_authed(req):
+        return RedirectResponse(url="/admin/login", status_code=302)
+    return HTMLResponse("""<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hibiscus Admin Panel</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e5e7eb;}
+.meta{color:#6b7280;font-size:13px;margin-top:2px;}
+.tabs{display:flex;gap:10px;padding:10px 18px;border-bottom:1px solid #e5e7eb;}
+.tab{padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;}
+.tab.active{background:#111827;color:#fff;border-color:#111827;}
+main{padding:0;height:calc(100vh - 110px);}
+iframe{width:100%;height:100%;border:0;}
+a{color:#111827;text-decoration:none;font-size:14px;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div style="font-weight:700;">Hibiscus to Airport Admin</div>
+    <div class="meta">Cockpit + Bookings + Status</div>
+  </div>
+  <div><a href="/admin/logout">Logout</a></div>
+</header>
+<div class="tabs">
+  <button class="tab active" data-url="/admin/cockpit">Cockpit</button>
+  <button class="tab" data-url="/admin/status">Status</button>
+</div>
+<main><iframe id="frame" src="/admin/cockpit"></iframe></main>
+<script>
+const tabs=[...document.querySelectorAll('.tab')];
+const frame=document.getElementById('frame');
+tabs.forEach(t=>{
+  t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    frame.src=t.dataset.url;
+  });
+});
+</script>
+</body></html>""")
+
+
+@app.get("/admin/status")
+def admin_status(req: Request):
+    if not _is_authed(req):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    return {"ok": True, "stamp": BUILD_STAMP, "utc": _utc()}
+
+
+@app.get("/admin/cockpit", response_class=HTMLResponse)
+def admin_cockpit(req: Request):
+    if not _is_authed(req):
+        return RedirectResponse(url="/admin/login", status_code=302)
+    return HTMLResponse(f"""<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cockpit</title>
+<style>
+body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:18px;max-width:980px;margin:0 auto;}}
+h2{{margin:0 0 8px 0;}}
+.meta{{color:#6b7280;font-size:13px;margin-bottom:14px;}}
+.row{{display:flex;gap:10px;flex-wrap:wrap;}}
+button{{padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#111827;color:#fff;cursor:pointer;}}
+pre{{background:#0b1020;color:#e5e7eb;padding:12px;border-radius:12px;overflow:auto;}}
+.card{{border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-top:12px;}}
+</style>
+</head>
+<body>
+<h2>Hibiscus Cockpit</h2>
+<div class="meta">Server stamp: <b>{BUILD_STAMP}</b></div>
+<div class="row">
+  <button onclick="hit('/debug/stamp')">/debug/stamp</button>
+  <button onclick="hit('/debug/which')">/debug/which</button>
+  <button onclick="hit('/healthz')">/healthz</button>
+  <button onclick="hit('/admin/status')">/admin/status</button>
+</div>
+<div class="card">
+  <div style="font-weight:700;">Output</div>
+  <pre id="out">(click a button)</pre>
+</div>
+<script>
+async function hit(p){{
+  const out=document.getElementById('out');
+  out.textContent='Loading '+p+'...';
+  try{{
+    const r=await fetch(p+'?ts='+Date.now(),{{headers:{{'cache-control':'no-cache'}}}});
+    out.textContent='HTTP '+r.status+'\\n\\n'+await r.text();
+  }}catch(e){{
+    out.textContent='ERROR: '+String(e);
+  }}
+}}
+</script>
+</body></html>""")
+
+
+# ========== Include booking routes (API: /api/bookings, /api/admin/login, etc.) ==========
+try:
+    from booking_routes import router as booking_router
+    app.include_router(booking_router, prefix="/api")
+except Exception as e:
+    import logging
+    logging.warning(f"Booking routes not loaded: {e}")
+
+
+# ========== Include booking form routes ==========
+try:
+    from bookingform_routes import router as bookingform_router
+    app.include_router(bookingform_router)
+except Exception as e:
+    import logging
+    logging.warning(f"Booking form routes not loaded: {e}")

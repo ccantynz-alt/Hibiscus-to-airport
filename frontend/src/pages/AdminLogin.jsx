@@ -6,7 +6,7 @@ import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 import { Loader2, Mail, Lock, ArrowLeft } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://api.hibiscustoairport.co.nz';
 
 // Separate component to handle OAuth callback
 const GoogleAuthCallback = ({ onSuccess, onError }) => {
@@ -95,12 +95,12 @@ const AdminLogin = () => {
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     if (token && !hasSessionId) {
-      navigate('/admin/dashboard');
+      navigate('/admin/bookings');
     }
   }, [navigate, hasSessionId]);
 
   const handleAuthSuccess = (data) => {
-    navigate('/admin/dashboard');
+    navigate('/admin/bookings');
   };
 
   const handleAuthError = (message) => {
@@ -127,7 +127,7 @@ const AdminLogin = () => {
       const response = await axios.post(`${BACKEND_URL}/api/admin/login`, credentials);
       localStorage.setItem('admin_token', response.data.access_token);
       toast({ title: 'Login Successful!', description: 'Welcome back' });
-      navigate('/admin/dashboard');
+      navigate('/admin/bookings');
     } catch (error) {
       const message = error.response?.data?.detail || 'Invalid credentials';
       setAuthError(message);
