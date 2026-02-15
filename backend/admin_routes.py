@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi import APIRouter, Request, Response, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 
+from config_env import env_presence_report, get_db_name, get_mongo_url_with_source
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -111,6 +113,7 @@ def admin_shell(req: Request):
     <button class="tab" data-url="/admin/cockpit">Cockpit</button>
     <button class="tab" data-url="/admin/booking-form">Booking Form</button>
     <button class="tab" data-url="/admin/mongo-scan">Recovery</button>
+    <button class="tab" data-url="/admin/diagnostics">Diagnostics</button>
     <button class="tab" data-url="/admin/status">Status</button>
   </div>
 
@@ -313,9 +316,19 @@ async def admin_bookings_list(
         return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     try:
         from motor.motor_asyncio import AsyncIOMotorClient
-        mongo_url = os.environ.get("MONGO_URL", "")
+        mongo_url, mongo_src = get_mongo_url_with_source()
         if not mongo_url:
-            return JSONResponse({"ok": False, "error": "MONGO_URL not set", "items": []})
+            return JSONResponse(
+                {
+                    "ok": False,
+                    "error": "MONGO_URL not set",
+                    "items": [],
+                    "help": {
+                        "message": "Set a MongoDB connection string in Render env vars.",
+                        "accepted_env_vars": ["MONGO_URL", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
+                    },
+                }
+            )
 
         # Clamp to avoid huge responses
         try:
@@ -327,7 +340,7 @@ async def admin_bookings_list(
         client = AsyncIOMotorClient(mongo_url)
 
         # Choose DB: explicit query param > env DB_NAME > db in URI.
-        env_db_name = (os.environ.get("DB_NAME") or "").strip() or None
+        env_db_name = get_db_name()
         override_db = (db or "").strip() or None
         default_db_name = None
         default_db = None
@@ -352,6 +365,7 @@ async def admin_bookings_list(
                         "collection": None,
                         "env_db_name": env_db_name,
                         "default_db_name": default_db_name,
+                        "mongo_url_source": mongo_src,
                     },
                 },
                 status_code=400,
@@ -381,6 +395,7 @@ async def admin_bookings_list(
                     "limit": limit,
                     "env_db_name": env_db_name,
                     "default_db_name": default_db_name,
+                    "mongo_url_source": mongo_src,
                 },
             }
         )
@@ -552,14 +567,24 @@ async def admin_mongo_scan(req: Request):
     try:
         from motor.motor_asyncio import AsyncIOMotorClient
 
-        mongo_url = os.environ.get("MONGO_URL", "")
+        mongo_url, mongo_src = get_mongo_url_with_source()
         if not mongo_url:
-            return JSONResponse({"ok": False, "error": "MONGO_URL not set"}, status_code=400)
+            return JSONResponse(
+                {
+                    "ok": False,
+                    "error": "MONGO_URL not set",
+                    "help": {
+                        "message": "This backend cannot scan for bookings until a MongoDB connection string is configured.",
+                        "accepted_env_vars": ["MONGO_URL", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
+                    },
+                },
+                status_code=400,
+            )
 
         client = AsyncIOMotorClient(mongo_url)
         errors: List[str] = []
 
-        env_db_name = (os.environ.get("DB_NAME") or "").strip() or None
+        env_db_name = get_db_name()
         default_db_name = None
         try:
             default_db_name = client.get_default_database().name
@@ -661,6 +686,7 @@ async def admin_mongo_scan(req: Request):
                     "env_db_name": env_db_name,
                     "default_db_name": default_db_name,
                     "used_db_name": used_db_name,
+                    "mongo_url_source": mongo_src,
                 },
                 "databases": databases_out,
                 "booking_candidates": candidates[:25],
@@ -670,3 +696,140 @@ async def admin_mongo_scan(req: Request):
     except Exception as e:
         logger.error(f"admin_mongo_scan error: {e}")
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@router.get("/admin/diagnostics", response_class=HTMLResponse)
+def admin_diagnostics_page(req: Request):
+    if not _require(req):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    return HTMLResponse("""<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Diagnostics</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; padding:18px; margin:0;}
+    h2{margin:0 0 6px 0;}
+    .meta{color:#6b7280; font-size:13px; margin-bottom:14px;}
+    button{padding:8px 14px; border-radius:10px; border:1px solid #e5e7eb; background:#111827; color:#fff; cursor:pointer; font-size:13px;}
+    table{width:100%; border-collapse:collapse; font-size:13px; margin-top:10px;}
+    th{background:#f8fafc; text-align:left; padding:10px 8px; border-bottom:2px solid #e5e7eb; white-space:nowrap;}
+    td{padding:8px; border-bottom:1px solid #f1f5f9; vertical-align:top;}
+    tr:hover td{background:#f8fafc;}
+    code{background:#f3f4f6; padding:2px 6px; border-radius:6px;}
+    .ok{color:#065f46;}
+    .bad{color:#991b1b;}
+    .small{color:#6b7280; font-size:12px;}
+    .err{color:#dc2626; font-size:13px; margin-top:10px;}
+  </style>
+</head>
+<body>
+  <h2>Diagnostics</h2>
+  <div class="meta">Shows whether critical env vars are configured (never shows secret values).</div>
+  <button onclick="loadDiag()">Refresh</button>
+  <div id="error" class="err" style="display:none;"></div>
+  <div id="out"></div>
+<script>
+function esc(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+function badge(ok){return ok ? '<span class=\"ok\">SET</span>' : '<span class=\"bad\">MISSING</span>';}
+async function loadDiag(){
+  const err = document.getElementById('error');
+  const out = document.getElementById('out');
+  err.style.display='none';
+  out.innerHTML = '<div class=\"small\">Loading...</div>';
+  try{
+    const r = await fetch('/api/admin/diagnostics?ts='+Date.now());
+    const data = await r.json();
+    if(!r.ok || !data.ok) throw new Error(data.error || ('HTTP '+r.status));
+    const cfg = data.config || {};
+    let html = '<h3>Environment</h3>';
+    html += '<table><thead><tr><th>Key</th><th>Status</th><th>Notes</th></tr></thead><tbody>';
+    for(const k of Object.keys(cfg)){
+      const item = cfg[k] || {};
+      let notes = '';
+      if(k==='MONGO_URL'){
+        notes = 'source=' + esc(item.source||'') + '; candidates=' + esc((item.candidates||[]).join(', '));
+      }
+      html += '<tr><td><code>'+esc(k)+'</code></td><td>'+badge(!!item.set)+'</td><td class=\"small\">'+notes+'</td></tr>';
+    }
+    html += '</tbody></table>';
+
+    const db = data.db || {};
+    html += '<h3 style=\"margin-top:18px;\">Database</h3>';
+    if(db.ok){
+      html += '<div class=\"small\">Connected to <code>'+esc(db.db_name||'')+'</code></div>';
+      html += '<table><thead><tr><th>Collection</th><th>Count</th></tr></thead><tbody>';
+      for(const c of (db.collections||[])){
+        html += '<tr><td><code>'+esc(c.name)+'</code></td><td>'+esc(c.count)+'</td></tr>';
+      }
+      html += '</tbody></table>';
+    } else {
+      html += '<div class=\"bad\">Not connected</div><div class=\"small\">'+esc(db.error||'')+'</div>';
+    }
+
+    out.innerHTML = html;
+  }catch(e){
+    err.textContent = 'Diagnostics failed: ' + String(e);
+    err.style.display = 'block';
+    out.innerHTML = '';
+  }
+}
+loadDiag();
+</script>
+</body>
+</html>""")
+
+
+@router.get("/api/admin/diagnostics")
+async def admin_diagnostics(req: Request):
+    if not _require(req):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+
+    config = env_presence_report()
+    db_report: Dict[str, Any] = {"ok": False}
+
+    mongo_url, mongo_src = get_mongo_url_with_source()
+    if mongo_url:
+        try:
+            from motor.motor_asyncio import AsyncIOMotorClient
+
+            client = AsyncIOMotorClient(mongo_url)
+            env_db_name = get_db_name()
+            default_db_name = None
+            try:
+                default_db_name = client.get_default_database().name
+            except Exception:
+                default_db_name = None
+
+            used_db_name = env_db_name or default_db_name
+            if not used_db_name:
+                db_report = {
+                    "ok": False,
+                    "error": "DB_NAME not set and URI has no default database",
+                    "mongo_url_source": mongo_src,
+                    "env_db_name": env_db_name,
+                    "default_db_name": default_db_name,
+                }
+            else:
+                db = client[used_db_name]
+                collections = []
+                for name in ("bookings", "deleted_bookings", "admins", "admin_sessions"):
+                    try:
+                        count = await db[name].estimated_document_count()
+                    except Exception:
+                        count = None
+                    collections.append({"name": name, "count": count})
+                db_report = {"ok": True, "db_name": used_db_name, "collections": collections}
+            client.close()
+        except Exception as e:
+            db_report = {"ok": False, "error": str(e), "mongo_url_source": mongo_src}
+    else:
+        db_report = {
+            "ok": False,
+            "error": "MONGO_URL not set",
+            "accepted_env_vars": ["MONGO_URL", "MONGODB_URI", "MONGODB_URL", "DATABASE_URL (mongodb only)"],
+        }
+
+    return JSONResponse({"ok": True, "utc": datetime.utcnow().isoformat() + "Z", "config": config, "db": db_report})

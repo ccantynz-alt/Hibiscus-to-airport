@@ -168,6 +168,10 @@ try:
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     from apscheduler.triggers.cron import CronTrigger
     from motor.motor_asyncio import AsyncIOMotorClient
+    import asyncio
+    import csv
+    import io
+    from config_env import get_db_name, get_mongo_url_with_source
 
     scheduler = AsyncIOScheduler()
 
@@ -175,8 +179,8 @@ try:
         """Send reminders for bookings happening tomorrow — runs daily at 6 PM NZ time."""
         try:
             logger.info("Running day-before reminder job...")
-            mongo_url = os.environ.get('MONGO_URL', '')
-            db_name = os.environ.get('DB_NAME', 'hibiscus_shuttle')
+            mongo_url, _mongo_src = get_mongo_url_with_source()
+            db_name = get_db_name() or os.environ.get('DB_NAME', 'hibiscus_shuttle')
             if not mongo_url:
                 logger.warning("MONGO_URL not set, skipping reminders")
                 return
@@ -247,6 +251,120 @@ try:
         except Exception as e:
             logger.error(f"Error in day-before reminder job: {e}")
 
+    async def send_daily_booking_backup():
+        """
+        Email a lightweight CSV backup/digest to ADMIN_EMAIL.
+        Runs only if SMTP + ADMIN_EMAIL + Mongo are configured.
+        """
+        try:
+            admin_email = (os.environ.get("ADMIN_EMAIL") or "").strip()
+            if not admin_email:
+                logger.info("ADMIN_EMAIL not set, skipping daily backup email")
+                return
+
+            smtp_server = (os.environ.get("SMTP_SERVER") or "").strip()
+            smtp_user = (os.environ.get("SMTP_USERNAME") or "").strip()
+            smtp_pass = (os.environ.get("SMTP_PASSWORD") or "").strip()
+            sender = (os.environ.get("SENDER_EMAIL") or "").strip()
+            if not (smtp_server and smtp_user and smtp_pass and sender):
+                logger.info("SMTP not configured, skipping daily backup email")
+                return
+
+            mongo_url, _mongo_src = get_mongo_url_with_source()
+            if not mongo_url:
+                logger.info("MONGO_URL not set, skipping daily backup email")
+                return
+
+            db_name = get_db_name() or ""
+            client = AsyncIOMotorClient(mongo_url)
+            try:
+                if not db_name:
+                    try:
+                        db_name = client.get_default_database().name
+                    except Exception:
+                        db_name = ""
+                if not db_name:
+                    logger.info("DB_NAME not set and no default DB in URI; skipping daily backup email")
+                    return
+
+                db = client[db_name]
+                since = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+
+                bookings = await db.bookings.find(
+                    {"createdAt": {"$gte": since}}, {"_id": 0}
+                ).sort("createdAt", -1).to_list(5000)
+                deleted = await db.deleted_bookings.find(
+                    {"deletedAt": {"$gte": since}}, {"_id": 0}
+                ).sort("deletedAt", -1).to_list(5000)
+
+                def to_csv(rows, fields):
+                    buf = io.StringIO()
+                    w = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore")
+                    w.writeheader()
+                    for r in rows:
+                        if isinstance(r, dict):
+                            w.writerow(r)
+                    return buf.getvalue()
+
+                # Keep the export stable and not overly wide.
+                fields = [
+                    "booking_ref",
+                    "createdAt",
+                    "date",
+                    "time",
+                    "name",
+                    "email",
+                    "phone",
+                    "pickupAddress",
+                    "dropoffAddress",
+                    "passengers",
+                    "status",
+                    "payment_status",
+                    "totalPrice",
+                ]
+
+                bookings_csv = to_csv(bookings, fields)
+                deleted_csv = to_csv(deleted, fields + ["deletedAt", "deletedBy", "restoredAt"])
+
+                subject = f"Daily bookings backup (last 7 days) - {datetime.now(timezone.utc).date().isoformat()}"
+                body = (
+                    f"<p>Automated backup/digest from <b>{db_name}</b>.</p>"
+                    f"<ul>"
+                    f"<li>Active bookings (last 7d): <b>{len(bookings)}</b></li>"
+                    f"<li>Deleted bookings (last 7d): <b>{len(deleted)}</b></li>"
+                    f"</ul>"
+                    f"<p>CSV attachments are included for redundancy.</p>"
+                )
+
+                from utils import send_email
+
+                attachments = [
+                    {
+                        "filename": f"bookings_last_7d_{db_name}.csv",
+                        "content": bookings_csv,
+                        "mime": "text/csv",
+                    },
+                    {
+                        "filename": f"deleted_bookings_last_7d_{db_name}.csv",
+                        "content": deleted_csv,
+                        "mime": "text/csv",
+                    },
+                ]
+
+                ok = await asyncio.to_thread(
+                    send_email,
+                    admin_email,
+                    subject,
+                    body,
+                    None,
+                    attachments,
+                )
+                logger.info(f"Daily backup email sent={ok} to {admin_email}")
+            finally:
+                client.close()
+        except Exception as e:
+            logger.error(f"Error in daily backup email job: {e}")
+
     @app.on_event("startup")
     async def start_scheduler():
         scheduler.add_job(
@@ -255,8 +373,14 @@ try:
             id="day_before_reminders",
             replace_existing=True
         )
+        scheduler.add_job(
+            send_daily_booking_backup,
+            CronTrigger(hour=12, minute=10),  # ~1:10 AM NZDT
+            id="daily_booking_backup",
+            replace_existing=True
+        )
         scheduler.start()
-        logger.info("Scheduler started - Day-before reminders will run at 6 PM NZ time daily")
+        logger.info("Scheduler started - reminders + daily backup email enabled when configured")
 
     @app.on_event("shutdown")
     async def shutdown_scheduler():
