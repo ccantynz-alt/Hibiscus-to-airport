@@ -9,7 +9,8 @@ import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 const libraries = ['places'];
 
 const AdminCreateBooking = () => {

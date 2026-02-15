@@ -8,7 +8,8 @@ import { ArrowLeft, User, MapPin, Calendar, DollarSign, Save, Loader2, Plus, X }
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 const AdminEditBooking = () => {

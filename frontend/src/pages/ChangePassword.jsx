@@ -6,7 +6,8 @@ import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 import { ArrowLeft, Lock, Eye, EyeOff } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 
 const ChangePassword = () => {
   const navigate = useNavigate();

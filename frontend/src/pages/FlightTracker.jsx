@@ -8,7 +8,8 @@ import { Card, CardContent } from '../components/ui/card';
 import { Plane, Search, Clock, MapPin, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 
 const FlightTracker = () => {
   const [flightNumber, setFlightNumber] = useState('');

@@ -8,7 +8,8 @@ import {
 import { Button } from '../components/ui/button';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 
 const DriverTracking = () => {
   const { bookingId } = useParams();

@@ -6,7 +6,8 @@ import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 import { Loader2, Lock, CheckCircle, XCircle } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 
 const AdminResetPassword = () => {
   const navigate = useNavigate();
