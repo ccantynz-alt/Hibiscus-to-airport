@@ -12,7 +12,8 @@ import {
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 
 const AdminDashboard = () => {
   const navigate = useNavigate();

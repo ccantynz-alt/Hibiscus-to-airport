@@ -91,7 +91,7 @@ def booking_form_editor(req: Request):
     if not _is_authed(req):
         return RedirectResponse(url="/admin/login", status_code=302)
 
-    return HTMLResponse(\"\"\"<!doctype html>
+    return HTMLResponse("""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8"/>
@@ -147,4 +147,4 @@ async function saveCfg(){
 loadCfg();
 </script>
 </body>
-</html>\"\"\")
+</html>""")

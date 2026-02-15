@@ -8,7 +8,8 @@ import {
   CheckCircle, XCircle, AlertCircle, Car, Phone
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 
 // Format date in NZ format (DD/MM/YYYY)
 const formatDateNZ = (dateStr) => {

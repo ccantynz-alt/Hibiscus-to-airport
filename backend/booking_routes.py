@@ -3557,7 +3557,7 @@ def _get_db():
     client = MongoClient(mongo_url)
     return client[db_name]
 
-@router.post("/api/admin/bootstrap")
+@router.post("/admin/bootstrap")
 async def admin_bootstrap(body: _BootstrapBody, x_admin_token: Optional[str] = None):
     expected = (os.getenv("ADMIN_TOKEN") or "").strip()
     provided = (x_admin_token or "").strip()

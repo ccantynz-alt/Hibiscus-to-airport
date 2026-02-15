@@ -6,60 +6,69 @@ import DairyFlatAirportShuttle from "./pages/DairyFlatAirportShuttle";
 import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
 import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
 
+import AdminLogin from "./pages/AdminLogin";
 import AdminShell from "./admin/AdminShell";
 import Cockpit from "./admin/Cockpit";
-import SafeBookings from "./admin/SafeBookings";
-import SafeLogin from "./admin/SafeLogin";
 
 import RealAdminBookings from "./pages/AdminDashboard";
 
+/**
+ * Simple auth check: if an admin token exists in localStorage the user is
+ * considered logged in.  The actual token is validated server-side on every
+ * API call, so this is purely a UX guard.
+ */
+function RequireAuth({ children }) {
+  const token = localStorage.getItem("admin_token") || localStorage.getItem("HIBI_ADMIN_TOKEN");
+  if (!token) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return children;
+}
+
 function AdminRoutes() {
-  const [isAuthed, setIsAuthed] = React.useState(false);
-
-  React.useEffect(() => {
-    const token = localStorage.getItem("HIBI_ADMIN_TOKEN") || localStorage.getItem("admin_token");
-    setIsAuthed(!!token);
-  }, []);
-
-  const handleAuth = (token) => {
-    localStorage.setItem("HIBI_ADMIN_TOKEN", token);
-    localStorage.setItem("admin_token", token);
-    setIsAuthed(true);
-  };
-
   return (
     <Routes>
-      <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-      <Route path="/admin/login" element={
-        isAuthed ? <Navigate to="/admin/bookings" replace /> : <SafeLogin onAuthed={handleAuth} />
-      } />
+      {/* Login — always accessible */}
+      <Route path="/admin/login" element={<AdminLogin />} />
 
+      {/* Redirect bare /admin to /admin/bookings */}
+      <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
+
+      {/* Protected admin pages */}
       <Route
         path="/admin/bookings"
         element={
-          isAuthed ? (
+          <RequireAuth>
             <AdminShell>
               <RealAdminBookings />
             </AdminShell>
-          ) : (
-            <Navigate to="/admin/login" replace />
-          )
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/admin/dashboard"
+        element={
+          <RequireAuth>
+            <AdminShell>
+              <RealAdminBookings />
+            </AdminShell>
+          </RequireAuth>
         }
       />
 
       <Route
         path="/admin/cockpit"
         element={
-          isAuthed ? (
+          <RequireAuth>
             <AdminShell>
               <Cockpit />
             </AdminShell>
-          ) : (
-            <Navigate to="/admin/login" replace />
-          )
+          </RequireAuth>
         }
       />
 
+      {/* Catch-all for unknown /admin/* paths */}
       <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
     </Routes>
   );

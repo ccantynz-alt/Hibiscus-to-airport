@@ -8,7 +8,8 @@ import { Search, Edit, Save, X, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 
 const DEFAULT_PAGES = [
   { slug: 'orewa-airport-shuttle', name: 'Orewa Airport Shuttle' },

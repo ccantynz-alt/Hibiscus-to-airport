@@ -6,7 +6,8 @@ import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 import { Loader2, Mail, Lock, ArrowLeft } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config';
+
 
 // Separate component to handle OAuth callback
 const GoogleAuthCallback = ({ onSuccess, onError }) => {
