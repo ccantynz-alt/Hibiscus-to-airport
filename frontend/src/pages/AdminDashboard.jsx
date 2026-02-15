@@ -12,7 +12,7 @@ import {
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://api.hibiscustoairport.co.nz';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -88,11 +88,11 @@ const AdminDashboard = () => {
     if (urlParams.get('calendar_authorized') === 'true') {
       setCalendarAuthorized(true);
       toast({ title: 'Success!', description: 'Google Calendar has been authorized successfully.' });
-      window.history.replaceState({}, '', '/admin/dashboard');
+      window.history.replaceState({}, '', '/admin/bookings');
     }
     if (urlParams.get('calendar_error')) {
       toast({ title: 'Authorization Failed', description: urlParams.get('calendar_error'), variant: 'destructive' });
-      window.history.replaceState({}, '', '/admin/dashboard');
+      window.history.replaceState({}, '', '/admin/bookings');
     }
   }, []);
 
