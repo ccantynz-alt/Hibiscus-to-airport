@@ -9,31 +9,54 @@ import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
 import AdminShell from "./admin/AdminShell";
 import Cockpit from "./admin/Cockpit";
 import SafeBookings from "./admin/SafeBookings";
-
+import SafeLogin from "./admin/SafeLogin";
 
 import RealAdminBookings from "./pages/AdminDashboard";
 
 function AdminRoutes() {
+  const [isAuthed, setIsAuthed] = React.useState(false);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem("HIBI_ADMIN_TOKEN") || localStorage.getItem("admin_token");
+    setIsAuthed(!!token);
+  }, []);
+
+  const handleAuth = (token) => {
+    localStorage.setItem("HIBI_ADMIN_TOKEN", token);
+    localStorage.setItem("admin_token", token);
+    setIsAuthed(true);
+  };
+
   return (
     <Routes>
       <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-      <Route path="/admin/login" element={<div style={{padding:28}}><h1>Admin Login</h1><p><b>STAMP:</b> HIBI_MEGA_PACK_003_FINISH_OVERNIGHT_20260210</p><p>Login component not pinned yet. Provide -PinLoginImport.</p></div>} />
+      <Route path="/admin/login" element={
+        isAuthed ? <Navigate to="/admin/bookings" replace /> : <SafeLogin onAuthed={handleAuth} />
+      } />
 
       <Route
         path="/admin/bookings"
         element={
-          <AdminShell>
-            <RealAdminBookings />
-          </AdminShell>
+          isAuthed ? (
+            <AdminShell>
+              <RealAdminBookings />
+            </AdminShell>
+          ) : (
+            <Navigate to="/admin/login" replace />
+          )
         }
       />
 
       <Route
         path="/admin/cockpit"
         element={
-          <AdminShell>
-            <Cockpit />
-          </AdminShell>
+          isAuthed ? (
+            <AdminShell>
+              <Cockpit />
+            </AdminShell>
+          ) : (
+            <Navigate to="/admin/login" replace />
+          )
         }
       />
 
