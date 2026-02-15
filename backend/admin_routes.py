@@ -109,6 +109,7 @@ def admin_shell(req: Request):
     <button class="tab active" data-url="/admin/bookings-view">Bookings</button>
     <button class="tab" data-url="/admin/cockpit">Cockpit</button>
     <button class="tab" data-url="/admin/booking-form">Booking Form</button>
+    <button class="tab" data-url="/admin/auth-logs">Auth Logs</button>
     <button class="tab" data-url="/admin/status">Status</button>
   </div>
 
@@ -306,3 +307,200 @@ def admin_status(req: Request):
     if not _require(req):
         return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     return JSONResponse({"ok": True, "utc": datetime.utcnow().isoformat() + "Z"})
+
+@router.get("/admin/auth-logs", response_class=HTMLResponse)
+def admin_auth_logs_view(req: Request):
+    if not _require(req):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    return HTMLResponse("""<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MongoDB Authentication Logs</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; padding:18px; margin:0;}
+    h2{margin:0 0 6px 0;}
+    .meta{color:#6b7280; font-size:13px; margin-bottom:14px;}
+    .row-bar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center;}
+    button{padding:8px 14px; border-radius:10px; border:1px solid #e5e7eb; background:#111827; color:#fff; cursor:pointer; font-size:13px;}
+    input{padding:8px 12px; border-radius:10px; border:1px solid #d1d5db; font-size:13px;}
+    select{padding:8px 12px; border-radius:10px; border:1px solid #d1d5db; font-size:13px;}
+    table{width:100%; border-collapse:collapse; font-size:13px;}
+    th{background:#f8fafc; text-align:left; padding:10px 8px; border-bottom:2px solid #e5e7eb; white-space:nowrap;}
+    td{padding:8px; border-bottom:1px solid #f1f5f9; vertical-align:top;}
+    tr:hover td{background:#f8fafc;}
+    .badge{display:inline-block; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:600;}
+    .badge-success{background:#d1fae5; color:#065f46;}
+    .badge-fail{background:#fee2e2; color:#991b1b;}
+    .badge-admin{background:#dbeafe; color:#1e40af;}
+    .badge-external{background:#fef3c7; color:#92400e;}
+    .stats{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
+    .stat{padding:12px 16px; border:1px solid #e5e7eb; border-radius:12px; min-width:120px;}
+    .stat-val{font-size:22px; font-weight:700;}
+    .stat-label{font-size:11px; color:#6b7280; margin-top:2px;}
+    #error{color:#dc2626; margin-top:10px; display:none;}
+    .empty{text-align:center; padding:40px; color:#6b7280;}
+    .ip-cell{font-family:monospace; font-size:12px;}
+    .username-cell{max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  </style>
+</head>
+<body>
+  <h2>MongoDB Authentication Logs</h2>
+  <div class="meta">Authentication events from MongoDB Atlas. Auto-refreshes every 60s.</div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="row-bar">
+    <input id="search" type="text" placeholder="Search username, IP, host..." oninput="applyFilter()" />
+    <select id="sourceFilter" onchange="applyFilter()">
+      <option value="all">All sources</option>
+      <option value="admin">Admin</option>
+      <option value="$external">External</option>
+    </select>
+    <select id="ipFilter" onchange="applyFilter()">
+      <option value="all">All IPs</option>
+    </select>
+    <button onclick="loadLogs()">Refresh</button>
+  </div>
+
+  <div id="error"></div>
+  <div id="table-wrap"></div>
+
+<script>
+let ALL = [];
+let uniqueIPs = new Set();
+
+async function loadLogs(){
+  const wrap = document.getElementById('table-wrap');
+  const err = document.getElementById('error');
+  err.style.display='none';
+  wrap.innerHTML = '<div class="empty">Loading authentication logs...</div>';
+  try {
+    const r = await fetch('/api/admin/auth-logs-list?ts='+Date.now());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    ALL = data.items || [];
+    
+    // Extract unique IPs for filter
+    uniqueIPs = new Set(ALL.map(log => log.ip_address).filter(Boolean));
+    updateIPFilter();
+    
+    renderStats();
+    applyFilter();
+  } catch(e){
+    err.textContent = 'Failed to load authentication logs: '+String(e);
+    err.style.display = 'block';
+    wrap.innerHTML = '<div class="empty">Could not load authentication logs.</div>';
+  }
+}
+
+function updateIPFilter(){
+  const select = document.getElementById('ipFilter');
+  const currentVal = select.value;
+  select.innerHTML = '<option value="all">All IPs</option>';
+  Array.from(uniqueIPs).sort().forEach(ip => {
+    const opt = document.createElement('option');
+    opt.value = ip;
+    opt.textContent = ip;
+    select.appendChild(opt);
+  });
+  select.value = currentVal;
+}
+
+function renderStats(){
+  const s = document.getElementById('stats');
+  const total = ALL.length;
+  const successful = ALL.filter(l=>l.is_successful).length;
+  const failed = total - successful;
+  const uniqueUsers = new Set(ALL.map(l=>l.username).filter(Boolean)).size;
+  const uniqueIPsCount = uniqueIPs.size;
+  
+  s.innerHTML = `
+    <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Total Events</div></div>
+    <div class="stat"><div class="stat-val">${successful}</div><div class="stat-label">Successful</div></div>
+    <div class="stat"><div class="stat-val">${failed}</div><div class="stat-label">Failed</div></div>
+    <div class="stat"><div class="stat-val">${uniqueUsers}</div><div class="stat-label">Unique Users</div></div>
+    <div class="stat"><div class="stat-val">${uniqueIPsCount}</div><div class="stat-label">Unique IPs</div></div>
+  `;
+}
+
+function applyFilter(){
+  const term = (document.getElementById('search').value||'').toLowerCase();
+  const source = document.getElementById('sourceFilter').value;
+  const ip = document.getElementById('ipFilter').value;
+  
+  let list = ALL;
+  if(source !== 'all') list = list.filter(l => l.authentication_source === source);
+  if(ip !== 'all') list = list.filter(l => l.ip_address === ip);
+  if(term) list = list.filter(l =>
+    (l.username||'').toLowerCase().includes(term) ||
+    (l.ip_address||'').toLowerCase().includes(term) ||
+    (l.host||'').toLowerCase().includes(term)
+  );
+  renderTable(list);
+}
+
+function badge(val, type){
+  if(type === 'result'){
+    const cls = val === 'Successful' ? 'badge-success' : 'badge-fail';
+    return '<span class="badge '+cls+'">'+(val||'n/a')+'</span>';
+  }
+  if(type === 'source'){
+    const cls = val === 'admin' ? 'badge-admin' : 'badge-external';
+    return '<span class="badge '+cls+'">'+(val||'n/a')+'</span>';
+  }
+  return val;
+}
+
+function renderTable(list){
+  const wrap = document.getElementById('table-wrap');
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty">No authentication logs found.</div>';
+    return;
+  }
+  
+  let html = '<table><thead><tr>';
+  html += '<th>Timestamp</th><th>Username</th><th>IP Address</th>';
+  html += '<th>Host</th><th>Auth Source</th><th>Result</th>';
+  html += '</tr></thead><tbody>';
+  
+  for(const log of list){
+    html += '<tr>';
+    html += '<td style="white-space:nowrap;">'+(log.timestamp||'-')+'</td>';
+    html += '<td class="username-cell" title="'+(log.username||'')+'">'+(log.username||'-')+'</td>';
+    html += '<td class="ip-cell">'+(log.ip_address||'-')+'</td>';
+    html += '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">'+(log.host||'-')+'</td>';
+    html += '<td>'+badge(log.authentication_source, 'source')+'</td>';
+    html += '<td>'+badge(log.authentication_result, 'result')+'</td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+loadLogs();
+setInterval(loadLogs, 60000);
+</script>
+</body>
+</html>""")
+
+@router.get("/api/admin/auth-logs-list")
+async def admin_auth_logs_list(req: Request):
+    """Fetch authentication logs from MongoDB for the admin panel."""
+    if not _require(req):
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+    try:
+        from backend.auth_logs import get_auth_logs, initialize_auth_logs
+        
+        # Initialize logs if collection is empty
+        await initialize_auth_logs()
+        
+        # Fetch logs
+        docs = await get_auth_logs(limit=500)
+        
+        return JSONResponse({"ok": True, "count": len(docs), "items": docs})
+    except Exception as e:
+        logger.error(f"admin_auth_logs_list error: {e}")
+        return JSONResponse({"ok": False, "error": str(e), "items": []})
