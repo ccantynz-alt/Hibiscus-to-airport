@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from motor.motor_asyncio import AsyncIOMotorClient
 from auth import get_current_user, verify_password, create_access_token, get_password_hash
+from config_env import get_db_name, get_mongo_url_with_source
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
@@ -42,9 +43,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url, _mongo_src = get_mongo_url_with_source()
+if not mongo_url:
+    raise RuntimeError("MongoDB connection string not configured (set MONGO_URL or MONGO_URI in env)")
+
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db_name = get_db_name()
+if not db_name:
+    try:
+        db_name = client.get_default_database().name
+    except Exception:
+        db_name = None
+if not db_name:
+    raise RuntimeError("DB_NAME not configured and Mongo URI has no default database")
+
+db = client[db_name]
 
 # Stripe setup
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
@@ -88,6 +101,9 @@ class BookingCreate(BaseModel):
 class AdminLogin(BaseModel):
     username: str
     password: str
+
+class AdminKeyLogin(BaseModel):
+    key: str
 
 class PasswordChange(BaseModel):
     current_password: str
@@ -216,7 +232,7 @@ async def create_booking(booking: BookingCreate):
             # Check if this is an URGENT booking (within 24 hours)
             is_urgent, hours_until = is_urgent_booking(booking.date, booking.time)
             if is_urgent:
-                logger.warning(f"Ã°Å¸Å¡Â¨ URGENT BOOKING DETECTED: {booking_ref} - only {hours_until}hrs notice!")
+                logger.warning(f"[URGENT] Booking detected: {booking_ref} - only {hours_until}hrs notice!")
                 try:
                     send_urgent_admin_email(booking_doc, hours_until)
                     send_urgent_admin_sms(booking_doc, hours_until)
@@ -599,7 +615,7 @@ Questions? 021 743 321"""
             "payment_url": payment_url,
             "email_sent": email_sent,
             "sms_sent": sms_sent,
-            "message": f"Payment link sent! Email: {'Ã¢Å“â€œ' if email_sent else 'Ã¢Å“â€”'}, SMS: {'Ã¢Å“â€œ' if sms_sent else 'Ã¢Å“â€”'}"
+            "message": f"Payment link sent! Email: {'OK' if email_sent else 'FAIL'}, SMS: {'OK' if sms_sent else 'FAIL'}"
         }
         
     except HTTPException:
@@ -686,6 +702,22 @@ async def admin_login(credentials: AdminLogin):
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/key-login")
+async def admin_key_login(payload: AdminKeyLogin):
+    """
+    Break-glass admin login using ADMIN_API_KEY (Render env var).
+    This is intentionally simple: if you can set ADMIN_API_KEY in hosting,
+    you can regain access even if username/password or OAuth is broken.
+    """
+    expected = (os.environ.get("ADMIN_API_KEY") or "").strip()
+    provided = (payload.key or "").strip()
+    if not expected or provided != expected:
+        raise HTTPException(status_code=401, detail="Invalid admin key")
+
+    access_token = create_access_token(data={"sub": "admin_key", "auth_method": "admin_key"})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/admin/change-password", dependencies=[Depends(get_current_user)])
 async def change_password(password_data: PasswordChange, current_user: dict = Depends(get_current_user)):
@@ -799,113 +831,20 @@ async def reset_password(request: PasswordResetConfirm):
 
 @router.post("/admin/google-auth")
 async def google_auth_callback(request: Request, response: Response):
-    """Process Google OAuth session and create admin session"""
-    try:
-        body = await request.json()
-        session_id = body.get("session_id")
-        
-        if not session_id:
-            raise HTTPException(status_code=400, detail="Session ID required")
-        
-        logger.info(f"Processing Google OAuth for session_id: {session_id[:20]}...")
-        
-        # Verify session with Emergent Auth
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            auth_response = await client.get(
-                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-                headers={"X-Session-ID": session_id}
-            )
-        
-        logger.info(f"Emergent Auth response status: {auth_response.status_code}")
-        
-        if auth_response.status_code != 200:
-            error_detail = "Invalid or expired session"
-            try:
-                error_data = auth_response.json()
-                if "detail" in error_data:
-                    error_detail = error_data["detail"].get("error_description", error_detail)
-                logger.error(f"Emergent Auth error: {error_data}")
-            except:
-                pass
-            raise HTTPException(status_code=401, detail=error_detail)
-        
-        user_data = auth_response.json()
-        user_email = user_data.get("email", "").lower()
-        
-        logger.info(f"Google OAuth user: {user_email}")
-        
-        # Check if email is authorized
-        if user_email not in [e.lower() for e in AUTHORIZED_ADMIN_EMAILS]:
-            logger.warning(f"Unauthorized Google login attempt: {user_email}")
-            raise HTTPException(status_code=403, detail=f"This email ({user_email}) is not authorized for admin access. Contact administrator.")
-        
-        # Create or update admin user
-        existing_admin = await db.admins.find_one({"email": user_email})
-        
-        if not existing_admin:
-            # Create new admin from Google auth
-            admin_id = str(uuid.uuid4())
-            await db.admins.insert_one({
-                "id": admin_id,
-                "email": user_email,
-                "username": user_email.split("@")[0],
-                "name": user_data.get("name", "Admin"),
-                "picture": user_data.get("picture", ""),
-                "google_id": user_data.get("id"),
-                "auth_method": "google",
-                "createdAt": datetime.now(timezone.utc).isoformat()
-            })
-        else:
-            # Update existing admin
-            await db.admins.update_one(
-                {"email": user_email},
-                {"$set": {
-                    "name": user_data.get("name", existing_admin.get("name", "Admin")),
-                    "picture": user_data.get("picture", ""),
-                    "google_id": user_data.get("id"),
-                    "last_login": datetime.now(timezone.utc).isoformat()
-                }}
-            )
-        
-        # Create JWT token
-        access_token = create_access_token(data={"sub": user_email, "auth_method": "google"})
-        
-        # Store session token
-        session_token = user_data.get("session_token")
-        if session_token:
-            await db.admin_sessions.insert_one({
-                "email": user_email,
-                "session_token": session_token,
-                "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
-            
-            # Set cookie
-            response.set_cookie(
-                key="admin_session",
-                value=session_token,
-                httponly=True,
-                secure=True,
-                samesite="none",
-                max_age=7*24*60*60,
-                path="/"
-            )
-        
-        logger.info(f"Google OAuth login successful for: {user_email}")
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": {
-                "email": user_email,
-                "name": user_data.get("name"),
-                "picture": user_data.get("picture")
-            }
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Google auth error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    """
+    Deprecated.
+
+    This route previously depended on Emergent-hosted OAuth session data.
+    It is intentionally disabled to avoid sending operators to third-party auth.
+
+    Use:
+    - POST /api/admin/login (username/password), or
+    - POST /api/admin/key-login (ADMIN_API_KEY from backend hosting)
+    """
+    raise HTTPException(
+        status_code=410,
+        detail="Google login is disabled. Use username/password or /api/admin/key-login.",
+    )
 
 @router.get("/admin/me")
 async def get_admin_profile(request: Request):
@@ -1996,18 +1935,18 @@ async def send_driver_job_notification(booking: dict, driver: dict, payout: floa
         booking_date = booking.get('date', 'N/A')
         booking_time = booking.get('time', 'N/A')
         
-        # Build acceptance URL
-        base_url = os.environ.get('FRONTEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        # Build acceptance URL (avoid Emergent preview defaults)
+        base_url = (os.environ.get('FRONTEND_URL') or os.environ.get('PUBLIC_DOMAIN') or 'https://hibiscustoairport.co.nz').rstrip("/")
         accept_url = f"{base_url}/driver/job/{booking.get('id')}?token={token}"
         
         # Send Email to driver
         if driver_email:
-            subject = f"Ã°Å¸Å¡â€” NEW JOB: {booking_ref} - ${payout:.2f}"
+            subject = f"NEW JOB: {booking_ref} - ${payout:.2f}"
             
             email_body = f"""
             <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
               <div style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-                <h1 style="margin: 0; font-size: 24px;">Ã°Å¸Å¡â€” New Job Available</h1>
+                <h1 style="margin: 0; font-size: 24px;">New Job Available</h1>
                 <p style="margin: 8px 0 0; color: #f59e0b;">Booking {booking_ref}</p>
               </div>
               
@@ -2024,15 +1963,15 @@ async def send_driver_job_notification(booking: dict, driver: dict, payout: floa
                 </div>
                 
                 <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-                  <p style="margin: 0;"><strong>Ã°Å¸â€œâ€¦ Date:</strong> {booking_date}</p>
-                  <p style="margin: 10px 0 0;"><strong>Ã¢ÂÂ° Pickup Time:</strong> {booking_time}</p>
-                  <p style="margin: 10px 0 0;"><strong>Ã°Å¸â€œÂ Pickup:</strong> {booking.get('pickupAddress', 'N/A')}</p>
-                  <p style="margin: 10px 0 0;"><strong>Ã°Å¸ÂÂ Drop-off:</strong> {booking.get('dropoffAddress', 'N/A')}</p>
-                  <p style="margin: 10px 0 0;"><strong>Ã°Å¸â€˜Â¥ Passengers:</strong> {booking.get('passengers', 1)}</p>
-                  <p style="margin: 10px 0 0;"><strong>Ã°Å¸â€˜Â¤ Customer:</strong> {booking.get('name', 'N/A')}</p>
+                  <p style="margin: 0;"><strong>Date:</strong> {booking_date}</p>
+                  <p style="margin: 10px 0 0;"><strong>Pickup Time:</strong> {booking_time}</p>
+                  <p style="margin: 10px 0 0;"><strong>Pickup:</strong> {booking.get('pickupAddress', 'N/A')}</p>
+                  <p style="margin: 10px 0 0;"><strong>Drop-off:</strong> {booking.get('dropoffAddress', 'N/A')}</p>
+                  <p style="margin: 10px 0 0;"><strong>Passengers:</strong> {booking.get('passengers', 1)}</p>
+                  <p style="margin: 10px 0 0;"><strong>Customer:</strong> {booking.get('name', 'N/A')}</p>
                 </div>
                 
-                {f'<div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;"><p style="margin: 0; font-size: 14px; color: #0369a1;"><strong>Ã°Å¸â€œÂ Notes:</strong> {notes}</p></div>' if notes else ''}
+                {f'<div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;"><p style="margin: 0; font-size: 14px; color: #0369a1;"><strong>Notes:</strong> {notes}</p></div>' if notes else ''}
                 
                 <div style="text-align: center; margin: 30px 0;">
                   <a href="{accept_url}" style="display: inline-block; background: #f59e0b; color: black; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
@@ -2152,7 +2091,7 @@ async def driver_respond_to_job(booking_id: str, data: dict):
             from utils import send_email
             send_email(
                 admin_email,
-                f"Ã¢Å“â€¦ Driver ACCEPTED: {booking.get('booking_ref')}",
+                f"Driver ACCEPTED: {booking.get('booking_ref')}",
                 f"<p><strong>{driver_name}</strong> has ACCEPTED job <strong>{booking.get('booking_ref')}</strong></p><p>Pickup: {booking.get('date')} at {booking.get('time')}</p>"
             )
             
@@ -2182,7 +2121,7 @@ async def driver_respond_to_job(booking_id: str, data: dict):
             from utils import send_email
             send_email(
                 admin_email,
-                f"Ã¢ÂÅ’ Driver DECLINED: {booking.get('booking_ref')}",
+                f"Driver DECLINED: {booking.get('booking_ref')}",
                 f"<p><strong>{driver_name}</strong> has DECLINED job <strong>{booking.get('booking_ref')}</strong></p><p>Reason: {decline_reason or 'No reason given'}</p><p>Please assign another driver.</p>"
             )
             
@@ -2351,7 +2290,7 @@ async def send_5min_arrival_sms(tracking_session: dict, tracking_id: str):
         # Format tracking URL (use production domain)
         tracking_url = f"https://hibiscustoairport.co.nz/track/{booking_ref}"
         
-        message = f"Hi {customer_name.split()[0]}! Ã°Å¸Å¡â€” Your driver {driver_name} is approximately 10 minutes away. Track live: {tracking_url}"
+        message = f"Hi {customer_name.split()[0]}! Your driver {driver_name} is approximately 10 minutes away. Track live: {tracking_url}"
         
         # Send via Twilio
         account_sid = os.environ.get("TWILIO_ACCOUNT_SID", "")
@@ -2740,7 +2679,7 @@ At the end of your response, on a NEW LINE, add one of these tags:
 def fallback_response(session: WhatsAppSession, user_message: str) -> str:
     """Fallback responses if AI fails"""
     if session.state == "greeting":
-        return "Hi! Ã°Å¸â€˜â€¹ Welcome to Hibiscus to Airport! Where would you like to be picked up from?\n\n[NONE]"
+        return "Hi! Welcome to Hibiscus to Airport! Where would you like to be picked up from?\n\n[NONE]"
     elif session.state == "collecting_pickup":
         return f"Thanks! And where are you heading to? (e.g., Auckland Airport)\n\n[EXTRACTED_PICKUP: {user_message}]"
     elif session.state == "collecting_dropoff":
@@ -2808,7 +2747,7 @@ async def whatsapp_webhook(
         if message.lower() in ['reset', 'start over', 'cancel', 'restart']:
             reset_session(phone)
             session = get_or_create_session(phone)
-            response_text = "No problem! Let's start fresh. Ã°Å¸â€â€ž\n\nWhere would you like to be picked up from?"
+            response_text = "No problem! Let's start fresh.\n\nWhere would you like to be picked up from?"
             session.state = "collecting_pickup"
         else:
             # Add user message to history
@@ -2851,13 +2790,13 @@ async def whatsapp_webhook(
                     session.state = "confirming"
                     
                     # Add pricing info to response
-                    response_text += f"\n\nÃ°Å¸â€™Â° **Your Quote:**\n"
-                    response_text += f"Ã°Å¸â€œÂ From: {session.pickup_address}\n"
-                    response_text += f"Ã°Å¸â€œÂ To: {session.dropoff_address}\n"
-                    response_text += f"Ã°Å¸â€œâ€¦ Date: {session.date}\n"
-                    response_text += f"Ã¢ÂÂ° Time: {session.time}\n"
-                    response_text += f"Ã°Å¸â€˜Â¥ Passengers: {session.passengers}\n"
-                    response_text += f"Ã°Å¸â€™Âµ **Total: ${session.pricing['totalPrice']:.2f} NZD**\n\n"
+                    response_text += f"\n\n**Your Quote:**\n"
+                    response_text += f"From: {session.pickup_address}\n"
+                    response_text += f"To: {session.dropoff_address}\n"
+                    response_text += f"Date: {session.date}\n"
+                    response_text += f"Time: {session.time}\n"
+                    response_text += f"Passengers: {session.passengers}\n"
+                    response_text += f"**Total: ${session.pricing['totalPrice']:.2f} NZD**\n\n"
                     response_text += "Reply 'BOOK' to confirm and receive payment link, or 'CHANGE' to modify details."
                 except Exception as e:
                     logger.error(f"Pricing calculation error: {str(e)}")
@@ -2897,12 +2836,12 @@ async def whatsapp_webhook(
                         public_domain = os.environ.get('PUBLIC_DOMAIN', 'https://hibiscustoairport.co.nz')
                         payment_url = f"{public_domain}/booking?pay={booking_id}"
                         
-                        response_text = f"Ã¢Å“â€¦ **Booking Created!**\n\n"
-                        response_text += f"Ã°Å¸â€œâ€¹ Reference: **{booking_ref}**\n"
-                        response_text += f"Ã°Å¸â€™Âµ Total: **${session.pricing['totalPrice']:.2f} NZD**\n\n"
-                        response_text += f"Ã°Å¸â€™Â³ Pay securely here:\n{payment_url}\n\n"
+                        response_text = f"**Booking Created!**\n\n"
+                        response_text += f"Reference: **{booking_ref}**\n"
+                        response_text += f"Total: **${session.pricing['totalPrice']:.2f} NZD**\n\n"
+                        response_text += f"Pay securely here:\n{payment_url}\n\n"
                         response_text += "Or pay cash to the driver on pickup day.\n\n"
-                        response_text += "Questions? Just message us here! Ã°Å¸ËœÅ "
+                        response_text += "Questions? Just message us here!"
                         
                         session.state = "payment"
                         
@@ -2985,15 +2924,15 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID', 'primary')
 GOOGLE_SCOPES = ['https://www.googleapis.com/auth/calendar']
 
-# Get frontend URL for redirect
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+# Get frontend URL for redirect (avoid Emergent preview defaults)
+FRONTEND_URL = (os.environ.get('FRONTEND_URL') or os.environ.get('PUBLIC_DOMAIN') or 'https://hibiscustoairport.co.nz').rstrip("/")
 
 @router.get("/calendar/auth/url")
-async def get_calendar_auth_url(current_user: dict = Depends(get_current_user)):
+async def get_calendar_auth_url(request: Request, current_user: dict = Depends(get_current_user)):
     """Generate Google OAuth URL for calendar authorization"""
     try:
         # Build the redirect URI using the backend URL
-        backend_url = os.environ.get('BACKEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        backend_url = (os.environ.get('BACKEND_URL') or f"{request.url.scheme}://{request.url.netloc}").rstrip("/")
         redirect_uri = f"{backend_url}/api/calendar/auth/callback"
         
         # Build authorization URL
@@ -3014,7 +2953,7 @@ async def get_calendar_auth_url(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/calendar/auth/callback")
-async def calendar_auth_callback(code: str = None, error: str = None):
+async def calendar_auth_callback(request: Request, code: str = None, error: str = None):
     """Handle Google OAuth callback and store tokens"""
     try:
         if error:
@@ -3025,7 +2964,7 @@ async def calendar_auth_callback(code: str = None, error: str = None):
             return RedirectResponse(f"{FRONTEND_URL}/admin?calendar_error=no_code")
         
         # Get backend URL for redirect_uri
-        backend_url = os.environ.get('BACKEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        backend_url = (os.environ.get('BACKEND_URL') or f"{request.url.scheme}://{request.url.netloc}").rstrip("/")
         redirect_uri = f"{backend_url}/api/calendar/auth/callback"
         
         # Exchange code for tokens using direct HTTP request
@@ -3204,28 +3143,28 @@ async def add_booking_to_google_calendar(booking: dict):
         description = f"""
 BOOKING REFERENCE: {booking_ref}
 
-Ã°Å¸â€˜Â¤ Customer: {booking.get('name', 'N/A')}
-Ã°Å¸â€œÅ¾ Phone: {booking.get('phone', 'N/A')}
-Ã¢Å“â€°Ã¯Â¸Â Email: {booking.get('email', 'N/A')}
+Customer: {booking.get('name', 'N/A')}
+Phone: {booking.get('phone', 'N/A')}
+Email: {booking.get('email', 'N/A')}
 
-Ã°Å¸â€œÂ Pickup: {booking.get('pickupAddress', 'N/A')}
-Ã°Å¸ÂÂ Drop-off: {booking.get('dropoffAddress', 'N/A')}
+Pickup: {booking.get('pickupAddress', 'N/A')}
+Drop-off: {booking.get('dropoffAddress', 'N/A')}
 
-Ã°Å¸â€˜Â¥ Passengers: {booking.get('passengers', 1)}
-Ã°Å¸â€™Â° Total: ${booking.get('pricing', {}).get('totalPrice', 0):.2f} NZD
+Passengers: {booking.get('passengers', 1)}
+Total: ${booking.get('pricing', {}).get('totalPrice', 0):.2f} NZD
 
-Ã¢Å“Ë†Ã¯Â¸Â Flight Info:
+Flight Info:
 - Departure: {booking.get('departureFlightNumber', 'N/A')} at {booking.get('departureTime', 'N/A')}
 - Arrival: {booking.get('arrivalFlightNumber', 'N/A')} at {booking.get('arrivalTime', 'N/A')}
 
-Ã°Å¸â€œÂ Notes: {booking.get('notes', 'None')}
+Notes: {booking.get('notes', 'None')}
 
 Status: {booking.get('status', 'pending').upper()}
 Payment: {booking.get('payment_status', 'pending').upper()}
 """.strip()
         
         event = {
-            'summary': f"Ã°Å¸Å¡â€” {booking_ref} - {booking.get('name', 'Customer')} | {booking.get('passengers', 1)} pax",
+            'summary': f"{booking_ref} - {booking.get('name', 'Customer')} | {booking.get('passengers', 1)} pax",
             'location': booking.get('pickupAddress', ''),
             'description': description,
             'start': {
@@ -3279,7 +3218,7 @@ async def create_test_calendar_event(current_user: dict = Depends(get_current_us
         end_datetime = tomorrow.replace(hour=11, minute=0, second=0, microsecond=0).isoformat()
         
         event = {
-            'summary': 'Ã°Å¸Â§Âª Test Booking - Hibiscus to Airport',
+            'summary': 'Test Booking - Hibiscus to Airport',
             'location': 'Auckland Airport',
             'description': 'This is a test event to verify Google Calendar integration is working correctly.',
             'start': {
@@ -3318,12 +3257,12 @@ async def send_booking_reminder(booking: dict):
         formatted_date = booking.get('date', 'N/A')
         
         # Send reminder email
-        subject = f"Ã¢ÂÂ° Reminder: Your Airport Transfer Tomorrow - {booking_ref}"
+        subject = f"Reminder: Your Airport Transfer Tomorrow - {booking_ref}"
         
         body = f"""
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
           <div style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 24px;">Ã¢ÂÂ° Transfer Reminder</h1>
+            <h1 style="margin: 0; font-size: 24px;">Transfer Reminder</h1>
             <p style="margin: 8px 0 0; color: #f59e0b;">Your transfer is tomorrow!</p>
           </div>
           
@@ -3344,15 +3283,15 @@ async def send_booking_reminder(booking: dict):
             
             <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p style="margin: 0; font-size: 14px; color: #92400e;">
-                <strong>Ã°Å¸â€œÅ’ Please be ready 5-10 minutes before your pickup time.</strong><br>
+                <strong>Please be ready 5-10 minutes before your pickup time.</strong><br>
                 Your driver will contact you when they are on their way.
               </p>
             </div>
             
             <p style="font-size: 14px; color: #6b7280;">
               If you need to make any changes, please contact us:<br>
-              Ã°Å¸â€œÅ¾ 021 743 321<br>
-              Ã¢Å“â€°Ã¯Â¸Â bookings@bookaride.co.nz
+              021 743 321<br>
+              bookings@bookaride.co.nz
             </p>
           </div>
         </div>

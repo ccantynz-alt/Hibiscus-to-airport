@@ -330,14 +330,25 @@ def calculate_price(distance_km: float, passengers: int = 1, vip_pickup: bool = 
     }
 
 # Email Notifications
-def send_email(to_email: str, subject: str, body: str, calendar_invite=None):
-    """Send email via Google Workspace SMTP with optional calendar invite"""
+def send_email(to_email: str, subject: str, body: str, calendar_invite=None, attachments=None):
+    """
+    Send email via Google Workspace SMTP with optional calendar invite and attachments.
+
+    attachments: optional list of dicts:
+      - filename: str
+      - content: str|bytes
+      - mime: str (e.g. "text/csv" or "application/json")
+    """
     try:
         smtp_server = os.environ.get('SMTP_SERVER')
         smtp_port = int(os.environ.get('SMTP_PORT', 587))
         smtp_username = os.environ.get('SMTP_USERNAME')
         smtp_password = os.environ.get('SMTP_PASSWORD')
         sender_email = os.environ.get('SENDER_EMAIL')
+
+        if not smtp_server or not smtp_username or not smtp_password or not sender_email:
+            logger.warning("SMTP env vars missing - cannot send email")
+            return False
         
         msg = MIMEMultipart('mixed')
         msg['From'] = sender_email
@@ -362,6 +373,25 @@ def send_email(to_email: str, subject: str, body: str, calendar_invite=None):
             encoders.encode_base64(ical_part)
             ical_part.add_header('Content-Disposition', 'attachment', filename='booking.ics')
             msg.attach(ical_part)
+
+        # Attach extra files (e.g., CSV backups)
+        if attachments:
+            for a in attachments:
+                try:
+                    filename = (a or {}).get("filename") or "attachment.bin"
+                    mime = (a or {}).get("mime") or "application/octet-stream"
+                    content = (a or {}).get("content") or b""
+                    if isinstance(content, str):
+                        content = content.encode("utf-8")
+
+                    maintype, subtype = (mime.split("/", 1) + ["octet-stream"])[:2]
+                    part = MIMEBase(maintype, subtype)
+                    part.set_payload(content)
+                    encoders.encode_base64(part)
+                    part.add_header("Content-Disposition", "attachment", filename=filename)
+                    msg.attach(part)
+                except Exception as attach_err:
+                    logger.error(f"Failed attaching {a}: {attach_err}")
         
         # Send email
         with smtplib.SMTP(smtp_server, smtp_port) as server:
