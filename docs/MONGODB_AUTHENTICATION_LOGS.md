@@ -1,4 +1,4 @@
-# MongoDB Authentication Logs — Analysis & Reference
+# MongoDB Authentication Logs - Analysis & Reference
 
 This document explains how to interpret MongoDB Atlas authentication logs and summarizes findings from recent logs.
 
@@ -19,7 +19,7 @@ This document explains how to interpret MongoDB Atlas authentication logs and su
 
 ### Two Authentication Sources
 
-#### 1. Application / Backend (`MONGO_URL` → `admin`)
+#### 1. Application / Backend (`MONGO_URL` -> `admin`)
 
 | Username | Auth Source | Typical Use |
 |----------|-------------|-------------|
@@ -31,13 +31,13 @@ This document explains how to interpret MongoDB Atlas authentication logs and su
 > **Note:** If Atlas logs show the username as `MONGO_URL`, that means the MongoDB user in your connection string is literally named `MONGO_URL`.
 > Consider creating a dedicated user (e.g. `hibiscus_app` or `bookaride_backend`) for clearer audit trails and easier credential rotation.
 
-#### 2. Human / Atlas UI (`CN=ccantynz@gmail.com` → `$external`)
+#### 2. Human / Atlas UI (`CN=ccantynz@gmail.com` -> `$external`)
 
 | Username | Auth Source | Typical Use |
 |----------|-------------|-------------|
 | `CN=ccantynz@gmail.com` | `$external` | MongoDB Atlas UI, Compass, or CLI using Google/LDAP/X.509 |
 
-- **Source IPs:** `13.238.145.51`, `54.252.174.158` (AWS ap-southeast-2 — Australia)
+- **Source IPs:** `13.238.145.51`, `54.252.174.158` (AWS ap-southeast-2 - Australia)
 - **Auth method:** External (e.g. Google OAuth, X.509, or LDAP)
 
 ---
@@ -54,15 +54,15 @@ This document explains how to interpret MongoDB Atlas authentication logs and su
 
 ## Security Recommendations
 
-1. **Use descriptive usernames** — Prefer `hibiscus_app` or `bookaride_backend` over `MONGO_URL` for application connections. This improves audit clarity and avoids confusion with env var names.
+1. **Use descriptive usernames** - Prefer `hibiscus_app` or `bookaride_backend` over `MONGO_URL` for application connections. This improves audit clarity and avoids confusion with env var names.
 
-2. **Rotate credentials** — If `MONGO_URL` or any credential may have been exposed, rotate the MongoDB user password and update `MONGO_URL` in Render/hosting.
+2. **Rotate credentials** - If `MONGO_URL` or any credential may have been exposed, rotate the MongoDB user password and update `MONGO_URL` in Render/hosting.
 
-3. **Restrict IP access** — In MongoDB Atlas → Network Access, consider limiting allowed IPs to known deployment and admin IPs (e.g. hosting egress IPs, your office/VPN).
+3. **Restrict IP access** - In MongoDB Atlas -> Network Access, consider limiting allowed IPs to known deployment and admin IPs (e.g. hosting egress IPs, your office/VPN).
 
-4. **Monitor failed logins** — Watch for `Authentication Result: Failed` entries; repeated failures from unknown IPs may indicate brute-force attempts.
+4. **Monitor failed logins** - Watch for `Authentication Result: Failed` entries; repeated failures from unknown IPs may indicate brute-force attempts.
 
-5. **Separate admin and app users** — Use different MongoDB users for:
+5. **Separate admin and app users** - Use different MongoDB users for:
    - Application (read/write to app DB only)
    - Admin/bootstrap (for maintenance tooling)
    - Atlas UI access (your personal `$external` identity)
@@ -73,7 +73,7 @@ This document explains how to interpret MongoDB Atlas authentication logs and su
 
 1. Log in to [MongoDB Atlas](https://cloud.mongodb.com)
 2. Select your project and cluster (`hibiscustoairport`)
-3. Go to **Security** → **Authentication** or **Monitoring** → **Logs**
+3. Go to **Security** -> **Authentication** or **Monitoring** -> **Logs**
 4. Filter by authentication events
 
 ---
