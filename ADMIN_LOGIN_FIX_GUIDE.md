@@ -154,6 +154,11 @@ Once logged in, the bookings page should:
 - Check that `allow_origins` includes the frontend domain
 - May need to update to specific domain instead of `*` for production
 
+### Issue: "list_collection_names failed for db config/local"
+- These errors come from tools (Compass, IDE extensions) probing MongoDB system databases
+- Your application is unaffected; see `MONGODB_CONFIG_LOCAL_AUTHORIZATION.md` for details
+- Include the database in `MONGO_URL` (e.g. `.../hibiscus_airport?retryWrites=...`) to reduce probing
+
 ## Security Recommendations
 
 1. **Change default admin password** - Use the change password feature after first login
