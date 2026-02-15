@@ -53,7 +53,8 @@
 
 ### Backend (Set in Render Dashboard)
 ```
-MONGO_URL=mongodb+srv://...
+# Prefer MONGO_URI (full MongoDB connection string). MONGO_URL is still supported.
+MONGO_URI=mongodb+srv://...
 DB_NAME=hibiscus_airport
 ADMIN_EMAIL=bookings@bookaride.co.nz
 FRONTEND_URL=https://hibiscustoairport.co.nz
@@ -134,7 +135,7 @@ Once logged in, the bookings page should:
 ## Troubleshooting
 
 ### Issue: Login returns 401
-- Check that `MONGO_URL` and `DB_NAME` are set in Render
+- Check that `MONGO_URI` (or legacy `MONGO_URL`) and `DB_NAME` are set in Render
 - Verify the database is accessible from Render
 - Check Render logs for connection errors
 

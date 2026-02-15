@@ -84,7 +84,7 @@ Expected results:
 Make sure these are set in Render dashboard:
 
 **Critical (Required):**
-- `MONGO_URL` - MongoDB connection string
+- `MONGO_URI` (or legacy `MONGO_URL`) - MongoDB connection string (full URI)
 - `DB_NAME` - Database name (e.g., `hibiscus_airport`)
 
 **Important (For full functionality):**
@@ -130,7 +130,7 @@ First-time setup creates default admin:
 
 ### If login still fails after deployment:
 1. Check Render logs for errors
-2. Verify MongoDB connection (MONGO_URL is correct)
+2. Verify MongoDB connection string (MONGO_URI/MONGO_URL is correct)
 3. Check that database is accessible from Render's IP
 4. Verify environment variables are set
 
