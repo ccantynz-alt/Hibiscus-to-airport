@@ -14,35 +14,56 @@ app.add_middleware(
 )
 
 # Import and include all routers
+# Try both import styles for compatibility
 try:
-    from admin_routes import router as admin_router
+    try:
+        from backend.admin_routes import router as admin_router
+    except ImportError:
+        from admin_routes import router as admin_router
     app.include_router(admin_router)
+    print("✓ Loaded admin_router")
 except Exception as e:
-    print(f"Failed to import admin_router: {e}")
+    print(f"✗ Failed to import admin_router: {e}")
 
 try:
-    from booking_routes import router as booking_router
+    try:
+        from backend.booking_routes import router as booking_router
+    except ImportError:
+        from booking_routes import router as booking_router
     app.include_router(booking_router, prefix="/api")
+    print("✓ Loaded booking_router")
 except Exception as e:
-    print(f"Failed to import booking_router: {e}")
+    print(f"✗ Failed to import booking_router: {e}")
 
 try:
-    from cockpit_routes import cockpit_router
+    try:
+        from backend.cockpit_routes import cockpit_router
+    except ImportError:
+        from cockpit_routes import cockpit_router
     app.include_router(cockpit_router, prefix="/api")
+    print("✓ Loaded cockpit_router")
 except Exception as e:
-    print(f"Failed to import cockpit_router: {e}")
+    print(f"✗ Failed to import cockpit_router: {e}")
 
 try:
-    from bookingform_routes import router as bookingform_router
+    try:
+        from backend.bookingform_routes import router as bookingform_router
+    except ImportError:
+        from bookingform_routes import router as bookingform_router
     app.include_router(bookingform_router, prefix="/api")
+    print("✓ Loaded bookingform_router")
 except Exception as e:
-    print(f"Failed to import bookingform_router: {e}")
+    print(f"✗ Failed to import bookingform_router: {e}")
 
 try:
-    from agent_routes import router as agent_router
+    try:
+        from backend.agent_routes import router as agent_router
+    except ImportError:
+        from agent_routes import router as agent_router
     app.include_router(agent_router)
+    print("✓ Loaded agent_router")
 except Exception as e:
-    print(f"Failed to import agent_router: {e}")
+    print(f"✗ Failed to import agent_router: {e}")
 
 @app.get("/")
 def root():
