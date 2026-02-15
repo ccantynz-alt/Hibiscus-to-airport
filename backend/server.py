@@ -1,12 +1,21 @@
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+# backend/server.py
+# This is the entry point for the Render deployment
+# Import the properly configured app from main.py
 
-app = FastAPI()
-
-@app.get("/debug/stamp")
-def debug_stamp():
-    return {"stamp": "ADMIN_BOOT_OK"}
-
-@app.post("/admin/login")
-def admin_login():
-    return {"token": "OWNER_BYPASS_TOKEN", "role": "owner"}
+try:
+    from backend.main import app
+except ImportError:
+    try:
+        from main import app
+    except ImportError:
+        # Fallback if neither works
+        from fastapi import FastAPI
+        app = FastAPI()
+        
+        @app.get("/")
+        def root():
+            return {"error": "Could not import main app", "status": "configuration_error"}
+        
+        @app.get("/debug/stamp")
+        def debug_stamp():
+            return {"stamp": "FALLBACK_MODE_CHECK_IMPORTS"}
