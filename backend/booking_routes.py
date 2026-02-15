@@ -1046,8 +1046,10 @@ async def delete_seo_page(page_slug: str):
 async def get_all_bookings():
     try:
         bookings = await db.bookings.find({}, {"_id": 0}).sort("createdAt", -1).to_list(1000)
+        logger.info(f"GET /bookings returned {len(bookings)} bookings (db={os.environ.get('DB_NAME', 'unknown')})")
         return bookings
     except Exception as e:
+        logger.error(f"GET /bookings failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/bookings/export/csv", dependencies=[Depends(get_current_user)])
@@ -3468,9 +3470,11 @@ async def health():
     # If DB is reachable, this should not throw
     ok_db = True
     err = None
+    booking_count = 0
+    deleted_count = 0
     try:
-        # lightweight ping: count 0/1 doc
-        await db.bookings.count_documents({}, limit=1)
+        booking_count = await db.bookings.count_documents({})
+        deleted_count = await db.deleted_bookings.count_documents({})
     except Exception as e:
         ok_db = False
         err = str(e)
@@ -3478,6 +3482,9 @@ async def health():
         "ok": True,
         "service": "hibiscus-backend",
         "db_ok": ok_db,
+        "db_name": os.environ.get('DB_NAME', '(not set)'),
+        "booking_count": booking_count,
+        "deleted_count": deleted_count,
         "db_error": err,
         "ts": datetime.now(timezone.utc).isoformat()
     }
