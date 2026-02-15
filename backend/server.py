@@ -44,6 +44,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# MongoDB config (supports MONGO_URI or MONGO_URL; redacts secrets in logs)
+try:
+    from mongo_config import get_mongo_uri, get_db_name
+except ImportError:  # pragma: no cover
+    from backend.mongo_config import get_mongo_uri, get_db_name  # type: ignore
+
 # ---------------------------------------------------------------------------
 # Middleware: prevent Cloudflare/CDN caching of API responses
 # ---------------------------------------------------------------------------
@@ -170,12 +176,12 @@ try:
         """Send reminders for bookings happening tomorrow — runs daily at 6 PM NZ time."""
         try:
             logger.info("Running day-before reminder job...")
-            mongo_url = os.environ.get('MONGO_URL', '')
-            db_name = os.environ.get('DB_NAME', 'hibiscus_shuttle')
-            if not mongo_url:
-                logger.warning("MONGO_URL not set, skipping reminders")
+            mongo_uri = get_mongo_uri(required=False)
+            db_name = get_db_name("hibiscus_shuttle")
+            if not mongo_uri:
+                logger.warning("MONGO_URI/MONGO_URL not set, skipping reminders")
                 return
-            client = AsyncIOMotorClient(mongo_url)
+            client = AsyncIOMotorClient(mongo_uri)
             db = client[db_name]
             tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
             bookings = await db.bookings.find({

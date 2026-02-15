@@ -16,7 +16,8 @@
 ## 2. BACKEND .env FILE
 
 ```env
-MONGO_URL=mongodb://localhost:27017
+# Prefer `MONGO_URI` (full connection string). `MONGO_URL` is supported for backward compatibility.
+MONGO_URI=mongodb://localhost:27017
 DB_NAME=bookaride
 JWT_SECRET_KEY=your-secret-key
 PUBLIC_DOMAIN=https://yourdomain.com

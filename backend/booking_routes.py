@@ -15,6 +15,12 @@ from pathlib import Path
 from motor.motor_asyncio import AsyncIOMotorClient
 from auth import get_current_user, verify_password, create_access_token, get_password_hash
 
+# MongoDB config (supports MONGO_URI or MONGO_URL; redacts secrets in logs)
+try:
+    from mongo_config import get_mongo_uri, get_db_name
+except ImportError:  # pragma: no cover
+    from backend.mongo_config import get_mongo_uri, get_db_name  # type: ignore
+
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -42,9 +48,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+mongo_uri = get_mongo_uri()
+client = AsyncIOMotorClient(mongo_uri)
+db = client[get_db_name()]
 
 # Stripe setup
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
@@ -3550,11 +3556,9 @@ class _BootstrapBody(BaseModel):
     password: str
 
 def _get_db():
-    mongo_url = (os.getenv("MONGO_URL") or "").strip()
-    db_name = (os.getenv("DB_NAME") or "hibiscustoairport").strip()
-    if not mongo_url:
-        raise RuntimeError("MONGO_URL is not set")
-    client = MongoClient(mongo_url)
+    mongo_uri = get_mongo_uri()
+    db_name = get_db_name("hibiscustoairport")
+    client = MongoClient(mongo_uri)
     return client[db_name]
 
 @router.post("/admin/bootstrap")

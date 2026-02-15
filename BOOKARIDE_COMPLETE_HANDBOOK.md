@@ -195,7 +195,8 @@ BookaRide is a **premium airport shuttle booking platform** for New Zealand with
 
 ```env
 # Database
-MONGO_URL=mongodb://localhost:27017
+# Prefer `MONGO_URI` (full connection string). `MONGO_URL` is supported for backward compatibility.
+MONGO_URI=mongodb://localhost:27017
 DB_NAME=your_database_name
 
 # Authentication

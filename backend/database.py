@@ -1,9 +1,9 @@
-import os
 from pymongo import MongoClient
 
-MONGO_URL = os.getenv("MONGO_URL")
-if not MONGO_URL:
-    raise RuntimeError("MONGO_URL env var not set")
+try:
+    from mongo_config import get_mongo_uri
+except ImportError:  # pragma: no cover
+    from backend.mongo_config import get_mongo_uri  # type: ignore
 
-client = MongoClient(MONGO_URL)
+client = MongoClient(get_mongo_uri())
 db = client.get_default_database()

@@ -11,6 +11,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# MongoDB config (supports MONGO_URI or MONGO_URL; redacts secrets in logs)
+try:
+    from mongo_config import get_mongo_uri, get_db_name
+except ImportError:  # pragma: no cover
+    from backend.mongo_config import get_mongo_uri, get_db_name  # type: ignore
+
 ADMIN_COOKIE = "d8_admin"
 ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "").strip()
 
@@ -288,11 +294,11 @@ async def admin_bookings_list(req: Request):
         return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     try:
         from motor.motor_asyncio import AsyncIOMotorClient
-        mongo_url = os.environ.get("MONGO_URL", "")
-        db_name = os.environ.get("DB_NAME", "hibiscus_shuttle")
-        if not mongo_url:
-            return JSONResponse({"ok": False, "error": "MONGO_URL not set", "items": []})
-        client = AsyncIOMotorClient(mongo_url)
+        mongo_uri = get_mongo_uri(required=False)
+        db_name = get_db_name("hibiscus_shuttle")
+        if not mongo_uri:
+            return JSONResponse({"ok": False, "error": "MONGO_URI/MONGO_URL not set", "items": []})
+        client = AsyncIOMotorClient(mongo_uri)
         db = client[db_name]
         docs = await db.bookings.find({}, {"_id": 0}).sort("createdAt", -1).to_list(500)
         client.close()
