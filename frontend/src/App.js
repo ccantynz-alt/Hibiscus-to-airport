@@ -1,103 +1,250 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import "./App.css";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import Header from "./components/Header";
+import Hero from "./components/Hero";
+import Services from "./components/Services";
+import Features from "./components/Features";
+import Fleet from "./components/Fleet";
+import About from "./components/About";
+import HowItWorks from "./components/HowItWorks";
+import Testimonials from "./components/Testimonials";
+import Contact from "./components/Contact";
+import Footer from "./components/Footer";
+import LiveBookingsTicker from "./components/LiveBookingsTicker";
+import ExitIntentPopup from "./components/ExitIntentPopup";
+import AIChatbot from "./components/AIChatbot";
+import { Toaster } from "./components/ui/sonner";
+
+// Public pages
+import BookingPage from "./pages/BookingPage";
 import ServiceAreas from "./pages/ServiceAreas";
-import DairyFlatAirportShuttle from "./pages/DairyFlatAirportShuttle";
-import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
-import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
+import StudentAirportTransfers from "./pages/StudentAirportTransfers";
+import FAQ from "./pages/FAQ";
+import FlightTracker from "./pages/FlightTracker";
+import AirportArrivals from "./pages/AirportArrivals";
 
-import AdminLogin from "./pages/AdminLogin";
+// Core suburb/service SEO pages
+import OrewaShuttle from "./pages/OrewaShuttle";
+import SilverdaleShuttle from "./pages/SilverdaleShuttle";
+import WhangaparaoaShuttle from "./pages/WhangaparaoaShuttle";
+import RedBeachShuttle from "./pages/RedBeachShuttle";
+import GulfHarbourShuttle from "./pages/GulfHarbourShuttle";
+import StanmoreBayShuttle from "./pages/StanmoreBayShuttle";
+import ArklesBayShuttle from "./pages/ArklesBayShuttle";
+import ArmyBayShuttle from "./pages/ArmyBayShuttle";
+import HatfieldsBeachShuttle from "./pages/HatfieldsBeachShuttle";
+import ManlyShuttle from "./pages/ManlyShuttle";
+import AlbanyShuttle from "./pages/AlbanyShuttle";
+import TakapunaShuttle from "./pages/TakapunaShuttle";
+import BrownsBayShuttle from "./pages/BrownsBayShuttle";
+import MairangiBayShuttle from "./pages/MairangiBayShuttle";
+import DevonportShuttle from "./pages/DevonportShuttle";
+import OrewaToAirport from "./pages/OrewaToAirport";
+import BestAirportShuttle from "./pages/BestAirportShuttle";
+import EarlyMorningShuttle from "./pages/EarlyMorningShuttle";
+import BusinessAirportTransfer from "./pages/BusinessAirportTransfer";
+import HibiscusShuttlesAlternative from "./pages/HibiscusShuttlesAlternative";
+import LocalAirportShuttle from "./pages/LocalAirportShuttle";
+import AirportShuttleOrewa from "./pages/AirportShuttleOrewa";
+
+// Service pages
+import CorporateTransfers from "./pages/CorporateTransfers";
+import CruiseTransfers from "./pages/CruiseTransfers";
+import AucklandAirportTransfers from "./pages/AucklandAirportTransfers";
+
+// School pages
+import OrewaCollegeShuttle from "./pages/OrewaCollegeShuttle";
+import WhangaparaoaCollegeShuttle from "./pages/WhangaparaoaCollegeShuttle";
+import KingswaySchoolShuttle from "./pages/KingswaySchoolShuttle";
+import LongBayCollegeShuttle from "./pages/LongBayCollegeShuttle";
+import RangitotoCollegeShuttle from "./pages/RangitotoCollegeShuttle";
+
+// Matakana pages
+import MatakanaShuttle from "./pages/MatakanaShuttle";
+import MatakanaConcertShuttle from "./pages/MatakanaConcertShuttle";
+import MatakanaEventsShuttle from "./pages/MatakanaEventsShuttle";
+import MatakanaFarmersMarketShuttle from "./pages/MatakanaFarmersMarketShuttle";
+import MatakanaVillageShuttle from "./pages/MatakanaVillageShuttle";
+import MatakanaWineryShuttle from "./pages/MatakanaWineryShuttle";
+
+// New(er) SEO pages
+import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
+import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
+import SnellsBeachAirportShuttle from "./pages/SnellsBeachAirportShuttle";
+import OmahaAirportShuttle from "./pages/OmahaAirportShuttle";
+import PuhoiAirportShuttle from "./pages/PuhoiAirportShuttle";
+import MillwaterAirportShuttle from "./pages/MillwaterAirportShuttle";
+import LeighAirportShuttle from "./pages/LeighAirportShuttle";
+import EarlyMorningFlightShuttle from "./pages/EarlyMorningFlightShuttle";
+import ExecutiveAirportTransfers from "./pages/ExecutiveAirportTransfers";
+import FamilyAirportShuttle from "./pages/FamilyAirportShuttle";
+import DairyFlatAirportShuttle from "./pages/DairyFlatAirportShuttle";
+import WellsfordAirportShuttle from "./pages/WellsfordAirportShuttle";
+
+// Payments + tracking + driver
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
+import CustomerTracking from "./pages/CustomerTracking";
+import DriverPortal from "./pages/DriverPortal";
+import DriverTracking from "./pages/DriverTracking";
+import DriverJobResponse from "./pages/DriverJobResponse";
+
+// Admin
 import AdminShell from "./admin/AdminShell";
 import Cockpit from "./admin/Cockpit";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import ChangePassword from "./pages/ChangePassword";
+import AdminSEO from "./pages/AdminSEO";
+import AdminCreateBooking from "./pages/AdminCreateBooking";
+import AdminEditBooking from "./pages/AdminEditBooking";
+import AdminResetPassword from "./pages/AdminResetPassword";
 
-import RealAdminBookings from "./pages/AdminDashboard";
+const Home = () => {
+  return (
+    <div className="min-h-screen bg-white">
+      <Header />
+      <Hero />
+      <Services />
+      <Features />
+      <Fleet />
+      <About />
+      <HowItWorks />
+      <Testimonials />
+      <Contact />
+      <Footer />
+      <LiveBookingsTicker />
+      <ExitIntentPopup />
+      <AIChatbot />
+    </div>
+  );
+};
 
 /**
  * Simple auth check: if an admin token exists in localStorage the user is
- * considered logged in.  The actual token is validated server-side on every
- * API call, so this is purely a UX guard.
+ * considered logged in. The token is still validated server-side on every API
+ * call; this is purely a UX guard to prevent navigating into protected pages.
  */
 function RequireAuth({ children }) {
   const token = localStorage.getItem("admin_token") || localStorage.getItem("HIBI_ADMIN_TOKEN");
-  if (!token) {
-    return <Navigate to="/admin/login" replace />;
-  }
+  if (!token) return <Navigate to="/admin/login" replace />;
   return children;
 }
 
-function AdminRoutes() {
+function AdminGate({ children }) {
   return (
-    <Routes>
-      {/* Login — always accessible */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-
-      {/* Redirect bare /admin to /admin/bookings */}
-      <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
-
-      {/* Protected admin pages */}
-      <Route
-        path="/admin/bookings"
-        element={
-          <RequireAuth>
-            <AdminShell>
-              <RealAdminBookings />
-            </AdminShell>
-          </RequireAuth>
-        }
-      />
-
-      <Route
-        path="/admin/dashboard"
-        element={
-          <RequireAuth>
-            <AdminShell>
-              <RealAdminBookings />
-            </AdminShell>
-          </RequireAuth>
-        }
-      />
-
-      <Route
-        path="/admin/cockpit"
-        element={
-          <RequireAuth>
-            <AdminShell>
-              <Cockpit />
-            </AdminShell>
-          </RequireAuth>
-        }
-      />
-
-      {/* Catch-all for unknown /admin/* paths */}
-      <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
-    </Routes>
+    <RequireAuth>
+      <AdminShell>{children}</AdminShell>
+    </RequireAuth>
   );
-}
-
-function PublicRoutes() {
-  return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/service-areas" replace />} />
-      <Route path="/service-areas" element={<ServiceAreas />} />
-      <Route path="/dairy-flat-airport-shuttle" element={<DairyFlatAirportShuttle />} />
-      <Route path="/late-night-airport-shuttle" element={<LateNightAirportShuttle />} />
-      <Route path="/warkworth-airport-shuttle" element={<WarkworthAirportShuttle />} />
-      <Route path="*" element={<Navigate to="/service-areas" replace />} />
-    </Routes>
-  );
-}
-
-function RouterSwitch() {
-  const loc = useLocation();
-  const path = loc?.pathname || "/";
-  if (path.startsWith("/admin")) return <AdminRoutes />;
-  return <PublicRoutes />;
 }
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <RouterSwitch />
-    </BrowserRouter>
+    <div className="App">
+      <BrowserRouter>
+        <Routes>
+          {/* Public site */}
+          <Route path="/" element={<Home />} />
+          <Route path="/book-now" element={<BookingPage />} />
+          <Route path="/booking" element={<BookingPage />} />
+
+          <Route path="/service-areas" element={<ServiceAreas />} />
+          <Route path="/student-airport-transfers" element={<StudentAirportTransfers />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/flight-tracker" element={<FlightTracker />} />
+          <Route path="/airport-arrivals" element={<AirportArrivals />} />
+
+          {/* Suburb pages */}
+          <Route path="/orewa-airport-shuttle" element={<OrewaShuttle />} />
+          <Route path="/silverdale-airport-shuttle" element={<SilverdaleShuttle />} />
+          <Route path="/whangaparaoa-airport-shuttle" element={<WhangaparaoaShuttle />} />
+          <Route path="/red-beach-airport-shuttle" element={<RedBeachShuttle />} />
+          <Route path="/gulf-harbour-airport-shuttle" element={<GulfHarbourShuttle />} />
+          <Route path="/stanmore-bay-airport-shuttle" element={<StanmoreBayShuttle />} />
+          <Route path="/arkles-bay-airport-shuttle" element={<ArklesBayShuttle />} />
+          <Route path="/army-bay-airport-shuttle" element={<ArmyBayShuttle />} />
+          <Route path="/hatfields-beach-airport-shuttle" element={<HatfieldsBeachShuttle />} />
+          <Route path="/manly-airport-shuttle" element={<ManlyShuttle />} />
+          <Route path="/albany-airport-shuttle" element={<AlbanyShuttle />} />
+          <Route path="/takapuna-airport-shuttle" element={<TakapunaShuttle />} />
+          <Route path="/browns-bay-airport-shuttle" element={<BrownsBayShuttle />} />
+          <Route path="/mairangi-bay-airport-shuttle" element={<MairangiBayShuttle />} />
+          <Route path="/devonport-airport-shuttle" element={<DevonportShuttle />} />
+
+          {/* Service pages */}
+          <Route path="/corporate-airport-transfers" element={<CorporateTransfers />} />
+          <Route path="/cruise-ship-transfers" element={<CruiseTransfers />} />
+          <Route path="/auckland-airport-transfers" element={<AucklandAirportTransfers />} />
+
+          {/* Schools */}
+          <Route path="/orewa-college-airport-shuttle" element={<OrewaCollegeShuttle />} />
+          <Route path="/whangaparaoa-college-airport-shuttle" element={<WhangaparaoaCollegeShuttle />} />
+          <Route path="/kingsway-school-airport-shuttle" element={<KingswaySchoolShuttle />} />
+          <Route path="/long-bay-college-airport-shuttle" element={<LongBayCollegeShuttle />} />
+          <Route path="/rangitoto-college-airport-shuttle" element={<RangitotoCollegeShuttle />} />
+
+          {/* Matakana */}
+          <Route path="/matakana-shuttle" element={<MatakanaShuttle />} />
+          <Route path="/matakana-concert-shuttle" element={<MatakanaConcertShuttle />} />
+          <Route path="/matakana-events-shuttle" element={<MatakanaEventsShuttle />} />
+          <Route path="/matakana-farmers-market-shuttle" element={<MatakanaFarmersMarketShuttle />} />
+          <Route path="/matakana-village-shuttle" element={<MatakanaVillageShuttle />} />
+          <Route path="/matakana-winery-shuttle" element={<MatakanaWineryShuttle />} />
+
+          {/* Misc SEO */}
+          <Route path="/best-airport-shuttle-hibiscus-coast" element={<BestAirportShuttle />} />
+          <Route path="/orewa-to-auckland-airport-shuttle" element={<OrewaToAirport />} />
+          <Route path="/early-morning-airport-shuttle" element={<EarlyMorningShuttle />} />
+          <Route path="/business-airport-transfer" element={<BusinessAirportTransfer />} />
+          <Route path="/hibiscus-shuttles-alternative" element={<HibiscusShuttlesAlternative />} />
+          <Route path="/local-airport-shuttle" element={<LocalAirportShuttle />} />
+          <Route path="/airport-shuttle-orewa" element={<AirportShuttleOrewa />} />
+
+          {/* New SEO pages */}
+          <Route path="/warkworth-airport-shuttle" element={<WarkworthAirportShuttle />} />
+          <Route path="/late-night-airport-shuttle" element={<LateNightAirportShuttle />} />
+          <Route path="/snells-beach-airport-shuttle" element={<SnellsBeachAirportShuttle />} />
+          <Route path="/omaha-airport-shuttle" element={<OmahaAirportShuttle />} />
+          <Route path="/puhoi-airport-shuttle" element={<PuhoiAirportShuttle />} />
+          <Route path="/millwater-airport-shuttle" element={<MillwaterAirportShuttle />} />
+          <Route path="/leigh-airport-shuttle" element={<LeighAirportShuttle />} />
+          <Route path="/early-morning-flight-shuttle" element={<EarlyMorningFlightShuttle />} />
+          <Route path="/executive-airport-transfers" element={<ExecutiveAirportTransfers />} />
+          <Route path="/family-airport-shuttle" element={<FamilyAirportShuttle />} />
+          <Route path="/dairy-flat-airport-shuttle" element={<DairyFlatAirportShuttle />} />
+          <Route path="/wellsford-airport-shuttle" element={<WellsfordAirportShuttle />} />
+
+          {/* Payments */}
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
+
+          {/* Tracking + driver */}
+          <Route path="/track/:trackingRef" element={<CustomerTracking />} />
+          <Route path="/driver/portal" element={<DriverPortal />} />
+          <Route path="/driver/track/:bookingId" element={<DriverTracking />} />
+          <Route path="/driver/job/:bookingId" element={<DriverJobResponse />} />
+
+          {/* Admin */}
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/reset-password" element={<AdminResetPassword />} />
+
+          <Route path="/admin/dashboard" element={<AdminGate><AdminDashboard /></AdminGate>} />
+          <Route path="/admin/bookings" element={<AdminGate><AdminDashboard /></AdminGate>} />
+          <Route path="/admin/cockpit" element={<AdminGate><Cockpit /></AdminGate>} />
+          <Route path="/admin/change-password" element={<AdminGate><ChangePassword /></AdminGate>} />
+          <Route path="/admin/seo" element={<AdminGate><AdminSEO /></AdminGate>} />
+          <Route path="/admin/create-booking" element={<AdminGate><AdminCreateBooking /></AdminGate>} />
+          <Route path="/admin/edit-booking/:bookingId" element={<AdminGate><AdminEditBooking /></AdminGate>} />
+
+          {/* Fallback: unknown route -> home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+      <Toaster />
+    </div>
   );
 }
