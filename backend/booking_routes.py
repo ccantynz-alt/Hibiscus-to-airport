@@ -89,6 +89,9 @@ class AdminLogin(BaseModel):
     username: str
     password: str
 
+class AdminKeyLogin(BaseModel):
+    key: str
+
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str
@@ -687,6 +690,22 @@ async def admin_login(credentials: AdminLogin):
         logger.error(f"Login error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/admin/key-login")
+async def admin_key_login(payload: AdminKeyLogin):
+    """
+    Break-glass admin login using ADMIN_API_KEY (Render env var).
+    This is intentionally simple: if you can set ADMIN_API_KEY in hosting,
+    you can regain access even if username/password or OAuth is broken.
+    """
+    expected = (os.environ.get("ADMIN_API_KEY") or "").strip()
+    provided = (payload.key or "").strip()
+    if not expected or provided != expected:
+        raise HTTPException(status_code=401, detail="Invalid admin key")
+
+    access_token = create_access_token(data={"sub": "admin_key", "auth_method": "admin_key"})
+    return {"access_token": access_token, "token_type": "bearer"}
+
 @router.post("/admin/change-password", dependencies=[Depends(get_current_user)])
 async def change_password(password_data: PasswordChange, current_user: dict = Depends(get_current_user)):
     try:
@@ -799,113 +818,20 @@ async def reset_password(request: PasswordResetConfirm):
 
 @router.post("/admin/google-auth")
 async def google_auth_callback(request: Request, response: Response):
-    """Process Google OAuth session and create admin session"""
-    try:
-        body = await request.json()
-        session_id = body.get("session_id")
-        
-        if not session_id:
-            raise HTTPException(status_code=400, detail="Session ID required")
-        
-        logger.info(f"Processing Google OAuth for session_id: {session_id[:20]}...")
-        
-        # Verify session with Emergent Auth
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            auth_response = await client.get(
-                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-                headers={"X-Session-ID": session_id}
-            )
-        
-        logger.info(f"Emergent Auth response status: {auth_response.status_code}")
-        
-        if auth_response.status_code != 200:
-            error_detail = "Invalid or expired session"
-            try:
-                error_data = auth_response.json()
-                if "detail" in error_data:
-                    error_detail = error_data["detail"].get("error_description", error_detail)
-                logger.error(f"Emergent Auth error: {error_data}")
-            except:
-                pass
-            raise HTTPException(status_code=401, detail=error_detail)
-        
-        user_data = auth_response.json()
-        user_email = user_data.get("email", "").lower()
-        
-        logger.info(f"Google OAuth user: {user_email}")
-        
-        # Check if email is authorized
-        if user_email not in [e.lower() for e in AUTHORIZED_ADMIN_EMAILS]:
-            logger.warning(f"Unauthorized Google login attempt: {user_email}")
-            raise HTTPException(status_code=403, detail=f"This email ({user_email}) is not authorized for admin access. Contact administrator.")
-        
-        # Create or update admin user
-        existing_admin = await db.admins.find_one({"email": user_email})
-        
-        if not existing_admin:
-            # Create new admin from Google auth
-            admin_id = str(uuid.uuid4())
-            await db.admins.insert_one({
-                "id": admin_id,
-                "email": user_email,
-                "username": user_email.split("@")[0],
-                "name": user_data.get("name", "Admin"),
-                "picture": user_data.get("picture", ""),
-                "google_id": user_data.get("id"),
-                "auth_method": "google",
-                "createdAt": datetime.now(timezone.utc).isoformat()
-            })
-        else:
-            # Update existing admin
-            await db.admins.update_one(
-                {"email": user_email},
-                {"$set": {
-                    "name": user_data.get("name", existing_admin.get("name", "Admin")),
-                    "picture": user_data.get("picture", ""),
-                    "google_id": user_data.get("id"),
-                    "last_login": datetime.now(timezone.utc).isoformat()
-                }}
-            )
-        
-        # Create JWT token
-        access_token = create_access_token(data={"sub": user_email, "auth_method": "google"})
-        
-        # Store session token
-        session_token = user_data.get("session_token")
-        if session_token:
-            await db.admin_sessions.insert_one({
-                "email": user_email,
-                "session_token": session_token,
-                "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
-            
-            # Set cookie
-            response.set_cookie(
-                key="admin_session",
-                value=session_token,
-                httponly=True,
-                secure=True,
-                samesite="none",
-                max_age=7*24*60*60,
-                path="/"
-            )
-        
-        logger.info(f"Google OAuth login successful for: {user_email}")
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": {
-                "email": user_email,
-                "name": user_data.get("name"),
-                "picture": user_data.get("picture")
-            }
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Google auth error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    """
+    Deprecated.
+
+    This route previously depended on Emergent-hosted OAuth session data.
+    It is intentionally disabled to avoid sending operators to third-party auth.
+
+    Use:
+    - POST /api/admin/login (username/password), or
+    - POST /api/admin/key-login (ADMIN_API_KEY from backend hosting)
+    """
+    raise HTTPException(
+        status_code=410,
+        detail="Google login is disabled. Use username/password or /api/admin/key-login.",
+    )
 
 @router.get("/admin/me")
 async def get_admin_profile(request: Request):
@@ -1996,8 +1922,8 @@ async def send_driver_job_notification(booking: dict, driver: dict, payout: floa
         booking_date = booking.get('date', 'N/A')
         booking_time = booking.get('time', 'N/A')
         
-        # Build acceptance URL
-        base_url = os.environ.get('FRONTEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        # Build acceptance URL (avoid Emergent preview defaults)
+        base_url = (os.environ.get('FRONTEND_URL') or os.environ.get('PUBLIC_DOMAIN') or 'https://hibiscustoairport.co.nz').rstrip("/")
         accept_url = f"{base_url}/driver/job/{booking.get('id')}?token={token}"
         
         # Send Email to driver
@@ -2985,15 +2911,15 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID', 'primary')
 GOOGLE_SCOPES = ['https://www.googleapis.com/auth/calendar']
 
-# Get frontend URL for redirect
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+# Get frontend URL for redirect (avoid Emergent preview defaults)
+FRONTEND_URL = (os.environ.get('FRONTEND_URL') or os.environ.get('PUBLIC_DOMAIN') or 'https://hibiscustoairport.co.nz').rstrip("/")
 
 @router.get("/calendar/auth/url")
-async def get_calendar_auth_url(current_user: dict = Depends(get_current_user)):
+async def get_calendar_auth_url(request: Request, current_user: dict = Depends(get_current_user)):
     """Generate Google OAuth URL for calendar authorization"""
     try:
         # Build the redirect URI using the backend URL
-        backend_url = os.environ.get('BACKEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        backend_url = (os.environ.get('BACKEND_URL') or f"{request.url.scheme}://{request.url.netloc}").rstrip("/")
         redirect_uri = f"{backend_url}/api/calendar/auth/callback"
         
         # Build authorization URL
@@ -3014,7 +2940,7 @@ async def get_calendar_auth_url(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/calendar/auth/callback")
-async def calendar_auth_callback(code: str = None, error: str = None):
+async def calendar_auth_callback(request: Request, code: str = None, error: str = None):
     """Handle Google OAuth callback and store tokens"""
     try:
         if error:
@@ -3025,7 +2951,7 @@ async def calendar_auth_callback(code: str = None, error: str = None):
             return RedirectResponse(f"{FRONTEND_URL}/admin?calendar_error=no_code")
         
         # Get backend URL for redirect_uri
-        backend_url = os.environ.get('BACKEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        backend_url = (os.environ.get('BACKEND_URL') or f"{request.url.scheme}://{request.url.netloc}").rstrip("/")
         redirect_uri = f"{backend_url}/api/calendar/auth/callback"
         
         # Exchange code for tokens using direct HTTP request
