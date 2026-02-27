@@ -61,11 +61,15 @@ class NoCacheMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(NoCacheMiddleware)
 
-# CORS (allow all origins for the frontend)
+# CORS — allow the known frontend origins (set CORS_ORIGINS env var for custom list)
+_CORS_ORIGINS = os.environ.get(
+    "CORS_ORIGINS",
+    "https://hibiscustoairport.co.nz,http://localhost:3000"
+).split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in _CORS_ORIGINS],
     allow_methods=["*"],
     allow_headers=["*"],
 )

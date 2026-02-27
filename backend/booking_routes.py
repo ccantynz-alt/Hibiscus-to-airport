@@ -32,7 +32,8 @@ from utils import (
     sync_contact_to_icloud,
     is_urgent_booking,
     send_urgent_admin_email,
-    send_urgent_admin_sms
+    send_urgent_admin_sms,
+    format_date_nz
 )
 import stripe
 import logging
@@ -137,7 +138,6 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str
-    payment_status: Optional[str] = None
 
 # Public Endpoints
 
@@ -627,9 +627,24 @@ async def check_payment_status(booking_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/webhook/stripe")
-async def stripe_webhook(request: dict):
+async def stripe_webhook(request: Request):
     try:
-        event = request
+        payload = await request.body()
+        sig_header = request.headers.get("stripe-signature", "")
+        webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+        if webhook_secret:
+            try:
+                event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+            except stripe.error.SignatureVerificationError:
+                logger.warning("Stripe webhook signature verification failed")
+                raise HTTPException(status_code=400, detail="Invalid signature")
+        else:
+            # Fallback: parse without verification (log warning)
+            import json
+            logger.warning("STRIPE_WEBHOOK_SECRET not set — webhook signature not verified")
+            event = json.loads(payload)
+
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
             booking_id = session['metadata']['booking_id']
@@ -663,16 +678,19 @@ async def admin_login(credentials: AdminLogin):
     try:
         admin = await db.admins.find_one({"username": credentials.username}, {"_id": 0})
         if not admin:
-            if credentials.username == "admin" and credentials.password == "Kongkong2025!@":
+            # Check for initial admin setup via ADMIN_INIT_PASSWORD env var (first-time only)
+            init_password = os.environ.get("ADMIN_INIT_PASSWORD", "")
+            if init_password and credentials.username == "admin" and credentials.password == init_password:
                 hashed_password = get_password_hash(credentials.password)
                 admin_doc = {
                     "id": str(uuid.uuid4()),
                     "username": "admin",
                     "password": hashed_password,
-                    "createdAt": datetime.utcnow().isoformat()
+                    "createdAt": datetime.now(timezone.utc).isoformat()
                 }
                 await db.admins.insert_one(admin_doc)
                 admin = admin_doc
+                logger.info("Initial admin account created — remove ADMIN_INIT_PASSWORD from env vars now")
             else:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
         
@@ -2846,7 +2864,7 @@ async def whatsapp_webhook(
                 # Calculate price
                 try:
                     distance_result = calculate_distance(session.pickup_address, session.dropoff_address)
-                    distance = distance_result.get("distance", 0) if distance_result else 30
+                    distance = distance_result if distance_result else 30
                     session.pricing = calculate_price(distance, session.passengers)
                     session.state = "confirming"
                     

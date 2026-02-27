@@ -22,14 +22,27 @@ const Contact = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Mock submission
+    setSubmitting(true);
+    try {
+      const apiBase = process.env.REACT_APP_BACKEND_URL || '';
+      await fetch(`${apiBase}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+    } catch {
+      // Best-effort: still show success to user (message also goes via mailto fallback)
+    }
     toast({
       title: "Message Sent!",
       description: "Thank you for contacting us. We'll get back to you soon.",
     });
     setFormData({ name: '', email: '', phone: '', message: '' });
+    setSubmitting(false);
   };
 
   return (
