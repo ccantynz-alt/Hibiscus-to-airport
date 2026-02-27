@@ -10,10 +10,10 @@ An elegant, professional airport shuttle and private transfer service website cl
 - Multi-step booking form with real-time pricing
 - Google Maps integration for address autocomplete and distance calculation
 - Multiple local SEO pages (12 suburb-specific landing pages)
-- AI-powered chatbot for customer inquiries
+- Flight tracking for arrival monitoring
 
 ### 2. Admin Dashboard
-- Secure login with password and Google OAuth
+- Secure login with password authentication
 - Booking management with compact, professional table layout
 - "Return Trips Pending" section for easy tracking
 - Driver assignment with SMS/Email notifications

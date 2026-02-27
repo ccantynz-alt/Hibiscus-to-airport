@@ -287,15 +287,10 @@ async def admin_bookings_list(req: Request):
     if not _require(req):
         return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     try:
-        from motor.motor_asyncio import AsyncIOMotorClient
-        mongo_url = os.environ.get("MONGO_URL", "")
-        db_name = os.environ.get("DB_NAME", "hibiscus_shuttle")
-        if not mongo_url:
+        from db import db
+        if db is None:
             return JSONResponse({"ok": False, "error": "MONGO_URL not set", "items": []})
-        client = AsyncIOMotorClient(mongo_url)
-        db = client[db_name]
         docs = await db.bookings.find({}, {"_id": 0}).sort("createdAt", -1).to_list(500)
-        client.close()
         return JSONResponse({"ok": True, "count": len(docs), "items": docs})
     except Exception as e:
         logger.error(f"admin_bookings_list error: {e}")

@@ -46,7 +46,7 @@ const Services = () => {
                     {service.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start">
                         <Check className="w-5 h-5 text-gold mr-2 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-300 text-sm">{feature}</span>
+                        <span className="text-gray-600 text-sm">{feature}</span>
                       </li>
                     ))}
                   </ul>

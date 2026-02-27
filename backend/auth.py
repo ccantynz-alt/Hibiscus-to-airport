@@ -10,7 +10,13 @@ import os
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "hibiscus-airport-super-secret-jwt-key-2025")
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "")
+if not SECRET_KEY:
+    import secrets as _secrets
+    SECRET_KEY = _secrets.token_urlsafe(64)
+    logging.getLogger(__name__).warning("JWT_SECRET_KEY not set — using random key (tokens will not survive restarts)")
+
+import logging
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 

@@ -30,8 +30,13 @@ next-env.d.ts
 dist/
 dist
 
-# Environment files (comprehensive coverage)
+# Environment files
+*.env
+*.env.*
+.env*.local
+!.env.example
 
+# Credentials and tokens
 *token.json*
 *credentials.json*
 
@@ -41,6 +46,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 dump.rdb
+*.log
 
 # System files
 .DS_Store
@@ -77,41 +83,13 @@ agenthub/agents/youtube/db
 .cache/
 
 # Mobile development
-android-sdk/ frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/6.pack
-frontend/node_modules/.cache/default-development/8.pack
-frontend/node_modules/.cache/default-development/9.pack
-frontend/node_modules/.cache/default-development/10.pack
-frontend/node_modules/.cache/default-development/11.pack
-frontend/node_modules/.cache/default-development/12.pack
-frontend/node_modules/.cache/default-development/13.pack
-frontend/node_modules/.cache/default-development/3.pack
-frontend/node_modules/.cache/default-development/1.pack
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
-*.bak_*
-.env*.local
-# --- HIBI: stop committing backups/logs ---
-*.bak.*
-*.log
+android-sdk/
+
+# Backup files
+*.bak
+
+# Development artifacts
 D8_CONTROL/
 RUN_LOGS/
+_doctor_tmp/
+.agent-smoke/

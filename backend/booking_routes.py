@@ -12,7 +12,6 @@ import csv
 import io
 from dotenv import load_dotenv
 from pathlib import Path
-from motor.motor_asyncio import AsyncIOMotorClient
 from auth import get_current_user, verify_password, create_access_token, get_password_hash
 
 # Load environment variables
@@ -32,7 +31,8 @@ from utils import (
     sync_contact_to_icloud,
     is_urgent_booking,
     send_urgent_admin_email,
-    send_urgent_admin_sms
+    send_urgent_admin_sms,
+    format_date_nz
 )
 import stripe
 import logging
@@ -41,18 +41,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# Shared MongoDB connection (single instance for the whole app)
+from db import db
 
 # Stripe setup
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-
-# Authorized admin emails for Google OAuth
-AUTHORIZED_ADMIN_EMAILS = [
-    "info@bookaride.co.nz"
-]
 
 # Models
 class PriceCalculation(BaseModel):
@@ -137,7 +130,6 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str
-    payment_status: Optional[str] = None
 
 # Public Endpoints
 
@@ -627,9 +619,24 @@ async def check_payment_status(booking_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/webhook/stripe")
-async def stripe_webhook(request: dict):
+async def stripe_webhook(request: Request):
     try:
-        event = request
+        payload = await request.body()
+        sig_header = request.headers.get("stripe-signature", "")
+        webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+        if webhook_secret:
+            try:
+                event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+            except stripe.error.SignatureVerificationError:
+                logger.warning("Stripe webhook signature verification failed")
+                raise HTTPException(status_code=400, detail="Invalid signature")
+        else:
+            # Fallback: parse without verification (log warning)
+            import json
+            logger.warning("STRIPE_WEBHOOK_SECRET not set — webhook signature not verified")
+            event = json.loads(payload)
+
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
             booking_id = session['metadata']['booking_id']
@@ -663,16 +670,19 @@ async def admin_login(credentials: AdminLogin):
     try:
         admin = await db.admins.find_one({"username": credentials.username}, {"_id": 0})
         if not admin:
-            if credentials.username == "admin" and credentials.password == "Kongkong2025!@":
+            # Check for initial admin setup via ADMIN_INIT_PASSWORD env var (first-time only)
+            init_password = os.environ.get("ADMIN_INIT_PASSWORD", "")
+            if init_password and credentials.username == "admin" and credentials.password == init_password:
                 hashed_password = get_password_hash(credentials.password)
                 admin_doc = {
                     "id": str(uuid.uuid4()),
                     "username": "admin",
                     "password": hashed_password,
-                    "createdAt": datetime.utcnow().isoformat()
+                    "createdAt": datetime.now(timezone.utc).isoformat()
                 }
                 await db.admins.insert_one(admin_doc)
                 admin = admin_doc
+                logger.info("Initial admin account created — remove ADMIN_INIT_PASSWORD from env vars now")
             else:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
         
@@ -793,168 +803,32 @@ async def reset_password(request: PasswordResetConfirm):
         logger.error(f"Password reset confirm error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# ============================================
-# GOOGLE OAUTH ADMIN LOGIN
-# ============================================
-
-@router.post("/admin/google-auth")
-async def google_auth_callback(request: Request, response: Response):
-    """Process Google OAuth session and create admin session"""
-    try:
-        body = await request.json()
-        session_id = body.get("session_id")
-        
-        if not session_id:
-            raise HTTPException(status_code=400, detail="Session ID required")
-        
-        logger.info(f"Processing Google OAuth for session_id: {session_id[:20]}...")
-        
-        # Verify session with Emergent Auth
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            auth_response = await client.get(
-                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-                headers={"X-Session-ID": session_id}
-            )
-        
-        logger.info(f"Emergent Auth response status: {auth_response.status_code}")
-        
-        if auth_response.status_code != 200:
-            error_detail = "Invalid or expired session"
-            try:
-                error_data = auth_response.json()
-                if "detail" in error_data:
-                    error_detail = error_data["detail"].get("error_description", error_detail)
-                logger.error(f"Emergent Auth error: {error_data}")
-            except:
-                pass
-            raise HTTPException(status_code=401, detail=error_detail)
-        
-        user_data = auth_response.json()
-        user_email = user_data.get("email", "").lower()
-        
-        logger.info(f"Google OAuth user: {user_email}")
-        
-        # Check if email is authorized
-        if user_email not in [e.lower() for e in AUTHORIZED_ADMIN_EMAILS]:
-            logger.warning(f"Unauthorized Google login attempt: {user_email}")
-            raise HTTPException(status_code=403, detail=f"This email ({user_email}) is not authorized for admin access. Contact administrator.")
-        
-        # Create or update admin user
-        existing_admin = await db.admins.find_one({"email": user_email})
-        
-        if not existing_admin:
-            # Create new admin from Google auth
-            admin_id = str(uuid.uuid4())
-            await db.admins.insert_one({
-                "id": admin_id,
-                "email": user_email,
-                "username": user_email.split("@")[0],
-                "name": user_data.get("name", "Admin"),
-                "picture": user_data.get("picture", ""),
-                "google_id": user_data.get("id"),
-                "auth_method": "google",
-                "createdAt": datetime.now(timezone.utc).isoformat()
-            })
-        else:
-            # Update existing admin
-            await db.admins.update_one(
-                {"email": user_email},
-                {"$set": {
-                    "name": user_data.get("name", existing_admin.get("name", "Admin")),
-                    "picture": user_data.get("picture", ""),
-                    "google_id": user_data.get("id"),
-                    "last_login": datetime.now(timezone.utc).isoformat()
-                }}
-            )
-        
-        # Create JWT token
-        access_token = create_access_token(data={"sub": user_email, "auth_method": "google"})
-        
-        # Store session token
-        session_token = user_data.get("session_token")
-        if session_token:
-            await db.admin_sessions.insert_one({
-                "email": user_email,
-                "session_token": session_token,
-                "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
-            
-            # Set cookie
-            response.set_cookie(
-                key="admin_session",
-                value=session_token,
-                httponly=True,
-                secure=True,
-                samesite="none",
-                max_age=7*24*60*60,
-                path="/"
-            )
-        
-        logger.info(f"Google OAuth login successful for: {user_email}")
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": {
-                "email": user_email,
-                "name": user_data.get("name"),
-                "picture": user_data.get("picture")
-            }
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Google auth error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/admin/me")
 async def get_admin_profile(request: Request):
-    """Get current admin profile from session"""
+    """Get current admin profile from JWT token"""
     try:
-        # Check cookie first
-        session_token = request.cookies.get("admin_session")
-        
-        # Fallback to Authorization header
-        if not session_token:
+        token = request.cookies.get("admin_session")
+
+        if not token:
             auth_header = request.headers.get("Authorization", "")
             if auth_header.startswith("Bearer "):
-                session_token = auth_header[7:]
-        
-        if not session_token:
+                token = auth_header[7:]
+
+        if not token:
             raise HTTPException(status_code=401, detail="Not authenticated")
-        
-        # Check if it's a JWT token (for traditional login)
-        if session_token.startswith("eyJ"):
-            # It's a JWT - decode and verify
-            from auth import decode_token
-            payload = decode_token(session_token)
-            if not payload:
-                raise HTTPException(status_code=401, detail="Invalid token")
-            
-            email = payload.get("sub")
-            admin = await db.admins.find_one({"$or": [{"email": email}, {"username": email}]}, {"_id": 0, "password": 0})
-            if not admin:
-                raise HTTPException(status_code=404, detail="Admin not found")
-            return admin
-        
-        # It's a session token from Google OAuth
-        session = await db.admin_sessions.find_one({"session_token": session_token})
-        if not session:
-            raise HTTPException(status_code=401, detail="Session not found")
-        
-        # Check expiry
-        expires_at = datetime.fromisoformat(session["expires_at"].replace('Z', '+00:00'))
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        
-        if expires_at < datetime.now(timezone.utc):
-            await db.admin_sessions.delete_one({"session_token": session_token})
-            raise HTTPException(status_code=401, detail="Session expired")
-        
-        admin = await db.admins.find_one({"email": session["email"]}, {"_id": 0, "password": 0})
+
+        from auth import decode_token
+        payload = decode_token(token)
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        email = payload.get("sub")
+        admin = await db.admins.find_one(
+            {"$or": [{"email": email}, {"username": email}]},
+            {"_id": 0, "password": 0}
+        )
         if not admin:
             raise HTTPException(status_code=404, detail="Admin not found")
-        
         return admin
     except HTTPException:
         raise
@@ -1997,7 +1871,7 @@ async def send_driver_job_notification(booking: dict, driver: dict, payout: floa
         booking_time = booking.get('time', 'N/A')
         
         # Build acceptance URL
-        base_url = os.environ.get('FRONTEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        base_url = os.environ.get('FRONTEND_URL', 'https://hibiscustoairport.co.nz')
         accept_url = f"{base_url}/driver/job/{booking.get('id')}?token={token}"
         
         # Send Email to driver
@@ -2462,85 +2336,6 @@ async def stop_tracking(booking_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ============================================
-# AI CHATBOT ENDPOINT
-# ============================================
-
-class ChatMessage(BaseModel):
-    message: str
-    session_id: Optional[str] = None
-
-@router.post("/chatbot/message")
-async def chatbot_message(data: ChatMessage):
-    """AI Chatbot for answering customer questions about bookings"""
-    try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        
-        emergent_key = os.environ.get('EMERGENT_LLM_KEY')
-        if not emergent_key:
-            raise HTTPException(status_code=500, detail="AI service not configured")
-        
-        session_id = data.session_id or str(uuid.uuid4())
-        
-        # System prompt with business context
-        system_message = """You are a friendly and helpful AI assistant for Hibiscus to Airport, a premium airport shuttle service based in the Hibiscus Coast, Auckland, New Zealand.
-
-ABOUT THE SERVICE:
-- We provide airport transfers from Hibiscus Coast suburbs (Orewa, Silverdale, Whangaparaoa, Red Beach, Gulf Harbour, Millwater, etc.) to Auckland Airport
-- Also serve Warkworth, Matakana, Omaha, Leigh, and surrounding areas
-- Premium, reliable service with professional drivers
-- We can accommodate up to 11 passengers with our minibus
-
-PRICING:
-- Prices are calculated based on distance from pickup to Auckland Airport
-- Minimum fare is $100
-- Prices typically range from $100-$250 depending on distance
-- Return trips are approximately 2x the one-way price
-- Get an instant quote on our website by entering your pickup address
-
-BOOKING PROCESS:
-1. Enter your pickup and dropoff addresses on our booking page
-2. Select your date, time, and number of passengers
-3. See instant pricing
-4. Choose payment method (card, PayPal, or cash on pickup)
-5. Receive confirmation via email and SMS
-
-PAYMENT OPTIONS:
-- Credit/Debit Card (Stripe) - pay online instantly
-- PayPal - secure online payment
-- Cash - pay the driver on pickup day
-
-FLIGHT TRACKING:
-- We monitor your flight for delays
-- If your flight is delayed, we automatically adjust pickup time
-- No stress if your flight is late!
-
-CONTACT:
-- Email: info@hibiscustoairport.co.nz
-- Website: hibiscustoairport.co.nz
-
-Be helpful, friendly, and concise. If someone asks about pricing, encourage them to use the booking form for an instant quote. For specific booking questions, suggest they proceed with the booking process or contact via email."""
-
-        # Initialize chat
-        chat = LlmChat(
-            api_key=emergent_key,
-            session_id=session_id,
-            system_message=system_message
-        ).with_model("openai", "gpt-4o-mini")
-        
-        # Send message and get response
-        user_message = UserMessage(text=data.message)
-        response = await chat.send_message(user_message)
-        
-        return {
-            "response": response,
-            "session_id": session_id
-        }
-        
-    except Exception as e:
-        logger.error(f"Chatbot error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
-
 
 # ============================================
 # FLIGHT TRACKING ENDPOINT
@@ -2641,334 +2436,8 @@ async def track_flight(flight_number: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ============================================
-# WHATSAPP AI BOT ENDPOINTS
-# ============================================
-
 from fastapi import Form
-from utils import calculate_price, calculate_distance, send_sms
 
-# In-memory session storage for WhatsApp conversations
-# In production, use Redis or MongoDB for persistence
-whatsapp_sessions = {}
-
-class WhatsAppSession:
-    def __init__(self, phone: str):
-        self.phone = phone
-        self.state = "greeting"  # greeting, collecting_pickup, collecting_dropoff, collecting_date, collecting_time, collecting_passengers, confirming, payment
-        self.pickup_address = None
-        self.dropoff_address = None
-        self.date = None
-        self.time = None
-        self.passengers = 1
-        self.pricing = None
-        self.booking_id = None
-        self.messages_history = []
-
-def get_or_create_session(phone: str) -> WhatsAppSession:
-    if phone not in whatsapp_sessions:
-        whatsapp_sessions[phone] = WhatsAppSession(phone)
-    return whatsapp_sessions[phone]
-
-def reset_session(phone: str):
-    if phone in whatsapp_sessions:
-        del whatsapp_sessions[phone]
-
-async def generate_ai_response(session: WhatsAppSession, user_message: str) -> str:
-    """Use AI to generate contextual responses and extract information"""
-    try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        
-        emergent_key = os.environ.get('EMERGENT_LLM_KEY')
-        if not emergent_key:
-            return fallback_response(session, user_message)
-        
-        system_prompt = f"""You are a friendly WhatsApp booking assistant for Hibiscus to Airport, a premium airport shuttle service in Auckland, New Zealand.
-
-CURRENT CONVERSATION STATE: {session.state}
-COLLECTED INFO SO FAR:
-- Pickup: {session.pickup_address or 'Not provided'}
-- Dropoff: {session.dropoff_address or 'Not provided'}
-- Date: {session.date or 'Not provided'}
-- Time: {session.time or 'Not provided'}
-- Passengers: {session.passengers}
-- Pricing: ${session.pricing['totalPrice'] if session.pricing else 'Not calculated'}
-
-YOUR TASK:
-1. If state is "greeting": Welcome them warmly and ask for their PICKUP address
-2. If state is "collecting_pickup": Extract the pickup address from their message, confirm it, and ask for DROPOFF address
-3. If state is "collecting_dropoff": Extract dropoff address, confirm it, and ask for DATE (format: DD/MM/YYYY)
-4. If state is "collecting_date": Extract date, confirm it, and ask for TIME (e.g., 6:30am)
-5. If state is "collecting_time": Extract time, confirm it, and ask for NUMBER OF PASSENGERS
-6. If state is "collecting_passengers": Extract passenger count and confirm all details
-7. If state is "confirming": They should be confirming or correcting. If confirmed, mention the price and ask them to click the payment link
-8. If state is "payment": Thank them and confirm booking is complete
-
-IMPORTANT RULES:
-- Be friendly, use emojis occasionally
-- Keep responses SHORT (max 2-3 sentences)
-- If they say something unclear, ask for clarification
-- If they want to start over, say "start over" or "reset"
-- Always confirm what you understood before moving on
-- For pickup/dropoff, accept any NZ address
-- For time, accept formats like "6:30am", "6:30 AM", "0630", "6:30"
-- For date, accept DD/MM/YYYY or natural language like "tomorrow", "next Monday"
-
-Respond naturally as the assistant. Extract any relevant information from their message.
-At the end of your response, on a NEW LINE, add one of these tags:
-[EXTRACTED_PICKUP: address] or [EXTRACTED_DROPOFF: address] or [EXTRACTED_DATE: YYYY-MM-DD] or [EXTRACTED_TIME: HH:MM] or [EXTRACTED_PASSENGERS: number] or [CONFIRMED] or [RESET] or [NONE]
-"""
-
-        chat = LlmChat(
-            api_key=emergent_key,
-            session_id=f"whatsapp_{session.phone}",
-            system_message=system_prompt
-        ).with_model("openai", "gpt-4o-mini")
-        
-        # Add message history context
-        context = "\n".join([f"{'Customer' if m['role']=='user' else 'Assistant'}: {m['content']}" for m in session.messages_history[-6:]])
-        full_message = f"Recent conversation:\n{context}\n\nCustomer's new message: {user_message}"
-        
-        response = await chat.send_message(UserMessage(text=full_message))
-        
-        return response
-        
-    except Exception as e:
-        logger.error(f"AI response error: {str(e)}")
-        return fallback_response(session, user_message)
-
-def fallback_response(session: WhatsAppSession, user_message: str) -> str:
-    """Fallback responses if AI fails"""
-    if session.state == "greeting":
-        return "Hi! Ã°Å¸â€˜â€¹ Welcome to Hibiscus to Airport! Where would you like to be picked up from?\n\n[NONE]"
-    elif session.state == "collecting_pickup":
-        return f"Thanks! And where are you heading to? (e.g., Auckland Airport)\n\n[EXTRACTED_PICKUP: {user_message}]"
-    elif session.state == "collecting_dropoff":
-        return f"Great! What date do you need the transfer? (DD/MM/YYYY)\n\n[EXTRACTED_DROPOFF: {user_message}]"
-    elif session.state == "collecting_date":
-        return f"And what time should we pick you up?\n\n[EXTRACTED_DATE: {user_message}]"
-    elif session.state == "collecting_time":
-        return f"How many passengers will there be?\n\n[EXTRACTED_TIME: {user_message}]"
-    else:
-        return "I'm having trouble understanding. Could you please rephrase that?\n\n[NONE]"
-
-def parse_ai_response(response: str):
-    """Parse AI response to extract tags and clean message"""
-    import re
-    
-    # Extract tag
-    tag_patterns = [
-        (r'\[EXTRACTED_PICKUP:\s*(.+?)\]', 'pickup'),
-        (r'\[EXTRACTED_DROPOFF:\s*(.+?)\]', 'dropoff'),
-        (r'\[EXTRACTED_DATE:\s*(.+?)\]', 'date'),
-        (r'\[EXTRACTED_TIME:\s*(.+?)\]', 'time'),
-        (r'\[EXTRACTED_PASSENGERS:\s*(\d+)\]', 'passengers'),
-        (r'\[CONFIRMED\]', 'confirmed'),
-        (r'\[RESET\]', 'reset'),
-        (r'\[NONE\]', 'none'),
-    ]
-    
-    extracted = {'type': 'none', 'value': None}
-    clean_response = response
-    
-    for pattern, tag_type in tag_patterns:
-        match = re.search(pattern, response, re.IGNORECASE)
-        if match:
-            extracted['type'] = tag_type
-            if match.groups():
-                extracted['value'] = match.group(1).strip()
-            # Remove the tag from response
-            clean_response = re.sub(pattern, '', clean_response, flags=re.IGNORECASE).strip()
-            break
-    
-    return clean_response, extracted
-
-@router.post("/whatsapp/webhook")
-async def whatsapp_webhook(
-    Body: str = Form(...),
-    From: str = Form(...),
-    To: str = Form(None),
-    MessageSid: str = Form(None)
-):
-    """
-    Twilio WhatsApp webhook endpoint.
-    Receives incoming WhatsApp messages and responds with AI-generated replies.
-    """
-    try:
-        # Clean phone number (remove 'whatsapp:' prefix)
-        phone = From.replace('whatsapp:', '').strip()
-        message = Body.strip()
-        
-        logger.info(f"WhatsApp message from {phone}: {message}")
-        
-        # Get or create session
-        session = get_or_create_session(phone)
-        
-        # Check for reset commands
-        if message.lower() in ['reset', 'start over', 'cancel', 'restart']:
-            reset_session(phone)
-            session = get_or_create_session(phone)
-            response_text = "No problem! Let's start fresh. Ã°Å¸â€â€ž\n\nWhere would you like to be picked up from?"
-            session.state = "collecting_pickup"
-        else:
-            # Add user message to history
-            session.messages_history.append({'role': 'user', 'content': message})
-            
-            # Generate AI response
-            ai_response = await generate_ai_response(session, message)
-            response_text, extracted = parse_ai_response(ai_response)
-            
-            # Process extracted information and update state
-            if extracted['type'] == 'reset':
-                reset_session(phone)
-                session = get_or_create_session(phone)
-                response_text = "Let's start over! Where would you like to be picked up from?"
-                session.state = "collecting_pickup"
-                
-            elif extracted['type'] == 'pickup' and extracted['value']:
-                session.pickup_address = extracted['value']
-                session.state = "collecting_dropoff"
-                
-            elif extracted['type'] == 'dropoff' and extracted['value']:
-                session.dropoff_address = extracted['value']
-                session.state = "collecting_date"
-                
-            elif extracted['type'] == 'date' and extracted['value']:
-                session.date = extracted['value']
-                session.state = "collecting_time"
-                
-            elif extracted['type'] == 'time' and extracted['value']:
-                session.time = extracted['value']
-                session.state = "collecting_passengers"
-                
-            elif extracted['type'] == 'passengers' and extracted['value']:
-                session.passengers = int(extracted['value'])
-                # Calculate price
-                try:
-                    distance_result = calculate_distance(session.pickup_address, session.dropoff_address)
-                    distance = distance_result.get("distance", 0) if distance_result else 30
-                    session.pricing = calculate_price(distance, session.passengers)
-                    session.state = "confirming"
-                    
-                    # Add pricing info to response
-                    response_text += f"\n\nÃ°Å¸â€™Â° **Your Quote:**\n"
-                    response_text += f"Ã°Å¸â€œÂ From: {session.pickup_address}\n"
-                    response_text += f"Ã°Å¸â€œÂ To: {session.dropoff_address}\n"
-                    response_text += f"Ã°Å¸â€œâ€¦ Date: {session.date}\n"
-                    response_text += f"Ã¢ÂÂ° Time: {session.time}\n"
-                    response_text += f"Ã°Å¸â€˜Â¥ Passengers: {session.passengers}\n"
-                    response_text += f"Ã°Å¸â€™Âµ **Total: ${session.pricing['totalPrice']:.2f} NZD**\n\n"
-                    response_text += "Reply 'BOOK' to confirm and receive payment link, or 'CHANGE' to modify details."
-                except Exception as e:
-                    logger.error(f"Pricing calculation error: {str(e)}")
-                    response_text = "I had trouble calculating the price for that route. Could you please double-check the addresses?"
-                    
-            elif extracted['type'] == 'confirmed' or message.lower() in ['book', 'confirm', 'yes', 'ok']:
-                if session.state == "confirming" and session.pricing:
-                    # Create the booking
-                    try:
-                        booking_id = str(uuid.uuid4())
-                        booking_ref = await generate_booking_reference(db)
-                        
-                        booking_doc = {
-                            "id": booking_id,
-                            "booking_ref": booking_ref,
-                            "name": f"WhatsApp Customer",
-                            "email": "",
-                            "phone": phone,
-                            "pickupAddress": session.pickup_address,
-                            "dropoffAddress": session.dropoff_address,
-                            "date": session.date,
-                            "time": session.time,
-                            "passengers": str(session.passengers),
-                            "pricing": session.pricing,
-                            "totalPrice": session.pricing['totalPrice'],
-                            "status": "pending",
-                            "payment_status": "unpaid",
-                            "source": "whatsapp",
-                            "notes": "Booked via WhatsApp AI Bot",
-                            "createdAt": datetime.utcnow().isoformat()
-                        }
-                        
-                        await db.bookings.insert_one(booking_doc)
-                        session.booking_id = booking_id
-                        
-                        # Generate payment link
-                        public_domain = os.environ.get('PUBLIC_DOMAIN', 'https://hibiscustoairport.co.nz')
-                        payment_url = f"{public_domain}/booking?pay={booking_id}"
-                        
-                        response_text = f"Ã¢Å“â€¦ **Booking Created!**\n\n"
-                        response_text += f"Ã°Å¸â€œâ€¹ Reference: **{booking_ref}**\n"
-                        response_text += f"Ã°Å¸â€™Âµ Total: **${session.pricing['totalPrice']:.2f} NZD**\n\n"
-                        response_text += f"Ã°Å¸â€™Â³ Pay securely here:\n{payment_url}\n\n"
-                        response_text += "Or pay cash to the driver on pickup day.\n\n"
-                        response_text += "Questions? Just message us here! Ã°Å¸ËœÅ "
-                        
-                        session.state = "payment"
-                        
-                        # Send admin notification
-                        try:
-                            from utils import send_admin_notification
-                            send_admin_notification(booking_doc)
-                        except:
-                            pass
-                            
-                    except Exception as e:
-                        logger.error(f"Booking creation error: {str(e)}")
-                        response_text = "Sorry, there was an error creating your booking. Please try again or visit our website."
-            
-            # Add assistant response to history
-            session.messages_history.append({'role': 'assistant', 'content': response_text})
-        
-        # Send WhatsApp response via Twilio
-        try:
-            from twilio.rest import Client
-            twilio_client = Client(
-                os.environ.get('TWILIO_ACCOUNT_SID'),
-                os.environ.get('TWILIO_AUTH_TOKEN')
-            )
-            
-            twilio_client.messages.create(
-                body=response_text[:1600],  # WhatsApp message limit
-                from_=f"whatsapp:{os.environ.get('TWILIO_PHONE_NUMBER')}",
-                to=f"whatsapp:{phone}"
-            )
-            
-            logger.info(f"WhatsApp response sent to {phone}")
-            
-        except Exception as e:
-            logger.error(f"Twilio send error: {str(e)}")
-        
-        # Return empty TwiML response (Twilio expects this)
-        return Response(
-            content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
-            media_type="application/xml"
-        )
-        
-    except Exception as e:
-        logger.error(f"WhatsApp webhook error: {str(e)}")
-        return Response(
-            content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
-            media_type="application/xml"
-        )
-
-@router.get("/whatsapp/sessions")
-async def get_whatsapp_sessions(current_user: dict = Depends(get_current_user)):
-    """Admin endpoint to view active WhatsApp sessions"""
-    sessions_info = []
-    for phone, session in whatsapp_sessions.items():
-        sessions_info.append({
-            "phone": phone,
-            "state": session.state,
-            "pickup": session.pickup_address,
-            "dropoff": session.dropoff_address,
-            "date": session.date,
-            "time": session.time,
-            "passengers": session.passengers,
-            "has_pricing": session.pricing is not None,
-            "message_count": len(session.messages_history)
-        })
-    return sessions_info
 
 
 # ============================================
@@ -2986,14 +2455,14 @@ GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID', 'primary')
 GOOGLE_SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 # Get frontend URL for redirect
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://hibiscustoairport.co.nz')
 
 @router.get("/calendar/auth/url")
 async def get_calendar_auth_url(current_user: dict = Depends(get_current_user)):
     """Generate Google OAuth URL for calendar authorization"""
     try:
         # Build the redirect URI using the backend URL
-        backend_url = os.environ.get('BACKEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        backend_url = os.environ.get('BACKEND_URL', 'https://hibiscustoairport.co.nz')
         redirect_uri = f"{backend_url}/api/calendar/auth/callback"
         
         # Build authorization URL
@@ -3025,7 +2494,7 @@ async def calendar_auth_callback(code: str = None, error: str = None):
             return RedirectResponse(f"{FRONTEND_URL}/admin?calendar_error=no_code")
         
         # Get backend URL for redirect_uri
-        backend_url = os.environ.get('BACKEND_URL', 'https://hibiscus-airport-1.preview.emergentagent.com')
+        backend_url = os.environ.get('BACKEND_URL', 'https://hibiscustoairport.co.nz')
         redirect_uri = f"{backend_url}/api/calendar/auth/callback"
         
         # Exchange code for tokens using direct HTTP request
@@ -3543,19 +3012,9 @@ except Exception:
     except Exception:
         _hash_password = None
 
-from pymongo import MongoClient
-
 class _BootstrapBody(BaseModel):
     username: str
     password: str
-
-def _get_db():
-    mongo_url = (os.getenv("MONGO_URL") or "").strip()
-    db_name = (os.getenv("DB_NAME") or "hibiscustoairport").strip()
-    if not mongo_url:
-        raise RuntimeError("MONGO_URL is not set")
-    client = MongoClient(mongo_url)
-    return client[db_name]
 
 @router.post("/admin/bootstrap")
 async def admin_bootstrap(body: _BootstrapBody, x_admin_token: Optional[str] = None):
@@ -3567,16 +3026,13 @@ async def admin_bootstrap(body: _BootstrapBody, x_admin_token: Optional[str] = N
     if _hash_password is None:
         return JSONResponse(status_code=500, content={"detail": "Password hashing not configured (auth.py hash function not found)"})
 
-    db = _get_db()
-    admins = db["admins"]
-
     pwd_hash = _hash_password(body.password)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
-    admins.update_one(
+    await db.admins.update_one(
         {"username": body.username},
-        {"$set": {"username": body.username, "password_hash": pwd_hash, "updated_at": now},
-         "$setOnInsert": {"created_at": now}},
+        {"$set": {"username": body.username, "password": pwd_hash, "updated_at": now.isoformat()},
+         "$setOnInsert": {"created_at": now.isoformat()}},
         upsert=True
     )
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Menu, X, Phone } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import Logo from './Logo';
 
 const Header = () => {
@@ -26,7 +26,7 @@ const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-8" aria-label="Main navigation">
             <button
               onClick={() => scrollToSection('services')}
               className="text-gray-300 hover:text-gold transition-colors font-medium tracking-wide text-sm"
@@ -62,6 +62,7 @@ const Header = () => {
           <button
             className="md:hidden text-gold"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
