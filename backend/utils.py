@@ -329,22 +329,58 @@ def calculate_price(distance_km: float, passengers: int = 1, vip_pickup: bool = 
         'ratePerKm': rate_per_km
     }
 
-# Email Notifications
-def send_email(to_email: str, subject: str, body: str, calendar_invite=None):
-    """Send email via Google Workspace SMTP with optional calendar invite"""
+# Email Notifications — via Gmail API (service account or OAuth)
+#
+# Requires either:
+#   GOOGLE_SERVICE_ACCOUNT_FILE  – path to service-account JSON with domain-wide delegation
+#   GOOGLE_CREDENTIALS_JSON      – inline JSON credentials (for container deployments)
+# And:
+#   SENDER_EMAIL                 – the "from" address (must be in the Google Workspace domain)
+#
+# Falls back to SMTP if GOOGLE_SERVICE_ACCOUNT_FILE / GOOGLE_CREDENTIALS_JSON are not set
+# (so the old SMTP_* env vars still work as a safety net).
+
+def _get_gmail_service():
+    """Build a Gmail API service using service-account credentials with domain-wide delegation."""
     try:
-        smtp_server = os.environ.get('SMTP_SERVER')
-        smtp_port = int(os.environ.get('SMTP_PORT', 587))
-        smtp_username = os.environ.get('SMTP_USERNAME')
-        smtp_password = os.environ.get('SMTP_PASSWORD')
-        sender_email = os.environ.get('SENDER_EMAIL')
-        
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+        import json
+
+        SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+        sender = os.environ.get('SENDER_EMAIL', 'noreply@hibiscustoairport.co.nz')
+
+        sa_file = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE', '')
+        sa_json = os.environ.get('GOOGLE_CREDENTIALS_JSON', '')
+
+        if sa_file:
+            creds = service_account.Credentials.from_service_account_file(
+                sa_file, scopes=SCOPES
+            ).with_subject(sender)
+        elif sa_json:
+            info = json.loads(sa_json)
+            creds = service_account.Credentials.from_service_account_info(
+                info, scopes=SCOPES
+            ).with_subject(sender)
+        else:
+            return None  # no credentials — fall through to SMTP
+
+        return build('gmail', 'v1', credentials=creds, cache_discovery=False)
+    except Exception as e:
+        logger.error(f"Failed to build Gmail API service: {e}")
+        return None
+
+def send_email(to_email: str, subject: str, body: str, calendar_invite=None):
+    """Send email via Gmail API (preferred) with SMTP fallback."""
+    try:
+        sender_email = os.environ.get('SENDER_EMAIL', 'noreply@hibiscustoairport.co.nz')
+
+        # Build MIME message
         msg = MIMEMultipart('mixed')
         msg['From'] = sender_email
         msg['To'] = to_email
         msg['Subject'] = subject
-        
-        # HTML body
+
         html_body = f"""
         <html>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -352,25 +388,41 @@ def send_email(to_email: str, subject: str, body: str, calendar_invite=None):
           </body>
         </html>
         """
-        
         msg.attach(MIMEText(html_body, 'html'))
-        
-        # Attach calendar invite if provided
+
         if calendar_invite:
             ical_part = MIMEBase('text', 'calendar', method='REQUEST', name='booking.ics')
             ical_part.set_payload(calendar_invite)
             encoders.encode_base64(ical_part)
             ical_part.add_header('Content-Disposition', 'attachment', filename='booking.ics')
             msg.attach(ical_part)
-        
-        # Send email
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            server.login(smtp_username, smtp_password)
-            server.send_message(msg)
-        
-        logger.info(f"Email sent successfully to {to_email}")
-        return True
+
+        # --- Try Gmail API first ---
+        gmail = _get_gmail_service()
+        if gmail:
+            import base64
+            raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+            gmail.users().messages().send(
+                userId='me', body={'raw': raw}
+            ).execute()
+            logger.info(f"Email sent via Gmail API to {to_email}")
+            return True
+
+        # --- SMTP fallback ---
+        smtp_server = os.environ.get('SMTP_SERVER', '')
+        smtp_username = os.environ.get('SMTP_USERNAME', '')
+        smtp_password = os.environ.get('SMTP_PASSWORD', '')
+        if smtp_server and smtp_username:
+            smtp_port = int(os.environ.get('SMTP_PORT', 587))
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_username, smtp_password)
+                server.send_message(msg)
+            logger.info(f"Email sent via SMTP to {to_email}")
+            return True
+
+        logger.error("No email provider configured (set GOOGLE_SERVICE_ACCOUNT_FILE or SMTP_SERVER)")
+        return False
     except Exception as e:
         logger.error(f"Error sending email: {str(e)}")
         return False

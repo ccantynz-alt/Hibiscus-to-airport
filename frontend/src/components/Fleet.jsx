@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from './ui/card';
-import { Users, Luggage, ChevronLeft, ChevronRight, Shield, Clock } from 'lucide-react';
+import { Users, Luggage, Shield, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 
-// Realistic shuttle fleet - Toyota Hiace (same as Bookaride)
-const TOYOTA_HIACE_IMAGE = 'https://customer-assets.emergentagent.com/job_bookmyride-nz/artifacts/6fpsudnh_IMG_0158%20%281%29.jpeg';
+// Fleet vehicle image — host your own or use a CDN you control
+const TOYOTA_HIACE_IMAGE = '/images/toyota-hiace.jpg';
 
 const fleet = [
   {

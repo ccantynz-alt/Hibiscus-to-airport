@@ -166,7 +166,7 @@ def agents_ping():
 try:
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     from apscheduler.triggers.cron import CronTrigger
-    from motor.motor_asyncio import AsyncIOMotorClient
+    from db import db as shared_db
 
     scheduler = AsyncIOScheduler()
 
@@ -174,15 +174,11 @@ try:
         """Send reminders for bookings happening tomorrow — runs daily at 6 PM NZ time."""
         try:
             logger.info("Running day-before reminder job...")
-            mongo_url = os.environ.get('MONGO_URL', '')
-            db_name = os.environ.get('DB_NAME', 'hibiscus_shuttle')
-            if not mongo_url:
-                logger.warning("MONGO_URL not set, skipping reminders")
+            if shared_db is None:
+                logger.warning("MongoDB not connected, skipping reminders")
                 return
-            client = AsyncIOMotorClient(mongo_url)
-            db = client[db_name]
             tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
-            bookings = await db.bookings.find({
+            bookings = await shared_db.bookings.find({
                 "date": tomorrow,
                 "status": "confirmed",
                 "payment_status": "paid",
@@ -194,7 +190,6 @@ try:
                 from utils import send_email, send_sms, format_date_nz
             except ImportError:
                 logger.error("Could not import email/sms utils for reminders")
-                client.close()
                 return
 
             sent_count = 0
@@ -232,7 +227,7 @@ try:
                     )
                     send_sms(booking['phone'], sms_message)
 
-                    await db.bookings.update_one(
+                    await shared_db.bookings.update_one(
                         {"id": booking['id']},
                         {"$set": {"reminder_sent": True, "reminder_sent_at": datetime.now(timezone.utc).isoformat()}}
                     )
@@ -242,7 +237,6 @@ try:
                     logger.error(f"Failed to send reminder for booking {booking.get('booking_ref')}: {e}")
 
             logger.info(f"Day-before reminders complete: {sent_count} sent")
-            client.close()
         except Exception as e:
             logger.error(f"Error in day-before reminder job: {e}")
 

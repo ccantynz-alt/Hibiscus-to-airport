@@ -4,7 +4,6 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import AIChatbot from '../components/AIChatbot';
 import { Loader2, MapPin, Calendar, Clock, Users, Mail, Phone, User, FileText, Globe, DollarSign, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
@@ -1022,8 +1021,7 @@ const BookingPage = () => {
       </section>
       
       <Footer />
-      <AIChatbot />
-      
+
       {/* Date Picker Modal */}
       <DatePickerModal
         isOpen={showDatePicker}
