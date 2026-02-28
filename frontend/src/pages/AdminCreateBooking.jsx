@@ -9,7 +9,7 @@ import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
-import { BACKEND_URL } from '../config';
+import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
 
 const libraries = ['places'];
 
@@ -23,9 +23,9 @@ const AdminCreateBooking = () => {
   const [pickupAutocomplete, setPickupAutocomplete] = useState(null);
   const [dropoffAutocomplete, setDropoffAutocomplete] = useState(null);
   const additionalAutocompleteRefs = useRef({});
-  
+
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries,
   });
   
