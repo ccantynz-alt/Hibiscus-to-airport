@@ -13,7 +13,7 @@ axios.defaults.timeout = 15000;
 
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
-import { BACKEND_URL } from '../config';
+import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
 
 const libraries = ['places'];
 
@@ -195,10 +195,13 @@ const BookingPage = () => {
   const [promoDiscount, setPromoDiscount] = useState(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
   
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries,
   });
+
+  // If Maps fails to load (bad key, network, etc.) fall back to plain inputs
+  const mapsAvailable = isLoaded && !loadError;
   
   const [formData, setFormData] = useState({
     serviceType: '',
@@ -470,13 +473,8 @@ const BookingPage = () => {
     }
   };
 
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-gold animate-spin" />
-      </div>
-    );
-  }
+  // No longer block the entire page on Maps loading — we render either
+  // Autocomplete inputs (when Maps is ready) or plain text inputs.
 
   return (
     <div className="min-h-screen bg-white">
@@ -548,14 +546,26 @@ const BookingPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Pickup Address
                       </label>
-                      <Autocomplete
-                        onLoad={onPickupLoad}
-                        onPlaceChanged={onPickupPlaceChanged}
-                        options={{
-                          componentRestrictions: { country: 'nz' },
-                          fields: ['formatted_address', 'name']
-                        }}
-                      >
+                      {mapsAvailable ? (
+                        <Autocomplete
+                          onLoad={onPickupLoad}
+                          onPlaceChanged={onPickupPlaceChanged}
+                          options={{
+                            componentRestrictions: { country: 'nz' },
+                            fields: ['formatted_address', 'name']
+                          }}
+                        >
+                          <Input
+                            type="text"
+                            name="pickupAddress"
+                            value={formData.pickupAddress}
+                            onChange={handleChange}
+                            placeholder="Enter pickup address..."
+                            required
+                            className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
+                          />
+                        </Autocomplete>
+                      ) : (
                         <Input
                           type="text"
                           name="pickupAddress"
@@ -565,7 +575,7 @@ const BookingPage = () => {
                           required
                           className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
                         />
-                      </Autocomplete>
+                      )}
                     </div>
                     
                     {/* Add Another Pickup */}
@@ -605,14 +615,26 @@ const BookingPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Drop-off Address
                       </label>
-                      <Autocomplete
-                        onLoad={onDropoffLoad}
-                        onPlaceChanged={onDropoffPlaceChanged}
-                        options={{
-                          componentRestrictions: { country: 'nz' },
-                          fields: ['formatted_address', 'name']
-                        }}
-                      >
+                      {mapsAvailable ? (
+                        <Autocomplete
+                          onLoad={onDropoffLoad}
+                          onPlaceChanged={onDropoffPlaceChanged}
+                          options={{
+                            componentRestrictions: { country: 'nz' },
+                            fields: ['formatted_address', 'name']
+                          }}
+                        >
+                          <Input
+                            type="text"
+                            name="dropoffAddress"
+                            value={formData.dropoffAddress}
+                            onChange={handleChange}
+                            placeholder="Enter drop-off address..."
+                            required
+                            className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
+                          />
+                        </Autocomplete>
+                      ) : (
                         <Input
                           type="text"
                           name="dropoffAddress"
@@ -622,7 +644,7 @@ const BookingPage = () => {
                           required
                           className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
                         />
-                      </Autocomplete>
+                      )}
                     </div>
                     
                     {/* Date and Time */}

@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 // --- Public pages ---
+import HomePage from "./pages/HomePage";
 import ServiceAreas from "./pages/ServiceAreas";
 import BookingPage from "./pages/BookingPage";
 import FAQ from "./pages/FAQ";
@@ -206,8 +207,8 @@ function AdminRoutes() {
 function PublicRoutes() {
   return (
     <Routes>
-      {/* Home redirects to service-areas */}
-      <Route path="/" element={<Navigate to="/service-areas" replace />} />
+      {/* Home — full landing page with Hero, Services, Fleet, About, Contact */}
+      <Route path="/" element={<HomePage />} />
       <Route path="/service-areas" element={<ServiceAreas />} />
 
       {/* Booking */}
@@ -291,8 +292,8 @@ function PublicRoutes() {
       <Route path="/tracking/:ref" element={<CustomerTracking />} />
       <Route path="/flight-tracker" element={<FlightTracker />} />
 
-      {/* Catch-all: redirect unknown routes to service-areas */}
-      <Route path="*" element={<Navigate to="/service-areas" replace />} />
+      {/* Catch-all: redirect unknown routes to home */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

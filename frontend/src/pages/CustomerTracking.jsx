@@ -7,9 +7,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-import { BACKEND_URL } from '../config';
-
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCPYWgE0UL9VXaT9GxZTWiQb2kTXJpWvco';
+import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
 
 // Format date in NZ format (DD/MM/YYYY)
 const formatDateNZ = (dateStr) => {

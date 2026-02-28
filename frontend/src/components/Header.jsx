@@ -11,6 +11,9 @@ const Header = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
       setMobileMenuOpen(false);
+    } else {
+      // Not on the homepage — navigate there with the hash
+      window.location.href = `/#${sectionId}`;
     }
   };
 
