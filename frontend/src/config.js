@@ -6,4 +6,4 @@ export const BACKEND_URL =
 // Google Maps API key — set REACT_APP_GOOGLE_MAPS_API_KEY in your environment
 // for production.  The fallback key is the project's shared dev key.
 export const GOOGLE_MAPS_API_KEY =
-  process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyCPYWgE0UL9VXaT9GxZTWiQb2kTXJpWvco';
+  process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyCWCQ_4vQX3j9i19Qg6-Fjzg0Muv1KtK5U';
