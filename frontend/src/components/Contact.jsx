@@ -44,7 +44,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">Email</h3>
-                    <a href="mailto:bookings@bookaride.co.nz" className="text-gray-600 hover:text-blue-600">bookings@bookaride.co.nz</a>
+                    <a href="mailto:info@bookaride.co.nz" className="text-gray-600 hover:text-blue-600">info@bookaride.co.nz</a>
                   </div>
                 </div>
               </CardContent>
