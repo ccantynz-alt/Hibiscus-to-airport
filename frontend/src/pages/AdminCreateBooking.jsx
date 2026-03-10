@@ -271,7 +271,7 @@ const AdminCreateBooking = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    placeholder="+64 21 XXX XXXX"
+                    placeholder="+64 21 743 321"
                     required
                     className="h-12"
                   />

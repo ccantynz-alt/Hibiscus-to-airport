@@ -113,13 +113,13 @@ const FAQ = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="tel:+6421XXXXXXX"
+                href="tel:021743321"
                 className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-200"
               >
-                Call +64 21 XXX XXXX
+                Call 021 743 321
               </a>
               <a
-                href="mailto:transfers@hibiscustoairport.co.nz"
+                href="mailto:info@bookaride.co.nz"
                 className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200"
               >
                 Email Us

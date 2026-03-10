@@ -226,7 +226,7 @@ const LocalAirportShuttle = () => {
                 <div>
                   <Phone className="w-8 h-8 text-gold mx-auto mb-2" />
                   <p className="font-bold text-gray-900">Local Phone</p>
-                  <p className="text-gold font-bold">+64 21 XXX XXXX</p>
+                  <p className="text-gold font-bold">021 743 321</p>
                 </div>
                 <div>
                   <Clock className="w-8 h-8 text-gold mx-auto mb-2" />
