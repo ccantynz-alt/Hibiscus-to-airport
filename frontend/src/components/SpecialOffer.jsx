@@ -76,6 +76,7 @@ const SpecialOffer = () => {
               <img
                 src="https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=800&q=80"
                 alt="Hobbiton Movie Set"
+                loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"></div>

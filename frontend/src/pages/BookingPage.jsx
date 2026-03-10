@@ -12,6 +12,7 @@ import axios from 'axios';
 axios.defaults.timeout = 15000;
 
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import PageMeta from '../components/PageMeta';
 
 import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
 
@@ -478,6 +479,11 @@ const BookingPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Book Your Airport Shuttle"
+        description="Book a premium airport shuttle from Hibiscus Coast to Auckland Airport. Instant pricing, online payment, 24/7 service."
+        path="/booking"
+      />
       {/* Top Banner - International Bookings */}
       <div className="bg-gray-900 text-white py-2">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-center gap-6 text-sm">

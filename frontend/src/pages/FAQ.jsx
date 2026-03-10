@@ -1,6 +1,8 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { ChevronDown } from 'lucide-react';
 
 const FAQ = () => {
@@ -45,8 +47,29 @@ const FAQ = () => {
     setOpenItem(openItem === index ? null : index);
   };
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Frequently Asked Questions"
+        description="Common questions about Hibiscus to Airport shuttle service - pricing, service areas, booking, cancellation policy, and more."
+        path="/faq"
+      />
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+      </Helmet>
       <Header />
       
       {/* Hero Section */}

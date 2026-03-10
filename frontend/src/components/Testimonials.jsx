@@ -47,6 +47,7 @@ const Testimonials = () => {
                     <img
                       src={testimonial.avatar}
                       alt={testimonial.name}
+                      loading="lazy"
                       className="w-12 h-12 rounded-full object-cover mr-4"
                     />
                     <div>
@@ -73,6 +74,7 @@ const Testimonials = () => {
                   <img
                     src={testimonials[currentIndex].avatar}
                     alt={testimonials[currentIndex].name}
+                    loading="lazy"
                     className="w-12 h-12 rounded-full object-cover mr-4"
                   />
                   <div>
