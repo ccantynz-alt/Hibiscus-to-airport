@@ -124,7 +124,7 @@ def sync_contact_to_icloud(booking: dict):
                 import smtplib
                 
                 msg = MIMEMultipart()
-                msg['From'] = os.environ.get('SENDER_EMAIL', 'noreply@hibiscustoairport.co.nz')
+                msg['From'] = os.environ.get('SENDER_EMAIL', 'noreply@bookaride.co.nz')
                 msg['To'] = icloud_email
                 msg['Subject'] = f"New Customer Contact - {booking.get('name')} ({booking_ref})"
                 
@@ -348,7 +348,7 @@ def _get_gmail_service():
         import json
 
         SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-        sender = os.environ.get('SENDER_EMAIL', 'noreply@hibiscustoairport.co.nz')
+        sender = os.environ.get('SENDER_EMAIL', 'noreply@bookaride.co.nz')
 
         sa_file = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE', '')
         sa_json = os.environ.get('GOOGLE_CREDENTIALS_JSON', '')
@@ -373,7 +373,7 @@ def _get_gmail_service():
 def send_email(to_email: str, subject: str, body: str, calendar_invite=None):
     """Send email via Gmail API (preferred) with SMTP fallback."""
     try:
-        sender_email = os.environ.get('SENDER_EMAIL', 'noreply@hibiscustoairport.co.nz')
+        sender_email = os.environ.get('SENDER_EMAIL', 'noreply@bookaride.co.nz')
 
         # Build MIME message
         msg = MIMEMultipart('mixed')

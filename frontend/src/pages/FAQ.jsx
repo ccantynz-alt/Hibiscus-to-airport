@@ -1,6 +1,8 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { ChevronDown } from 'lucide-react';
 
 const FAQ = () => {
@@ -45,8 +47,29 @@ const FAQ = () => {
     setOpenItem(openItem === index ? null : index);
   };
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Frequently Asked Questions"
+        description="Common questions about Hibiscus to Airport shuttle service - pricing, service areas, booking, cancellation policy, and more."
+        path="/faq"
+      />
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+      </Helmet>
       <Header />
       
       {/* Hero Section */}
@@ -113,13 +136,13 @@ const FAQ = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="tel:+6421XXXXXXX"
+                href="tel:021743321"
                 className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-200"
               >
-                Call +64 21 XXX XXXX
+                Call 021 743 321
               </a>
               <a
-                href="mailto:transfers@hibiscustoairport.co.nz"
+                href="mailto:info@bookaride.co.nz"
                 className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200"
               >
                 Email Us

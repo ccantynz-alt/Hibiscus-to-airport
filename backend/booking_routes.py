@@ -625,17 +625,15 @@ async def stripe_webhook(request: Request):
         sig_header = request.headers.get("stripe-signature", "")
         webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
-        if webhook_secret:
-            try:
-                event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-            except stripe.error.SignatureVerificationError:
-                logger.warning("Stripe webhook signature verification failed")
-                raise HTTPException(status_code=400, detail="Invalid signature")
-        else:
-            # Fallback: parse without verification (log warning)
-            import json
-            logger.warning("STRIPE_WEBHOOK_SECRET not set — webhook signature not verified")
-            event = json.loads(payload)
+        if not webhook_secret:
+            logger.error("STRIPE_WEBHOOK_SECRET not set — rejecting webhook for security")
+            raise HTTPException(status_code=500, detail="Webhook secret not configured")
+
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        except stripe.error.SignatureVerificationError:
+            logger.warning("Stripe webhook signature verification failed")
+            raise HTTPException(status_code=400, detail="Invalid signature")
 
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']

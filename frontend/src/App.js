@@ -1,91 +1,94 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 
-// --- Public pages ---
+// --- Eagerly loaded (critical path) ---
 import HomePage from "./pages/HomePage";
-import ServiceAreas from "./pages/ServiceAreas";
 import BookingPage from "./pages/BookingPage";
-import FAQ from "./pages/FAQ";
+
+// --- Lazy loaded public pages ---
+const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
+const FAQ = lazy(() => import("./pages/FAQ"));
 
 // Suburb shuttle pages
-import OrewaShuttle from "./pages/OrewaShuttle";
-import OrewaToAirport from "./pages/OrewaToAirport";
-import SilverdaleShuttle from "./pages/SilverdaleShuttle";
-import WhangaparaoaShuttle from "./pages/WhangaparaoaShuttle";
-import RedBeachShuttle from "./pages/RedBeachShuttle";
-import GulfHarbourShuttle from "./pages/GulfHarbourShuttle";
-import StanmoreBayShuttle from "./pages/StanmoreBayShuttle";
-import ArklesBayShuttle from "./pages/ArklesBayShuttle";
-import ArmyBayShuttle from "./pages/ArmyBayShuttle";
-import HatfieldsBeachShuttle from "./pages/HatfieldsBeachShuttle";
-import ManlyShuttle from "./pages/ManlyShuttle";
-import AlbanyShuttle from "./pages/AlbanyShuttle";
-import TakapunaShuttle from "./pages/TakapunaShuttle";
-import BrownsBayShuttle from "./pages/BrownsBayShuttle";
-import MairangiBayShuttle from "./pages/MairangiBayShuttle";
-import DevonportShuttle from "./pages/DevonportShuttle";
-import DairyFlatAirportShuttle from "./pages/DairyFlatAirportShuttle";
-import WarkworthAirportShuttle from "./pages/WarkworthAirportShuttle";
-import MillwaterAirportShuttle from "./pages/MillwaterAirportShuttle";
-import OmahaAirportShuttle from "./pages/OmahaAirportShuttle";
-import PuhoiAirportShuttle from "./pages/PuhoiAirportShuttle";
-import SnellsBeachAirportShuttle from "./pages/SnellsBeachAirportShuttle";
-import WellsfordAirportShuttle from "./pages/WellsfordAirportShuttle";
-import LeighAirportShuttle from "./pages/LeighAirportShuttle";
+const OrewaShuttle = lazy(() => import("./pages/OrewaShuttle"));
+const OrewaToAirport = lazy(() => import("./pages/OrewaToAirport"));
+const SilverdaleShuttle = lazy(() => import("./pages/SilverdaleShuttle"));
+const WhangaparaoaShuttle = lazy(() => import("./pages/WhangaparaoaShuttle"));
+const RedBeachShuttle = lazy(() => import("./pages/RedBeachShuttle"));
+const GulfHarbourShuttle = lazy(() => import("./pages/GulfHarbourShuttle"));
+const StanmoreBayShuttle = lazy(() => import("./pages/StanmoreBayShuttle"));
+const ArklesBayShuttle = lazy(() => import("./pages/ArklesBayShuttle"));
+const ArmyBayShuttle = lazy(() => import("./pages/ArmyBayShuttle"));
+const HatfieldsBeachShuttle = lazy(() => import("./pages/HatfieldsBeachShuttle"));
+const ManlyShuttle = lazy(() => import("./pages/ManlyShuttle"));
+const AlbanyShuttle = lazy(() => import("./pages/AlbanyShuttle"));
+const TakapunaShuttle = lazy(() => import("./pages/TakapunaShuttle"));
+const BrownsBayShuttle = lazy(() => import("./pages/BrownsBayShuttle"));
+const MairangiBayShuttle = lazy(() => import("./pages/MairangiBayShuttle"));
+const DevonportShuttle = lazy(() => import("./pages/DevonportShuttle"));
+const DairyFlatAirportShuttle = lazy(() => import("./pages/DairyFlatAirportShuttle"));
+const WarkworthAirportShuttle = lazy(() => import("./pages/WarkworthAirportShuttle"));
+const MillwaterAirportShuttle = lazy(() => import("./pages/MillwaterAirportShuttle"));
+const OmahaAirportShuttle = lazy(() => import("./pages/OmahaAirportShuttle"));
+const PuhoiAirportShuttle = lazy(() => import("./pages/PuhoiAirportShuttle"));
+const SnellsBeachAirportShuttle = lazy(() => import("./pages/SnellsBeachAirportShuttle"));
+const WellsfordAirportShuttle = lazy(() => import("./pages/WellsfordAirportShuttle"));
+const LeighAirportShuttle = lazy(() => import("./pages/LeighAirportShuttle"));
 
 // Service type pages
-import AucklandAirportTransfers from "./pages/AucklandAirportTransfers";
-import CorporateTransfers from "./pages/CorporateTransfers";
-import StudentAirportTransfers from "./pages/StudentAirportTransfers";
-import ExecutiveAirportTransfers from "./pages/ExecutiveAirportTransfers";
-import FamilyAirportShuttle from "./pages/FamilyAirportShuttle";
-import BusinessAirportTransfer from "./pages/BusinessAirportTransfer";
-import CruiseTransfers from "./pages/CruiseTransfers";
-import BestAirportShuttle from "./pages/BestAirportShuttle";
-import HibiscusShuttlesAlternative from "./pages/HibiscusShuttlesAlternative";
-import LocalAirportShuttle from "./pages/LocalAirportShuttle";
-import AirportShuttleOrewa from "./pages/AirportShuttleOrewa";
-import LateNightAirportShuttle from "./pages/LateNightAirportShuttle";
-import EarlyMorningShuttle from "./pages/EarlyMorningShuttle";
-import EarlyMorningFlightShuttle from "./pages/EarlyMorningFlightShuttle";
-import AirportArrivals from "./pages/AirportArrivals";
+const AucklandAirportTransfers = lazy(() => import("./pages/AucklandAirportTransfers"));
+const CorporateTransfers = lazy(() => import("./pages/CorporateTransfers"));
+const StudentAirportTransfers = lazy(() => import("./pages/StudentAirportTransfers"));
+const ExecutiveAirportTransfers = lazy(() => import("./pages/ExecutiveAirportTransfers"));
+const FamilyAirportShuttle = lazy(() => import("./pages/FamilyAirportShuttle"));
+const BusinessAirportTransfer = lazy(() => import("./pages/BusinessAirportTransfer"));
+const CruiseTransfers = lazy(() => import("./pages/CruiseTransfers"));
+const BestAirportShuttle = lazy(() => import("./pages/BestAirportShuttle"));
+const HibiscusShuttlesAlternative = lazy(() => import("./pages/HibiscusShuttlesAlternative"));
+const LocalAirportShuttle = lazy(() => import("./pages/LocalAirportShuttle"));
+const AirportShuttleOrewa = lazy(() => import("./pages/AirportShuttleOrewa"));
+const LateNightAirportShuttle = lazy(() => import("./pages/LateNightAirportShuttle"));
+const EarlyMorningShuttle = lazy(() => import("./pages/EarlyMorningShuttle"));
+const EarlyMorningFlightShuttle = lazy(() => import("./pages/EarlyMorningFlightShuttle"));
+const AirportArrivals = lazy(() => import("./pages/AirportArrivals"));
 
 // School pages
-import OrewaCollegeShuttle from "./pages/OrewaCollegeShuttle";
-import WhangaparaoaCollegeShuttle from "./pages/WhangaparaoaCollegeShuttle";
-import KingswaySchoolShuttle from "./pages/KingswaySchoolShuttle";
-import LongBayCollegeShuttle from "./pages/LongBayCollegeShuttle";
-import RangitotoCollegeShuttle from "./pages/RangitotoCollegeShuttle";
+const OrewaCollegeShuttle = lazy(() => import("./pages/OrewaCollegeShuttle"));
+const WhangaparaoaCollegeShuttle = lazy(() => import("./pages/WhangaparaoaCollegeShuttle"));
+const KingswaySchoolShuttle = lazy(() => import("./pages/KingswaySchoolShuttle"));
+const LongBayCollegeShuttle = lazy(() => import("./pages/LongBayCollegeShuttle"));
+const RangitotoCollegeShuttle = lazy(() => import("./pages/RangitotoCollegeShuttle"));
 
 // Matakana pages
-import MatakanaShuttle from "./pages/MatakanaShuttle";
-import MatakanaEventsShuttle from "./pages/MatakanaEventsShuttle";
-import MatakanaConcertShuttle from "./pages/MatakanaConcertShuttle";
-import MatakanaFarmersMarketShuttle from "./pages/MatakanaFarmersMarketShuttle";
-import MatakanaWineryShuttle from "./pages/MatakanaWineryShuttle";
-import MatakanaVillageShuttle from "./pages/MatakanaVillageShuttle";
+const MatakanaShuttle = lazy(() => import("./pages/MatakanaShuttle"));
+const MatakanaEventsShuttle = lazy(() => import("./pages/MatakanaEventsShuttle"));
+const MatakanaConcertShuttle = lazy(() => import("./pages/MatakanaConcertShuttle"));
+const MatakanaFarmersMarketShuttle = lazy(() => import("./pages/MatakanaFarmersMarketShuttle"));
+const MatakanaWineryShuttle = lazy(() => import("./pages/MatakanaWineryShuttle"));
+const MatakanaVillageShuttle = lazy(() => import("./pages/MatakanaVillageShuttle"));
 
 // Payment pages
-import PaymentSuccess from "./pages/PaymentSuccess";
-import PaymentCancel from "./pages/PaymentCancel";
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 
 // Driver / tracking pages
-import DriverPortal from "./pages/DriverPortal";
-import DriverJobResponse from "./pages/DriverJobResponse";
-import DriverTracking from "./pages/DriverTracking";
-import CustomerTracking from "./pages/CustomerTracking";
-import FlightTracker from "./pages/FlightTracker";
+const DriverPortal = lazy(() => import("./pages/DriverPortal"));
+const DriverJobResponse = lazy(() => import("./pages/DriverJobResponse"));
+const DriverTracking = lazy(() => import("./pages/DriverTracking"));
+const CustomerTracking = lazy(() => import("./pages/CustomerTracking"));
+const FlightTracker = lazy(() => import("./pages/FlightTracker"));
 
 // --- Admin pages ---
-import AdminLogin from "./pages/AdminLogin";
-import AdminShell from "./admin/AdminShell";
-import Cockpit from "./admin/Cockpit";
-import RealAdminBookings from "./pages/AdminDashboard";
-import AdminCreateBooking from "./pages/AdminCreateBooking";
-import AdminEditBooking from "./pages/AdminEditBooking";
-import AdminResetPassword from "./pages/AdminResetPassword";
-import AdminSEO from "./pages/AdminSEO";
-import ChangePassword from "./pages/ChangePassword";
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminShell = lazy(() => import("./admin/AdminShell"));
+const Cockpit = lazy(() => import("./admin/Cockpit"));
+const RealAdminBookings = lazy(() => import("./pages/AdminDashboard"));
+const AdminCreateBooking = lazy(() => import("./pages/AdminCreateBooking"));
+const AdminEditBooking = lazy(() => import("./pages/AdminEditBooking"));
+const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
+const AdminSEO = lazy(() => import("./pages/AdminSEO"));
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 
 /**
  * Simple auth check: if an admin token exists in localStorage the user is
@@ -307,8 +310,12 @@ function RouterSwitch() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <RouterSwitch />
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div></div>}>
+          <RouterSwitch />
+        </Suspense>
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }
