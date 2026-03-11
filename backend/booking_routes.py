@@ -41,8 +41,143 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Shared MongoDB connection (single instance for the whole app)
-from db import db
+# Neon PostgreSQL connection pool
+from db import get_pool
+import json
+
+
+# ---------- row ↔ camelCase helpers ----------
+
+def row_to_booking(row):
+    """Convert asyncpg Record to camelCase dict for API response."""
+    if row is None:
+        return None
+    d = dict(row)
+    return {
+        "id": d.get("id"),
+        "booking_ref": d.get("booking_ref"),
+        "name": d.get("name"),
+        "email": d.get("email"),
+        "phone": d.get("phone"),
+        "pickupAddress": d.get("pickup_address", ""),
+        "dropoffAddress": d.get("dropoff_address", ""),
+        "date": d.get("date", ""),
+        "time": d.get("time", ""),
+        "passengers": d.get("passengers", "1"),
+        "notes": d.get("notes", ""),
+        "serviceType": d.get("service_type", ""),
+        "departureFlightNumber": d.get("departure_flight_number", ""),
+        "departureTime": d.get("departure_time", ""),
+        "arrivalFlightNumber": d.get("arrival_flight_number", ""),
+        "arrivalTime": d.get("arrival_time", ""),
+        "vipPickup": d.get("vip_pickup", False),
+        "oversizedLuggage": d.get("oversized_luggage", False),
+        "returnTrip": d.get("return_trip", False),
+        "pricing": d.get("pricing"),
+        "totalPrice": float(d["total_price"]) if d.get("total_price") is not None else 0,
+        "status": d.get("status", "pending"),
+        "payment_status": d.get("payment_status", "unpaid"),
+        "payment_method": d.get("payment_method"),
+        "lastEmailSent": d.get("last_email_sent"),
+        "lastSmsSent": d.get("last_sms_sent"),
+        "paymentLinkSent": d.get("payment_link_sent"),
+        "trackingId": d.get("tracking_id"),
+        "trackingStatus": d.get("tracking_status"),
+        "assignedDriverId": d.get("assigned_driver_id"),
+        "assignedDriverName": d.get("assigned_driver_name"),
+        "driverPayout": float(d["driver_payout"]) if d.get("driver_payout") is not None else None,
+        "driverNotes": d.get("driver_notes"),
+        "acceptanceToken": d.get("acceptance_token"),
+        "driverAccepted": d.get("driver_accepted"),
+        "driverAcceptedAt": d.get("driver_accepted_at"),
+        "driverDeclinedAt": d.get("driver_declined_at"),
+        "driverDeclineReason": d.get("driver_decline_reason"),
+        "driverAssignedAt": d.get("driver_assigned_at"),
+        "driverLocation": d.get("driver_location"),
+        "driverEtaMinutes": d.get("driver_eta_minutes"),
+        "autoDispatched": d.get("auto_dispatched", False),
+        "reminderSent": d.get("reminder_sent", False),
+        "reminderSentAt": d.get("reminder_sent_at"),
+        "returnDriverId": d.get("return_driver_id"),
+        "returnDriverName": d.get("return_driver_name"),
+        "returnDriverPayout": float(d["return_driver_payout"]) if d.get("return_driver_payout") is not None else None,
+        "returnDriverNotes": d.get("return_driver_notes"),
+        "returnAcceptanceToken": d.get("return_acceptance_token"),
+        "returnDriverAccepted": d.get("return_driver_accepted"),
+        "returnTrackingStatus": d.get("return_tracking_status"),
+        "returnDriverAssignedAt": d.get("return_driver_assigned_at"),
+        "googleCalendarEventId": d.get("google_calendar_event_id"),
+        "additionalPickups": d.get("additional_pickups", []),
+        "createdAt": d.get("created_at"),
+        "updatedAt": d.get("updated_at"),
+    }
+
+def row_to_driver(row):
+    if row is None:
+        return None
+    d = dict(row)
+    return {
+        "id": d["id"],
+        "name": d["name"],
+        "phone": d.get("phone"),
+        "email": d.get("email"),
+        "vehicle": d.get("vehicle"),
+        "license": d.get("license"),
+        "status": d.get("status", "active"),
+        "active": d.get("active", True),
+        "createdAt": d.get("created_at"),
+        "updatedAt": d.get("updated_at"),
+    }
+
+def row_to_promo(row):
+    if row is None:
+        return None
+    d = dict(row)
+    return {
+        "id": d["id"],
+        "code": d["code"],
+        "discount_type": d.get("discount_type", "percentage"),
+        "discount_value": float(d["discount_value"]) if d.get("discount_value") is not None else 0,
+        "min_booking_amount": float(d["min_booking_amount"]) if d.get("min_booking_amount") is not None else 0,
+        "max_uses": d.get("max_uses"),
+        "uses_count": d.get("uses_count", 0),
+        "expiry_date": d.get("expiry_date"),
+        "active": d.get("active", True),
+        "description": d.get("description"),
+        "created_at": d.get("created_at"),
+    }
+
+def row_to_seo(row):
+    if row is None:
+        return None
+    d = dict(row)
+    return {
+        "page_slug": d["page_slug"],
+        "page_title": d.get("page_title"),
+        "meta_description": d.get("meta_description"),
+        "meta_keywords": d.get("meta_keywords"),
+        "hero_heading": d.get("hero_heading"),
+        "hero_subheading": d.get("hero_subheading"),
+        "cta_text": d.get("cta_text"),
+        "createdAt": d.get("created_at"),
+        "updatedAt": d.get("updated_at"),
+    }
+
+async def _pg_update(table, fields_dict, where_col, where_val):
+    """Helper: build and execute a dynamic UPDATE."""
+    pool = await get_pool()
+    if not fields_dict:
+        return
+    parts, vals = [], []
+    idx = 1
+    for col, val in fields_dict.items():
+        parts.append(f"{col} = ${idx}")
+        vals.append(val)
+        idx += 1
+    vals.append(where_val)
+    sql = f"UPDATE {table} SET {', '.join(parts)} WHERE {where_col} = ${idx}"
+    await pool.execute(sql, *vals)
+
 
 # Stripe setup
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
@@ -158,40 +293,42 @@ async def calculate_price_endpoint(data: PriceCalculation):
 async def create_booking(booking: BookingCreate):
     try:
         booking_id = str(uuid.uuid4())
-        booking_ref = await generate_booking_reference(db)
+        booking_ref = await generate_booking_reference()
         
         # Use provided totalPrice or fallback to pricing dict
         total_price = booking.totalPrice if booking.totalPrice is not None else booking.pricing.get('totalPrice', 0)
         
+        pool = await get_pool()
+        created_at = datetime.utcnow().isoformat()
+        await pool.execute("""
+            INSERT INTO bookings (id, booking_ref, name, email, phone, pickup_address,
+                dropoff_address, date, time, passengers, notes, pricing, total_price,
+                status, payment_status, departure_flight_number, departure_time,
+                arrival_flight_number, arrival_time, service_type, vip_pickup,
+                oversized_luggage, return_trip, created_at)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
+        """, booking_id, booking_ref, booking.name, booking.email, booking.phone,
+            booking.pickupAddress, booking.dropoffAddress, booking.date, booking.time,
+            booking.passengers, booking.notes, json.dumps(booking.pricing), total_price,
+            booking.status, booking.payment_status, booking.departureFlightNumber,
+            booking.departureTime, booking.arrivalFlightNumber, booking.arrivalTime,
+            booking.serviceType, booking.vipPickup, booking.oversizedLuggage,
+            booking.returnTrip, created_at)
         booking_doc = {
-            "id": booking_id,
-            "booking_ref": booking_ref,
-            "name": booking.name,
-            "email": booking.email,
-            "phone": booking.phone,
-            "pickupAddress": booking.pickupAddress,
-            "dropoffAddress": booking.dropoffAddress,
-            "date": booking.date,
-            "time": booking.time,
-            "passengers": booking.passengers,
-            "notes": booking.notes,
-            "pricing": booking.pricing,
-            "totalPrice": total_price,
-            "status": booking.status,
-            "payment_status": booking.payment_status,
-            # Flight information
+            "id": booking_id, "booking_ref": booking_ref, "name": booking.name,
+            "email": booking.email, "phone": booking.phone,
+            "pickupAddress": booking.pickupAddress, "dropoffAddress": booking.dropoffAddress,
+            "date": booking.date, "time": booking.time, "passengers": booking.passengers,
+            "notes": booking.notes, "pricing": booking.pricing, "totalPrice": total_price,
+            "status": booking.status, "payment_status": booking.payment_status,
             "departureFlightNumber": booking.departureFlightNumber,
             "departureTime": booking.departureTime,
             "arrivalFlightNumber": booking.arrivalFlightNumber,
             "arrivalTime": booking.arrivalTime,
-            # Service options
-            "serviceType": booking.serviceType,
-            "vipPickup": booking.vipPickup,
-            "oversizedLuggage": booking.oversizedLuggage,
-            "returnTrip": booking.returnTrip,
-            "createdAt": datetime.utcnow().isoformat()
+            "serviceType": booking.serviceType, "vipPickup": booking.vipPickup,
+            "oversizedLuggage": booking.oversizedLuggage, "returnTrip": booking.returnTrip,
+            "createdAt": created_at
         }
-        await db.bookings.insert_one(booking_doc)
         
         # Sync contact to iCloud/iPhone
         try:
@@ -278,7 +415,9 @@ def check_notification_cooldown(last_sent: str, cooldown_minutes: int = NOTIFICA
 async def resend_email_confirmation(booking_id: str, force: bool = False):
     """Resend email confirmation to customer (with cooldown protection)"""
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -294,10 +433,8 @@ async def resend_email_confirmation(booking_id: str, force: bool = False):
         send_customer_confirmation(booking)
         
         # Update booking to track notification sent
-        await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": {"last_email_sent": datetime.now(timezone.utc).isoformat()}}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET last_email_sent = $1 WHERE id = $2", datetime.now(timezone.utc).isoformat(), booking_id)
         
         logger.info(f"Email confirmation resent to {booking['email']} for booking {booking['booking_ref']}")
         return {"message": f"Email sent to {booking['email']}", "booking_ref": booking['booking_ref']}
@@ -311,7 +448,9 @@ async def resend_email_confirmation(booking_id: str, force: bool = False):
 async def resend_sms_confirmation(booking_id: str, force: bool = False):
     """Resend SMS confirmation to customer (with cooldown protection)"""
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -327,10 +466,8 @@ async def resend_sms_confirmation(booking_id: str, force: bool = False):
         send_customer_sms(booking)
         
         # Update booking to track notification sent
-        await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": {"last_sms_sent": datetime.now(timezone.utc).isoformat()}}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET last_sms_sent = $1 WHERE id = $2", datetime.now(timezone.utc).isoformat(), booking_id)
         
         logger.info(f"SMS confirmation resent to {booking['phone']} for booking {booking['booking_ref']}")
         return {"message": f"SMS sent to {booking['phone']}", "booking_ref": booking['booking_ref']}
@@ -344,7 +481,9 @@ async def resend_sms_confirmation(booking_id: str, force: bool = False):
 async def resend_all_confirmations(booking_id: str, force: bool = False):
     """Resend both email and SMS confirmation to customer (with cooldown protection)"""
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -379,7 +518,10 @@ async def resend_all_confirmations(booking_id: str, force: bool = False):
             update_fields["last_sms_sent"] = datetime.now(timezone.utc).isoformat()
         
         if update_fields:
-            await db.bookings.update_one({"id": booking_id}, {"$set": update_fields})
+            # Map camelCase keys to snake_case for DB columns
+            _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at","serviceType":"service_type","departureFlightNumber":"departure_flight_number","departureTime":"departure_time","arrivalFlightNumber":"arrival_flight_number","arrivalTime":"arrival_time","vipPickup":"vip_pickup","oversizedLuggage":"oversized_luggage","returnTrip":"return_trip"}
+            _mapped = {_camel_map.get(k, k): v for k, v in update_fields.items()}
+            await _pg_update("bookings", _mapped, "id", booking_id)
         
         logger.info(f"Confirmations resent for booking {booking['booking_ref']}: {', '.join(messages_sent)}")
         return {
@@ -397,17 +539,17 @@ async def resend_all_confirmations(booking_id: str, force: bool = False):
 async def duplicate_booking(booking_id: str):
     """Create a duplicate of an existing booking"""
     try:
-        original = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        original = row_to_booking(row)
         if not original:
             raise HTTPException(status_code=404, detail="Booking not found")
         
         # Generate new booking ref
-        last_booking = await db.bookings.find_one(
-            {"booking_ref": {"$regex": "^H"}},
-            sort=[("booking_ref", -1)]
-        )
-        if last_booking and last_booking.get('booking_ref'):
-            last_num = int(last_booking['booking_ref'].replace('H', ''))
+        pool = await get_pool()
+        last_row = await pool.fetchrow("SELECT booking_ref FROM bookings WHERE booking_ref LIKE 'H%' ORDER BY booking_ref DESC LIMIT 1")
+        if last_row and last_row['booking_ref']:
+            last_num = int(last_row['booking_ref'].replace('H', ''))
             new_ref = f"H{last_num + 1}"
         else:
             new_ref = "H1"
@@ -430,7 +572,21 @@ async def duplicate_booking(booking_id: str):
         new_booking.pop('tracking_id', None)
         new_booking.pop('tracking_status', None)
         
-        await db.bookings.insert_one(new_booking)
+        pool = await get_pool()
+        await pool.execute("""
+            INSERT INTO bookings (id, booking_ref, name, email, phone, pickup_address,
+                dropoff_address, date, time, passengers, notes, pricing, total_price,
+                status, payment_status, service_type, created_at)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16,$17)
+        """, new_booking.get("id"), new_booking.get("booking_ref"), new_booking.get("name"), new_booking.get("email"),
+            new_booking.get("phone"), new_booking.get("pickupAddress", new_booking.get("pickup_address")),
+            new_booking.get("dropoffAddress", new_booking.get("dropoff_address")),
+            new_booking.get("date"), new_booking.get("time"), str(new_booking.get("passengers", "1")),
+            new_booking.get("notes"), json.dumps(new_booking.get("pricing")) if new_booking.get("pricing") else None,
+            float(new_booking.get("totalPrice", new_booking.get("total_price", 0)) or 0),
+            new_booking.get("status", "pending"), new_booking.get("payment_status", "unpaid"),
+            new_booking.get("serviceType", new_booking.get("service_type")),
+            new_booking.get("createdAt", new_booking.get("created_at", datetime.utcnow().isoformat())))
         
         logger.info(f"Booking duplicated: {original['booking_ref']} -> {new_ref}")
         return {
@@ -447,7 +603,9 @@ async def duplicate_booking(booking_id: str):
 async def create_checkout_session(booking_data: dict):
     try:
         booking_id = booking_data.get('booking_id')
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -483,7 +641,9 @@ async def create_checkout_session(booking_data: dict):
 async def send_payment_link(booking_id: str):
     """Generate and send a payment link to the customer via email and SMS"""
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -581,10 +741,8 @@ Questions? 021 743 321"""
             logger.error(f"Failed to send payment SMS: {str(e)}")
         
         # Update booking with payment link sent timestamp
-        await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": {"payment_link_sent": datetime.now(timezone.utc).isoformat()}}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET payment_link_sent = $1 WHERE id = $2", datetime.now(timezone.utc).isoformat(), booking_id)
         
         return {
             "success": True,
@@ -604,7 +762,9 @@ Questions? 021 743 321"""
 @router.get("/payment/status/{booking_id}")
 async def check_payment_status(booking_id: str):
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         return {
@@ -638,11 +798,11 @@ async def stripe_webhook(request: Request):
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
             booking_id = session['metadata']['booking_id']
-            await db.bookings.update_one(
-                {"id": booking_id},
-                {"$set": {"status": "confirmed", "payment_status": "paid"}}
-            )
-            booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+            pool = await get_pool()
+            await pool.execute("UPDATE bookings SET status = $1, payment_status = $2 WHERE id = $3", "confirmed", "paid", booking_id)
+            pool = await get_pool()
+            row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+            booking = row_to_booking(row)
             send_customer_confirmation(booking)
             send_customer_sms(booking)
             send_admin_notification(booking)
@@ -666,7 +826,9 @@ async def stripe_webhook(request: Request):
 @router.post("/admin/login")
 async def admin_login(credentials: AdminLogin):
     try:
-        admin = await db.admins.find_one({"username": credentials.username}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM admins WHERE username = $1", credentials.username)
+        admin = dict(row) if row else None
         if not admin:
             # Check for initial admin setup via ADMIN_INIT_PASSWORD env var (first-time only)
             init_password = os.environ.get("ADMIN_INIT_PASSWORD", "")
@@ -678,7 +840,10 @@ async def admin_login(credentials: AdminLogin):
                     "password": hashed_password,
                     "createdAt": datetime.now(timezone.utc).isoformat()
                 }
-                await db.admins.insert_one(admin_doc)
+                pool = await get_pool()
+                await pool.execute(
+                    "INSERT INTO admins (id, username, password, created_at) VALUES ($1, $2, $3, $4)",
+                    admin_doc["id"], admin_doc["username"], admin_doc["password"], admin_doc.get("createdAt", datetime.utcnow().isoformat()))
                 admin = admin_doc
                 logger.info("Initial admin account created — remove ADMIN_INIT_PASSWORD from env vars now")
             else:
@@ -699,7 +864,9 @@ async def admin_login(credentials: AdminLogin):
 async def change_password(password_data: PasswordChange, current_user: dict = Depends(get_current_user)):
     try:
         username = current_user.get("sub")
-        admin = await db.admins.find_one({"username": username}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM admins WHERE username = $1", username)
+        admin = dict(row) if row else None
         
         if not admin:
             raise HTTPException(status_code=404, detail="Admin user not found")
@@ -710,10 +877,8 @@ async def change_password(password_data: PasswordChange, current_user: dict = De
         
         # Hash and update new password
         new_hashed_password = get_password_hash(password_data.new_password)
-        await db.admins.update_one(
-            {"username": username},
-            {"$set": {"password": new_hashed_password, "updatedAt": datetime.utcnow().isoformat()}}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE admins SET password = $1, updated_at = $2 WHERE username = $3", new_hashed_password, datetime.utcnow().isoformat(), username)
         
         logger.info(f"Password changed successfully for admin: {username}")
         return {"message": "Password changed successfully"}
@@ -732,7 +897,9 @@ async def forgot_password(request: PasswordResetRequest):
     """Send password reset email to admin"""
     try:
         # Check if email matches admin account
-        admin = await db.admins.find_one({"email": request.email}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM admins WHERE email = $1", request.email)
+        admin = dict(row) if row else None
         
         # For security, always return success even if email not found
         if not admin:
@@ -744,13 +911,13 @@ async def forgot_password(request: PasswordResetRequest):
         expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         
         # Store reset token
-        await db.password_resets.delete_many({"email": request.email})  # Remove old tokens
-        await db.password_resets.insert_one({
-            "email": request.email,
-            "token": reset_token,
-            "expires_at": expires_at.isoformat(),
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
+        pool = await get_pool()
+        await pool.execute("DELETE FROM password_resets WHERE email = $1", request.email)  # Remove old tokens
+        pool = await get_pool()
+
+        await pool.execute("INSERT INTO password_resets (email,token,expires_at,created_at) VALUES ($1,$2,$3,$4)",
+
+            request.email, reset_token, expires_at.isoformat(), datetime.now(timezone.utc).isoformat())
         
         # Send email
         await send_password_reset_email(request.email, reset_token)
@@ -766,7 +933,9 @@ async def reset_password(request: PasswordResetConfirm):
     """Reset password using token"""
     try:
         # Find reset token
-        reset_record = await db.password_resets.find_one({"token": request.token})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM password_resets WHERE token = $1", request.token)
+        reset_record = dict(row) if row else None
         
         if not reset_record:
             raise HTTPException(status_code=400, detail="Invalid or expired reset link")
@@ -777,21 +946,18 @@ async def reset_password(request: PasswordResetConfirm):
             expires_at = expires_at.replace(tzinfo=timezone.utc)
         
         if expires_at < datetime.now(timezone.utc):
-            await db.password_resets.delete_one({"token": request.token})
+            pool = await get_pool()
+            await pool.execute("DELETE FROM password_resets WHERE token = $1", request.token)
             raise HTTPException(status_code=400, detail="Reset link has expired")
         
         # Update password
         new_hashed_password = get_password_hash(request.new_password)
-        result = await db.admins.update_one(
-            {"email": reset_record["email"]},
-            {"$set": {"password": new_hashed_password, "updatedAt": datetime.now(timezone.utc).isoformat()}}
-        )
-        
-        if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="Admin account not found")
+        pool = await get_pool()
+        result = await pool.execute("UPDATE admins SET password = $1, updated_at = $2 WHERE email = $3", new_hashed_password, datetime.now(timezone.utc).isoformat(), reset_record["email"])
         
         # Delete used token
-        await db.password_resets.delete_one({"token": request.token})
+        pool = await get_pool()
+        await pool.execute("DELETE FROM password_resets WHERE token = $1", request.token)
         
         logger.info(f"Password reset successfully for: {reset_record['email']}")
         return {"message": "Password reset successfully. You can now login with your new password."}
@@ -821,10 +987,11 @@ async def get_admin_profile(request: Request):
             raise HTTPException(status_code=401, detail="Invalid token")
 
         email = payload.get("sub")
-        admin = await db.admins.find_one(
-            {"$or": [{"email": email}, {"username": email}]},
-            {"_id": 0, "password": 0}
-        )
+        pool = await get_pool()
+
+        row = await pool.fetchrow("SELECT id, username, email, created_at, updated_at FROM admins WHERE email = $1 OR username = $1", email)
+
+        admin = dict(row) if row else None
         if not admin:
             raise HTTPException(status_code=404, detail="Admin not found")
         return admin
@@ -839,7 +1006,9 @@ async def get_admin_profile(request: Request):
 async def get_all_seo_pages():
     """Get all SEO page configurations"""
     try:
-        pages = await db.seo_pages.find({}, {"_id": 0}).to_list(1000)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM seo_pages")
+        pages = [row_to_seo(r) for r in rows]
         return pages
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -848,7 +1017,9 @@ async def get_all_seo_pages():
 async def get_seo_page(page_slug: str):
     """Get SEO configuration for a specific page (public endpoint)"""
     try:
-        page = await db.seo_pages.find_one({"page_slug": page_slug}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM seo_pages WHERE page_slug = $1", page_slug)
+        page = row_to_seo(row)
         if not page:
             # Return defaults if not found
             return {
@@ -868,8 +1039,9 @@ async def get_seo_page(page_slug: str):
 async def create_or_update_seo_page(seo_data: SEOPageData):
     """Create or update SEO configuration for a page"""
     try:
-        existing = await db.seo_pages.find_one({"page_slug": seo_data.page_slug})
-        
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM seo_pages WHERE page_slug = $1", seo_data.page_slug)
+        existing = dict(row) if row else None
         page_doc = {
             "page_slug": seo_data.page_slug,
             "page_title": seo_data.page_title,
@@ -882,14 +1054,19 @@ async def create_or_update_seo_page(seo_data: SEOPageData):
         }
         
         if existing:
-            await db.seo_pages.update_one(
-                {"page_slug": seo_data.page_slug},
-                {"$set": page_doc}
-            )
+            # TODO-MIGRATE: seo_pages.update_one
+            _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at"}
+            _mapped = {_camel_map.get(k, k): v for k, v in page_doc.items()}
+            await _pg_update("seo_pages", _mapped, "page_slug", seo_data.page_slug)
             logger.info(f"SEO page updated: {seo_data.page_slug}")
         else:
             page_doc["createdAt"] = datetime.utcnow().isoformat()
-            await db.seo_pages.insert_one(page_doc)
+            pool = await get_pool()
+            await pool.execute(
+                "INSERT INTO seo_pages (page_slug,page_title,meta_description,meta_keywords,hero_heading,hero_subheading,cta_text,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+                page_doc["page_slug"], page_doc.get("page_title"), page_doc.get("meta_description"), page_doc.get("meta_keywords"),
+                page_doc.get("hero_heading"), page_doc.get("hero_subheading"), page_doc.get("cta_text"),
+                page_doc.get("createdAt", datetime.utcnow().isoformat()), page_doc.get("updatedAt"))
             logger.info(f"SEO page created: {seo_data.page_slug}")
         
         return {"message": "SEO page saved successfully", "page_slug": seo_data.page_slug}
@@ -901,9 +1078,8 @@ async def create_or_update_seo_page(seo_data: SEOPageData):
 async def delete_seo_page(page_slug: str):
     """Delete SEO configuration for a page"""
     try:
-        result = await db.seo_pages.delete_one({"page_slug": page_slug})
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="SEO page not found")
+        pool = await get_pool()
+        await pool.execute("DELETE FROM seo_pages WHERE page_slug = $1", page_slug)
         return {"message": "SEO page deleted successfully"}
     except HTTPException:
         raise
@@ -917,7 +1093,9 @@ async def delete_seo_page(page_slug: str):
 @router.get("/bookings", dependencies=[Depends(get_current_user)])
 async def get_all_bookings():
     try:
-        bookings = await db.bookings.find({}, {"_id": 0}).sort("createdAt", -1).to_list(1000)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM bookings ORDER BY created_at DESC")
+        bookings = [row_to_booking(r) for r in rows]
         return bookings
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -926,7 +1104,9 @@ async def get_all_bookings():
 async def export_bookings_csv():
     """Export all bookings as CSV file"""
     try:
-        bookings = await db.bookings.find({}, {"_id": 0}).sort("createdAt", -1).to_list(10000)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM bookings ORDER BY created_at DESC")
+        bookings = [row_to_booking(r) for r in rows]
         
         # Create CSV in memory
         output = io.StringIO()
@@ -1036,7 +1216,7 @@ async def import_bookings_csv(data: dict):
                 
                 # Generate booking reference
                 booking_id = str(uuid.uuid4())
-                booking_ref = await generate_booking_reference(db)
+                booking_ref = await generate_booking_reference()
                 
                 # Parse the row (handle both formats)
                 name = row.get('Customer Name') or row.get('name', '')
@@ -1090,7 +1270,21 @@ async def import_bookings_csv(data: dict):
                     "createdAt": datetime.utcnow().isoformat()
                 }
                 
-                await db.bookings.insert_one(booking_doc)
+                pool = await get_pool()
+                await pool.execute("""
+                    INSERT INTO bookings (id, booking_ref, name, email, phone, pickup_address,
+                        dropoff_address, date, time, passengers, notes, pricing, total_price,
+                        status, payment_status, service_type, created_at)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16,$17)
+                """, booking_doc.get("id"), booking_doc.get("booking_ref"), booking_doc.get("name"), booking_doc.get("email"),
+                    booking_doc.get("phone"), booking_doc.get("pickupAddress", booking_doc.get("pickup_address")),
+                    booking_doc.get("dropoffAddress", booking_doc.get("dropoff_address")),
+                    booking_doc.get("date"), booking_doc.get("time"), str(booking_doc.get("passengers", "1")),
+                    booking_doc.get("notes"), json.dumps(booking_doc.get("pricing")) if booking_doc.get("pricing") else None,
+                    float(booking_doc.get("totalPrice", booking_doc.get("total_price", 0)) or 0),
+                    booking_doc.get("status", "pending"), booking_doc.get("payment_status", "unpaid"),
+                    booking_doc.get("serviceType", booking_doc.get("service_type")),
+                    booking_doc.get("createdAt", booking_doc.get("created_at", datetime.utcnow().isoformat())))
                 imported_count += 1
                 imported_refs.append(booking_ref)
                 
@@ -1113,7 +1307,9 @@ async def import_bookings_csv(data: dict):
 @router.get("/bookings/{booking_id}", dependencies=[Depends(get_current_user)])
 async def get_booking(booking_id: str):
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         return booking
@@ -1127,7 +1323,9 @@ async def get_booking(booking_id: str):
 async def update_booking(booking_id: str, booking_update: BookingUpdate):
     try:
         # Check if booking exists
-        existing = await db.bookings.find_one({"id": booking_id})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        existing = row_to_booking(row)
         if not existing:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -1135,13 +1333,14 @@ async def update_booking(booking_id: str, booking_update: BookingUpdate):
         update_data = {k: v for k, v in booking_update.model_dump().items() if v is not None}
         update_data["updatedAt"] = datetime.utcnow().isoformat()
         
-        await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": update_data}
-        )
+        _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at"}
+        _mapped = {_camel_map.get(k, k): v for k, v in update_data.items()}
+        await _pg_update("bookings", _mapped, "id", booking_id)
         
         # Get updated booking
-        updated_booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        updated_booking = row_to_booking(row)
         
         logger.info(f"Booking updated: {booking_id}")
         return {
@@ -1158,19 +1357,20 @@ async def update_booking(booking_id: str, booking_update: BookingUpdate):
 async def update_booking_status(booking_id: str, update_data: dict):
     try:
         # Get current booking to check status change
-        current_booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        current_booking = row_to_booking(row)
         
-        result = await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": update_data}
-        )
-        if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="Booking not found")
+        _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at"}
+        _mapped = {_camel_map.get(k, k): v for k, v in update_data.items()}
+        await _pg_update("bookings", _mapped, "id", booking_id)
         
         # If status changed to confirmed, sync to Google Calendar
         if update_data.get('status') == 'confirmed' and current_booking and current_booking.get('status') != 'confirmed':
             try:
-                updated_booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+                pool = await get_pool()
+                row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+                updated_booking = row_to_booking(row)
                 if updated_booking:
                     calendar_event_id = await add_booking_to_google_calendar(updated_booking)
                     if calendar_event_id:
@@ -1187,7 +1387,9 @@ async def delete_booking(booking_id: str):
     """Soft-delete a booking (moves to deleted_bookings collection)"""
     try:
         # Get booking details before deleting
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -1202,10 +1404,30 @@ async def delete_booking(booking_id: str):
         # SOFT DELETE: Move to deleted_bookings collection instead of hard delete
         booking["deletedAt"] = datetime.utcnow().isoformat()
         booking["deletedBy"] = "admin"
-        await db.deleted_bookings.insert_one(booking)
+        pool = await get_pool()
+        await pool.execute(
+            """INSERT INTO deleted_bookings (id, booking_ref, name, email, phone, pickup_address,
+                dropoff_address, date, time, passengers, notes, service_type, pricing, total_price,
+                status, payment_status, tracking_id, assigned_driver_name, created_at, deleted_at,
+                deleted_by, booking_data)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,$16,$17,$18,$19,$20,$21,$22::jsonb)""",
+            booking.get("id"), booking.get("booking_ref"), booking.get("name"), booking.get("email"), booking.get("phone"),
+            booking.get("pickupAddress", booking.get("pickup_address")),
+            booking.get("dropoffAddress", booking.get("dropoff_address")),
+            booking.get("date"), booking.get("time"), booking.get("passengers"), booking.get("notes"),
+            booking.get("serviceType", booking.get("service_type")),
+            json.dumps(booking.get("pricing")) if booking.get("pricing") else None,
+            float(booking.get("totalPrice", booking.get("total_price", 0)) or 0),
+            booking.get("status"), booking.get("payment_status"),
+            booking.get("trackingId", booking.get("tracking_id")),
+            booking.get("assignedDriverName", booking.get("assigned_driver_name")),
+            booking.get("createdAt", booking.get("created_at")),
+            booking.get("deletedAt", datetime.utcnow().isoformat()),
+            booking.get("deletedBy", "admin"), json.dumps(booking))
         
         # Remove from active bookings
-        await db.bookings.delete_one({"id": booking_id})
+        pool = await get_pool()
+        await pool.execute("DELETE FROM bookings WHERE id = $1", booking_id)
         
         return {
             "message": "Booking cancelled and moved to deleted (can be restored)",
@@ -1221,7 +1443,9 @@ async def delete_booking(booking_id: str):
 async def get_deleted_bookings():
     """List all soft-deleted bookings"""
     try:
-        deleted = await db.deleted_bookings.find({}, {"_id": 0}).sort("deletedAt", -1).to_list(1000)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM deleted_bookings ORDER BY deleted_at DESC")
+        deleted = [dict(r) for r in rows]
         return deleted
     except Exception as e:
         logger.error(f"Error fetching deleted bookings: {str(e)}")
@@ -1232,7 +1456,9 @@ async def restore_booking(booking_id: str):
     """Restore a soft-deleted booking"""
     try:
         # Find in deleted_bookings
-        booking = await db.deleted_bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM deleted_bookings WHERE id = $1", booking_id)
+        booking = dict(row) if row else None
         if not booking:
             raise HTTPException(status_code=404, detail="Deleted booking not found")
         
@@ -1243,8 +1469,23 @@ async def restore_booking(booking_id: str):
         booking["status"] = "pending"  # Reset status to pending after restore
         
         # Move back to active bookings
-        await db.bookings.insert_one(booking)
-        await db.deleted_bookings.delete_one({"id": booking_id})
+        pool = await get_pool()
+        await pool.execute("""
+            INSERT INTO bookings (id, booking_ref, name, email, phone, pickup_address,
+                dropoff_address, date, time, passengers, notes, pricing, total_price,
+                status, payment_status, service_type, created_at)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16,$17)
+        """, booking.get("id"), booking.get("booking_ref"), booking.get("name"), booking.get("email"),
+            booking.get("phone"), booking.get("pickupAddress", booking.get("pickup_address")),
+            booking.get("dropoffAddress", booking.get("dropoff_address")),
+            booking.get("date"), booking.get("time"), str(booking.get("passengers", "1")),
+            booking.get("notes"), json.dumps(booking.get("pricing")) if booking.get("pricing") else None,
+            float(booking.get("totalPrice", booking.get("total_price", 0)) or 0),
+            booking.get("status", "pending"), booking.get("payment_status", "unpaid"),
+            booking.get("serviceType", booking.get("service_type")),
+            booking.get("createdAt", booking.get("created_at", datetime.utcnow().isoformat())))
+        pool = await get_pool()
+        await pool.execute("DELETE FROM deleted_bookings WHERE id = $1", booking_id)
         
         logger.info(f"Booking restored: {booking.get('booking_ref', booking_id)}")
         return {
@@ -1261,9 +1502,8 @@ async def restore_booking(booking_id: str):
 async def permanently_delete_booking(booking_id: str):
     """Permanently delete a booking (no recovery possible)"""
     try:
-        result = await db.deleted_bookings.delete_one({"id": booking_id})
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Deleted booking not found")
+        pool = await get_pool()
+        await pool.execute("DELETE FROM deleted_bookings WHERE id = $1", booking_id)
         
         logger.info(f"Booking permanently deleted: {booking_id}")
         return {"message": "Booking permanently deleted"}
@@ -1282,7 +1522,9 @@ async def permanently_delete_booking(booking_id: str):
 async def get_promo_codes():
     """Get all promo codes"""
     try:
-        codes = await db.promo_codes.find({}, {"_id": 0}).to_list(100)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM promo_codes")
+        codes = [row_to_promo(r) for r in rows]
         return codes
     except Exception as e:
         logger.error(f"Error fetching promo codes: {str(e)}")
@@ -1293,7 +1535,9 @@ async def create_promo_code(promo: PromoCode):
     """Create a new promo code"""
     try:
         # Check if code already exists
-        existing = await db.promo_codes.find_one({"code": promo.code.upper()})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM promo_codes WHERE code = $1", promo.code.upper())
+        existing = dict(row) if row else None
         if existing:
             raise HTTPException(status_code=400, detail="Promo code already exists")
         
@@ -1311,8 +1555,17 @@ async def create_promo_code(promo: PromoCode):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
-        await db.promo_codes.insert_one(promo_doc)
-        del promo_doc["_id"]
+        pool = await get_pool()
+        
+        await pool.execute(
+        
+            "INSERT INTO promo_codes (id,code,discount_type,discount_value,min_booking_amount,max_uses,uses_count,expiry_date,active,description,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+        
+            promo_doc["id"], promo_doc["code"], promo_doc["discount_type"], promo_doc["discount_value"],
+        
+            promo_doc.get("min_booking_amount",0), promo_doc.get("max_uses"), promo_doc.get("uses_count",0),
+        
+            promo_doc.get("expiry_date"), promo_doc.get("active",True), promo_doc.get("description"), promo_doc.get("created_at"))
         
         logger.info(f"Promo code created: {promo.code.upper()}")
         return {"message": "Promo code created", "promo": promo_doc}
@@ -1332,7 +1585,11 @@ async def validate_promo_code(data: dict):
         if not code:
             raise HTTPException(status_code=400, detail="Promo code is required")
         
-        promo = await db.promo_codes.find_one({"code": code, "active": True}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM promo_codes WHERE code = $1 AND active = TRUE", code)
+        
+        promo = row_to_promo(row)
         
         if not promo:
             raise HTTPException(status_code=404, detail="Invalid or expired promo code")
@@ -1379,22 +1636,8 @@ async def validate_promo_code(data: dict):
 async def update_promo_code(promo_id: str, promo: PromoCode):
     """Update a promo code"""
     try:
-        result = await db.promo_codes.update_one(
-            {"id": promo_id},
-            {"$set": {
-                "code": promo.code.upper(),
-                "discount_type": promo.discount_type,
-                "discount_value": promo.discount_value,
-                "min_booking_amount": promo.min_booking_amount,
-                "max_uses": promo.max_uses,
-                "expiry_date": promo.expiry_date,
-                "active": promo.active,
-                "description": promo.description
-            }}
-        )
-        
-        if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="Promo code not found")
+        pool = await get_pool()
+        result = await pool.execute("UPDATE promo_codes SET code = $1, discount_type = $2, discount_value = $3, min_booking_amount = $4, max_uses = $5, expiry_date = $6, active = $7, description = $8 WHERE id = $9", promo.code.upper(), promo.discount_type, promo.discount_value, promo.min_booking_amount, promo.max_uses, promo.expiry_date, promo.active, promo.description, promo_id)
         
         return {"message": "Promo code updated"}
     except HTTPException:
@@ -1407,9 +1650,8 @@ async def update_promo_code(promo_id: str, promo: PromoCode):
 async def delete_promo_code(promo_id: str):
     """Delete a promo code"""
     try:
-        result = await db.promo_codes.delete_one({"id": promo_id})
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Promo code not found")
+        pool = await get_pool()
+        await pool.execute("DELETE FROM promo_codes WHERE id = $1", promo_id)
         return {"message": "Promo code deleted"}
     except HTTPException:
         raise
@@ -1424,7 +1666,9 @@ async def delete_promo_code(promo_id: str):
 @router.get("/drivers", dependencies=[Depends(get_current_user)])
 async def get_drivers():
     try:
-        drivers = await db.drivers.find({}, {"_id": 0}).to_list(100)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM drivers")
+        drivers = [row_to_driver(r) for r in rows]
         return drivers
     except Exception as e:
         logger.error(f"Error fetching drivers: {str(e)}")
@@ -1444,7 +1688,12 @@ async def create_driver(driver: DriverCreate):
             "status": "active",
             "createdAt": datetime.utcnow().isoformat()
         }
-        await db.drivers.insert_one(driver_doc)
+        pool = await get_pool()
+        await pool.execute(
+            "INSERT INTO drivers (id, name, phone, email, vehicle, license, status, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+            driver_doc["id"], driver_doc["name"], driver_doc.get("phone"), driver_doc.get("email"),
+            driver_doc.get("vehicle"), driver_doc.get("license"), driver_doc.get("status", "active"),
+            driver_doc.get("createdAt", datetime.utcnow().isoformat()))
         logger.info(f"Driver created: {driver.name} ({driver_id})")
         return {"message": "Driver created successfully", "id": driver_id}
     except Exception as e:
@@ -1454,7 +1703,9 @@ async def create_driver(driver: DriverCreate):
 @router.get("/drivers/{driver_id}", dependencies=[Depends(get_current_user)])
 async def get_driver(driver_id: str):
     try:
-        driver = await db.drivers.find_one({"id": driver_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", driver_id)
+        driver = row_to_driver(row)
         if not driver:
             raise HTTPException(status_code=404, detail="Driver not found")
         return driver
@@ -1467,19 +1718,24 @@ async def get_driver(driver_id: str):
 @router.put("/drivers/{driver_id}", dependencies=[Depends(get_current_user)])
 async def update_driver(driver_id: str, driver_update: DriverUpdate):
     try:
-        existing = await db.drivers.find_one({"id": driver_id})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", driver_id)
+        existing = row_to_driver(row)
         if not existing:
             raise HTTPException(status_code=404, detail="Driver not found")
         
         update_data = {k: v for k, v in driver_update.model_dump().items() if v is not None}
         update_data["updatedAt"] = datetime.utcnow().isoformat()
         
-        await db.drivers.update_one(
-            {"id": driver_id},
-            {"$set": update_data}
-        )
+        _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at"}
+        _mapped = {_camel_map.get(k, k): v for k, v in update_data.items()}
+        await _pg_update("drivers", _mapped, "id", driver_id)
         
-        updated_driver = await db.drivers.find_one({"id": driver_id}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", driver_id)
+        
+        updated_driver = row_to_driver(row)
         logger.info(f"Driver updated: {driver_id}")
         return {"message": "Driver updated successfully", "driver": updated_driver}
     except HTTPException:
@@ -1491,11 +1747,15 @@ async def update_driver(driver_id: str, driver_update: DriverUpdate):
 @router.delete("/drivers/{driver_id}", dependencies=[Depends(get_current_user)])
 async def delete_driver(driver_id: str):
     try:
-        driver = await db.drivers.find_one({"id": driver_id})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", driver_id)
+        driver = row_to_driver(row)
         if not driver:
             raise HTTPException(status_code=404, detail="Driver not found")
         
-        await db.drivers.delete_one({"id": driver_id})
+        pool = await get_pool()
+        
+        await pool.execute("DELETE FROM drivers WHERE id = $1", driver_id)
         logger.info(f"Driver deleted: {driver_id}")
         return {"message": "Driver deleted successfully"}
     except HTTPException:
@@ -1512,15 +1772,16 @@ async def get_available_drivers(booking_date: str, booking_time: str):
     """Find drivers who are not assigned to jobs at the given time"""
     try:
         # Get all active drivers
-        all_drivers = await db.drivers.find({"active": {"$ne": False}}, {"_id": 0}).to_list(100)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM drivers WHERE active IS NOT FALSE")
+        all_drivers = [row_to_driver(r) for r in rows]
         
         # Get bookings for the same date that have assigned drivers
-        busy_bookings = await db.bookings.find({
-            "date": booking_date,
-            "assigned_driver_id": {"$ne": None},
-            "driver_accepted": True,
-            "status": {"$ne": "cancelled"}
-        }, {"_id": 0, "assigned_driver_id": 1, "time": 1}).to_list(100)
+        pool = await get_pool()
+        busy_rows = await pool.fetch(
+            "SELECT assigned_driver_id, time FROM bookings WHERE date = $1 AND assigned_driver_id IS NOT NULL AND driver_accepted = TRUE AND status != 'cancelled'",
+            booking_date)
+        busy_bookings = [dict(r) for r in busy_rows]
         
         # Create a set of busy driver IDs (simple: any driver with a job that day)
         # In production, you'd check time overlap more precisely
@@ -1538,7 +1799,9 @@ async def get_available_drivers(booking_date: str, booking_time: str):
 async def get_available_drivers_for_booking(booking_id: str, current_user: dict = Depends(get_current_user)):
     """Get list of drivers available for a specific booking"""
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -1560,7 +1823,9 @@ async def get_available_drivers_for_booking(booking_id: str, current_user: dict 
 async def auto_dispatch_driver(booking_id: str, current_user: dict = Depends(get_current_user)):
     """Automatically assign the first available driver to a booking"""
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -1584,20 +1849,8 @@ async def auto_dispatch_driver(booking_id: str, current_user: dict = Depends(get
         acceptance_token = str(uuid.uuid4())[:8].upper()
         
         # Update booking
-        await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": {
-                "tracking_id": tracking_id,
-                "tracking_status": "pending_driver_acceptance",
-                "assigned_driver_id": driver["id"],
-                "assigned_driver_name": driver.get("name"),
-                "driver_payout": driver_payout,
-                "acceptance_token": acceptance_token,
-                "driver_accepted": None,
-                "driver_assigned_at": datetime.now(timezone.utc).isoformat(),
-                "auto_dispatched": True
-            }}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET tracking_id = $1, tracking_status = $2, assigned_driver_id = $3, assigned_driver_name = $4, driver_payout = $5, acceptance_token = $6, driver_accepted = $7, driver_assigned_at = $8, auto_dispatched = $9 WHERE id = $10", tracking_id, "pending_driver_acceptance", driver["id"], driver.get("name"), driver_payout, acceptance_token, None, datetime.now(timezone.utc).isoformat(), True, booking_id)
         
         # Send notification to driver
         await send_driver_job_notification(booking, driver, driver_payout, acceptance_token, "[AUTO-DISPATCH] Please respond ASAP")
@@ -1654,11 +1907,19 @@ async def assign_driver_to_booking(booking_id: str, data: DriverAssignmentReques
         if not data.driver_id:
             raise HTTPException(status_code=400, detail="driver_id is required")
         
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
-        driver = await db.drivers.find_one({"id": data.driver_id}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", data.driver_id)
+        
+        driver = row_to_driver(row)
         if not driver:
             raise HTTPException(status_code=404, detail="Driver not found")
         
@@ -1687,20 +1948,8 @@ async def assign_driver_to_booking(booking_id: str, data: DriverAssignmentReques
         driver_payout = data.driver_payout if data.driver_payout is not None else round(total_price * 0.8, 2)
         
         # Update booking with driver assignment and tracking info
-        await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": {
-                "tracking_id": tracking_id,
-                "tracking_status": "pending_driver_acceptance",
-                "assigned_driver_id": data.driver_id,
-                "assigned_driver_name": driver.get("name"),
-                "driver_payout": driver_payout,
-                "driver_notes": data.notes_to_driver,
-                "acceptance_token": acceptance_token,
-                "driver_accepted": None,
-                "driver_assigned_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET tracking_id = $1, tracking_status = $2, assigned_driver_id = $3, assigned_driver_name = $4, driver_payout = $5, driver_notes = $6, acceptance_token = $7, driver_accepted = $8, driver_assigned_at = $9 WHERE id = $10", tracking_id, "pending_driver_acceptance", data.driver_id, driver.get("name"), driver_payout, data.notes_to_driver, acceptance_token, None, datetime.now(timezone.utc).isoformat(), booking_id)
         
         # Send notification to driver
         await send_driver_job_notification(booking, driver, driver_payout, acceptance_token, data.notes_to_driver)
@@ -1726,24 +1975,19 @@ async def unassign_driver_from_booking(booking_id: str, data: dict = {}):
     try:
         trip_type = data.get("trip_type", "outbound")  # outbound or return
         
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
         if trip_type == "return":
             # Unassign return trip driver
             driver_name = booking.get("return_driver_name", "Driver")
-            await db.bookings.update_one(
-                {"id": booking_id},
-                {"$set": {
-                    "return_driver_id": None,
-                    "return_driver_name": None,
-                    "return_driver_payout": None,
-                    "return_driver_accepted": None,
-                    "return_tracking_status": None,
-                    "return_acceptance_token": None
-                }}
-            )
+            pool = await get_pool()
+            await pool.execute("UPDATE bookings SET return_driver_id = $1, return_driver_name = $2, return_driver_payout = $3, return_driver_accepted = $4, return_tracking_status = $5, return_acceptance_token = $6 WHERE id = $7", None, None, None, None, None, None, booking_id)
         else:
             # Unassign outbound trip driver
             driver_name = booking.get("assigned_driver_name", "Driver")
@@ -1753,20 +1997,8 @@ async def unassign_driver_from_booking(booking_id: str, data: dict = {}):
             if tracking_id and tracking_id in active_tracking:
                 del active_tracking[tracking_id]
             
-            await db.bookings.update_one(
-                {"id": booking_id},
-                {"$set": {
-                    "tracking_id": None,
-                    "tracking_status": None,
-                    "assigned_driver_id": None,
-                    "assigned_driver_name": None,
-                    "driver_payout": None,
-                    "driver_notes": None,
-                    "acceptance_token": None,
-                    "driver_accepted": None,
-                    "driver_assigned_at": None
-                }}
-            )
+            pool = await get_pool()
+            await pool.execute("UPDATE bookings SET tracking_id = $1, tracking_status = $2, assigned_driver_id = $3, assigned_driver_name = $4, driver_payout = $5, driver_notes = $6, acceptance_token = $7, driver_accepted = $8, driver_assigned_at = $9 WHERE id = $10", None, None, None, None, None, None, None, None, None, booking_id)
         
         logger.info(f"Driver {driver_name} unassigned from booking {booking.get('booking_ref')} ({trip_type} trip)")
         
@@ -1792,7 +2024,11 @@ async def assign_return_driver(booking_id: str, data: ReturnDriverAssignment):
         if not data.driver_id:
             raise HTTPException(status_code=400, detail="driver_id is required")
         
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -1800,7 +2036,11 @@ async def assign_return_driver(booking_id: str, data: ReturnDriverAssignment):
         if not booking.get("returnTrip"):
             raise HTTPException(status_code=400, detail="This booking does not have a return trip")
         
-        driver = await db.drivers.find_one({"id": data.driver_id}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", data.driver_id)
+        
+        driver = row_to_driver(row)
         if not driver:
             raise HTTPException(status_code=404, detail="Driver not found")
         
@@ -1813,19 +2053,8 @@ async def assign_return_driver(booking_id: str, data: ReturnDriverAssignment):
         driver_payout = data.driver_payout if data.driver_payout is not None else round(return_price * 0.8, 2)
         
         # Update booking with return driver assignment
-        await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": {
-                "return_driver_id": data.driver_id,
-                "return_driver_name": driver.get("name"),
-                "return_driver_payout": driver_payout,
-                "return_driver_notes": data.notes_to_driver,
-                "return_acceptance_token": acceptance_token,
-                "return_driver_accepted": None,
-                "return_tracking_status": "pending_driver_acceptance",
-                "return_driver_assigned_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET return_driver_id = $1, return_driver_name = $2, return_driver_payout = $3, return_driver_notes = $4, return_acceptance_token = $5, return_driver_accepted = $6, return_tracking_status = $7, return_driver_assigned_at = $8 WHERE id = $9", data.driver_id, driver.get("name"), driver_payout, data.notes_to_driver, acceptance_token, None, "pending_driver_acceptance", datetime.now(timezone.utc).isoformat(), booking_id)
         
         # Create a modified booking dict for the return trip notification
         return_booking = booking.copy()
@@ -1946,7 +2175,9 @@ Click to accept/decline:
 async def get_driver_job_details(booking_id: str, token: str = None):
     """Get job details for driver to review before accepting"""
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Job not found")
         
@@ -1955,7 +2186,9 @@ async def get_driver_job_details(booking_id: str, token: str = None):
             raise HTTPException(status_code=403, detail="Invalid token")
         
         driver_id = booking.get("assigned_driver_id")
-        driver = await db.drivers.find_one({"id": driver_id}, {"_id": 0}) if driver_id else None
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", driver_id)
+        driver = row_to_driver(row) if driver_id else None
         
         return {
             "booking_id": booking.get("id"),
@@ -1992,7 +2225,11 @@ async def driver_respond_to_job(booking_id: str, data: dict):
         accepted = data.get("accepted", False)
         decline_reason = data.get("decline_reason", "")
         
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Job not found")
         
@@ -2005,19 +2242,15 @@ async def driver_respond_to_job(booking_id: str, data: dict):
             return {"message": "You have already responded to this job", "status": "already_responded"}
         
         driver_id = booking.get("assigned_driver_id")
-        driver = await db.drivers.find_one({"id": driver_id}, {"_id": 0}) if driver_id else None
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", driver_id)
+        driver = row_to_driver(row) if driver_id else None
         driver_name = driver.get("name", "Driver") if driver else "Driver"
         
         if accepted:
             # Driver accepted
-            await db.bookings.update_one(
-                {"id": booking_id},
-                {"$set": {
-                    "driver_accepted": True,
-                    "driver_accepted_at": datetime.now(timezone.utc).isoformat(),
-                    "tracking_status": "driver_assigned"
-                }}
-            )
+            pool = await get_pool()
+            await pool.execute("UPDATE bookings SET driver_accepted = $1, driver_accepted_at = $2, tracking_status = $3 WHERE id = $4", True, datetime.now(timezone.utc).isoformat(), "driver_assigned", booking_id)
             
             # Notify admin
             admin_email = os.environ.get('ADMIN_EMAIL', 'bookings@bookaride.co.nz')
@@ -2037,17 +2270,8 @@ async def driver_respond_to_job(booking_id: str, data: dict):
             }
         else:
             # Driver declined
-            await db.bookings.update_one(
-                {"id": booking_id},
-                {"$set": {
-                    "driver_accepted": False,
-                    "driver_declined_at": datetime.now(timezone.utc).isoformat(),
-                    "driver_decline_reason": decline_reason,
-                    "tracking_status": "driver_declined",
-                    "assigned_driver_id": None,
-                    "assigned_driver_name": None
-                }}
-            )
+            pool = await get_pool()
+            await pool.execute("UPDATE bookings SET driver_accepted = $1, driver_declined_at = $2, driver_decline_reason = $3, tracking_status = $4, assigned_driver_id = $5, assigned_driver_name = $6 WHERE id = $7", False, datetime.now(timezone.utc).isoformat(), decline_reason, "driver_declined", None, None, booking_id)
             
             # Notify admin
             admin_email = os.environ.get('ADMIN_EMAIL', 'bookings@bookaride.co.nz')
@@ -2074,11 +2298,17 @@ async def driver_respond_to_job(booking_id: str, data: dict):
 async def start_driver_tracking(data: StartTracking):
     """Driver starts tracking - called when driver clicks 'On My Way'"""
     try:
-        booking = await db.bookings.find_one({"id": data.booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", data.booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
-        driver = await db.drivers.find_one({"id": data.driver_id}, {"_id": 0})
+        pool = await get_pool()
+        
+        row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", data.driver_id)
+        
+        driver = row_to_driver(row)
         if not driver:
             raise HTTPException(status_code=404, detail="Driver not found")
         
@@ -2101,15 +2331,8 @@ async def start_driver_tracking(data: StartTracking):
         }
         
         # Update booking with tracking info
-        await db.bookings.update_one(
-            {"id": data.booking_id},
-            {"$set": {
-                "tracking_id": tracking_id,
-                "tracking_status": "driver_on_way",
-                "assigned_driver_id": data.driver_id,
-                "assigned_driver_name": driver.get("name")
-            }}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET tracking_id = $1, tracking_status = $2, assigned_driver_id = $3, assigned_driver_name = $4 WHERE id = $5", tracking_id, "driver_on_way", data.driver_id, driver.get("name"), data.booking_id)
         
         logger.info(f"Tracking started: {tracking_id} for booking {data.booking_id} by driver {driver.get('name')}")
         
@@ -2186,13 +2409,8 @@ async def update_driver_location(data: DriverLocationUpdate):
                 logger.error(f"ETA calculation error: {str(eta_error)}")
         
         # Update tracking in database for persistence
-        await db.bookings.update_one(
-            {"id": data.booking_id},
-            {"$set": {
-                "driver_location": tracking_session["last_location"],
-                "driver_eta_minutes": tracking_session.get("current_eta_minutes")
-            }}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET driver_location = $1::jsonb, driver_eta_minutes = $2 WHERE id = $3", json.dumps(tracking_session["last_location"]), tracking_session.get("current_eta_minutes"), data.booking_id)
         
         return {
             "status": "updated",
@@ -2217,7 +2435,9 @@ async def send_5min_arrival_sms(tracking_session: dict, tracking_id: str):
             return
         
         # Get the booking ref for tracking URL
-        booking = await db.bookings.find_one({"id": tracking_session["booking_id"]}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", tracking_session["booking_id"])
+        booking = row_to_booking(row)
         booking_ref = booking.get("booking_ref", tracking_id) if booking else tracking_id
         
         # Format tracking URL (use production domain)
@@ -2259,15 +2479,21 @@ async def get_tracking_info(tracking_ref: str):
     """Get tracking info for customer view - by booking ref, booking ID, or tracking ID"""
     try:
         # First try to find by booking_ref
-        booking = await db.bookings.find_one({"booking_ref": tracking_ref}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE booking_ref = $1", tracking_ref)
+        booking = row_to_booking(row)
         
         if not booking:
             # Try by booking id
-            booking = await db.bookings.find_one({"id": tracking_ref}, {"_id": 0})
+            pool = await get_pool()
+            row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", tracking_ref)
+            booking = row_to_booking(row)
         
         if not booking:
             # Try by tracking_id
-            booking = await db.bookings.find_one({"tracking_id": tracking_ref}, {"_id": 0})
+            pool = await get_pool()
+            row = await pool.fetchrow("SELECT * FROM bookings WHERE tracking_id = $1", tracking_ref)
+            booking = row_to_booking(row)
         
         if not booking:
             raise HTTPException(status_code=404, detail="Tracking not found")
@@ -2281,7 +2507,9 @@ async def get_tracking_info(tracking_ref: str):
         driver_id = booking.get("assigned_driver_id")
         driver = None
         if driver_id:
-            driver = await db.drivers.find_one({"id": driver_id}, {"_id": 0})
+            pool = await get_pool()
+            row = await pool.fetchrow("SELECT * FROM drivers WHERE id = $1", driver_id)
+            driver = row_to_driver(row)
         
         return {
             "booking_id": booking.get("id"),
@@ -2322,10 +2550,8 @@ async def stop_tracking(booking_id: str):
                 break
         
         # Update booking
-        await db.bookings.update_one(
-            {"id": booking_id},
-            {"$set": {"tracking_status": "arrived"}}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET tracking_status = $1 WHERE id = $2", "arrived", booking_id)
         
         logger.info(f"Tracking stopped for booking {booking_id}")
         return {"message": "Tracking stopped", "status": "arrived"}
@@ -2510,20 +2736,8 @@ async def calendar_auth_callback(code: str = None, error: str = None):
             return RedirectResponse(f"{FRONTEND_URL}/admin?calendar_error={token_resp.get('error_description', token_resp.get('error'))}")
         
         # Store tokens in database
-        await db.google_calendar_tokens.update_one(
-            {"type": "admin_calendar"},
-            {
-                "$set": {
-                    "access_token": token_resp.get('access_token'),
-                    "refresh_token": token_resp.get('refresh_token'),
-                    "token_type": token_resp.get('token_type'),
-                    "expires_in": token_resp.get('expires_in'),
-                    "scope": token_resp.get('scope'),
-                    "updated_at": datetime.now(timezone.utc).isoformat()
-                }
-            },
-            upsert=True
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE google_calendar_tokens SET access_token = $1, refresh_token = $2, token_type = $3, expires_in = $4, scope = $5, updated_at = $6 WHERE type = $7", token_resp.get('access_token'), token_resp.get('refresh_token'), token_resp.get('token_type'), token_resp.get('expires_in'), token_resp.get('scope'), datetime.now(timezone.utc).isoformat(), "admin_calendar")
         
         logger.info("Google Calendar tokens stored successfully")
         return RedirectResponse(f"{FRONTEND_URL}/admin?calendar_authorized=true")
@@ -2536,7 +2750,9 @@ async def calendar_auth_callback(code: str = None, error: str = None):
 async def get_calendar_status(current_user: dict = Depends(get_current_user)):
     """Check if Google Calendar is authorized"""
     try:
-        tokens = await db.google_calendar_tokens.find_one({"type": "admin_calendar"})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM google_calendar_tokens WHERE type = $1", "admin_calendar")
+        tokens = dict(row) if row else None
         if tokens and tokens.get('refresh_token'):
             return {
                 "authorized": True,
@@ -2552,7 +2768,9 @@ async def get_calendar_status(current_user: dict = Depends(get_current_user)):
 async def sync_booking_to_calendar(booking_id: str, current_user: dict = Depends(get_current_user)):
     """Manually sync a specific booking to Google Calendar"""
     try:
-        booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
@@ -2580,10 +2798,9 @@ async def sync_all_bookings_to_calendar(current_user: dict = Depends(get_current
         today = datetime.now().strftime("%Y-%m-%d")
         
         # Get all upcoming bookings (today and future)
-        bookings = await db.bookings.find(
-            {"date": {"$gte": today}, "status": {"$ne": "cancelled"}},
-            {"_id": 0}
-        ).to_list(1000)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM bookings ORDER BY created_at DESC")
+        bookings = [row_to_booking(r) for r in rows]
         
         synced = 0
         failed = 0
@@ -2613,7 +2830,9 @@ async def sync_all_bookings_to_calendar(current_user: dict = Depends(get_current
 async def get_calendar_credentials():
     """Get valid Google Calendar credentials with auto-refresh"""
     try:
-        tokens = await db.google_calendar_tokens.find_one({"type": "admin_calendar"})
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM google_calendar_tokens WHERE type = $1", "admin_calendar")
+        tokens = dict(row) if row else None
         if not tokens or not tokens.get('refresh_token'):
             logger.warning("No Google Calendar tokens found")
             return None
@@ -2631,10 +2850,8 @@ async def get_calendar_credentials():
         if creds.expired and creds.refresh_token:
             creds.refresh(GoogleRequest())
             # Update stored access token
-            await db.google_calendar_tokens.update_one(
-                {"type": "admin_calendar"},
-                {"$set": {"access_token": creds.token}}
-            )
+            pool = await get_pool()
+            await pool.execute("UPDATE google_calendar_tokens SET access_token = $1 WHERE type = $2", creds.token, "admin_calendar")
         
         return creds
     except Exception as e:
@@ -2719,10 +2936,8 @@ Payment: {booking.get('payment_status', 'pending').upper()}
         logger.info(f"Created Google Calendar event for booking {booking_ref}: {created_event.get('id')}")
         
         # Store the event ID with the booking for future updates/deletion
-        await db.bookings.update_one(
-            {"id": booking.get('id')},
-            {"$set": {"google_calendar_event_id": created_event.get('id')}}
-        )
+        pool = await get_pool()
+        await pool.execute("UPDATE bookings SET google_calendar_event_id = $1 WHERE id = $2", created_event.get('id'), booking.get('id'))
         
         return created_event.get('id')
         
@@ -2855,12 +3070,9 @@ async def send_tomorrow_reminders(current_user: dict = Depends(get_current_user)
         tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
         
         # Find all confirmed bookings for tomorrow that haven't received reminders
-        bookings = await db.bookings.find({
-            "date": tomorrow,
-            "status": "confirmed",
-            "payment_status": "paid",
-            "reminder_sent": {"$ne": True}
-        }, {"_id": 0}).to_list(100)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow_date)
+        bookings = [row_to_booking(r) for r in rows]
         
         sent_count = 0
         failed_count = 0
@@ -2869,10 +3081,8 @@ async def send_tomorrow_reminders(current_user: dict = Depends(get_current_user)
             success = await send_booking_reminder(booking)
             if success:
                 # Mark reminder as sent
-                await db.bookings.update_one(
-                    {"id": booking['id']},
-                    {"$set": {"reminder_sent": True, "reminder_sent_at": datetime.now(timezone.utc).isoformat()}}
-                )
+                pool = await get_pool()
+                await pool.execute("UPDATE bookings SET reminder_sent = $1, reminder_sent_at = $2 WHERE id = $3", True, datetime.now(timezone.utc).isoformat(), booking['id'])
                 sent_count += 1
             else:
                 failed_count += 1
@@ -2894,12 +3104,9 @@ async def get_pending_reminders(current_user: dict = Depends(get_current_user)):
     try:
         tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
         
-        bookings = await db.bookings.find({
-            "date": tomorrow,
-            "status": "confirmed",
-            "payment_status": "paid",
-            "reminder_sent": {"$ne": True}
-        }, {"_id": 0, "id": 1, "booking_ref": 1, "name": 1, "email": 1, "phone": 1, "date": 1, "time": 1}).to_list(100)
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow_date)
+        bookings = [row_to_booking(r) for r in rows]
         
         return {
             "date": tomorrow,
@@ -2937,7 +3144,7 @@ async def health():
     err = None
     try:
         # lightweight ping: count 0/1 doc
-        await db.bookings.count_documents({}, limit=1)
+        (await (await get_pool()).fetchval("SELECT COUNT(*) FROM bookings LIMIT 1"))
     except Exception as e:
         ok_db = False
         err = str(e)
@@ -2985,7 +3192,21 @@ async def admin_test_write(x_admin_token: str | None = None):
         "serviceType": "test",
         "created_at_utc": now.isoformat()
     }
-    r = await db.bookings.insert_one(test_doc)
+    pool = await get_pool()
+    await pool.execute("""
+        INSERT INTO bookings (id, booking_ref, name, email, phone, pickup_address,
+            dropoff_address, date, time, passengers, notes, pricing, total_price,
+            status, payment_status, service_type, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$15,$16,$17)
+    """, test_doc.get("id"), test_doc.get("booking_ref"), test_doc.get("name"), test_doc.get("email"),
+        test_doc.get("phone"), test_doc.get("pickupAddress", test_doc.get("pickup_address")),
+        test_doc.get("dropoffAddress", test_doc.get("dropoff_address")),
+        test_doc.get("date"), test_doc.get("time"), str(test_doc.get("passengers", "1")),
+        test_doc.get("notes"), json.dumps(test_doc.get("pricing")) if test_doc.get("pricing") else None,
+        float(test_doc.get("totalPrice", test_doc.get("total_price", 0)) or 0),
+        test_doc.get("status", "pending"), test_doc.get("payment_status", "unpaid"),
+        test_doc.get("serviceType", test_doc.get("service_type")),
+        test_doc.get("createdAt", test_doc.get("created_at", datetime.utcnow().isoformat())))
     return {"ok": True, "insertedId": str(r.inserted_id), "test_id": test_doc["id"]}
 # === /DOMINAT8_ADMIN_DIAGNOSTICS_V1 ===
 
@@ -3027,12 +3248,8 @@ async def admin_bootstrap(body: _BootstrapBody, x_admin_token: Optional[str] = N
     pwd_hash = _hash_password(body.password)
     now = datetime.now(timezone.utc)
 
-    await db.admins.update_one(
-        {"username": body.username},
-        {"$set": {"username": body.username, "password": pwd_hash, "updated_at": now.isoformat()},
-         "$setOnInsert": {"created_at": now.isoformat()}},
-        upsert=True
-    )
+    pool = await get_pool()
+    await pool.execute("UPDATE admins SET username = $1, password = $2, updated_at = $3 WHERE username = $4", body.username, pwd_hash, now.isoformat(), body.username)
 
     return {"ok": True, "username": body.username}
 # === END BREAK-GLASS ADMIN BOOTSTRAP ===

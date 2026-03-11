@@ -283,15 +283,38 @@ setInterval(loadBookings, 30000);
 
 @router.get("/api/admin/bookings-list")
 async def admin_bookings_list(req: Request):
-    """Fetch bookings from MongoDB for the server-rendered admin panel."""
+    """Fetch bookings from PostgreSQL for the server-rendered admin panel."""
     if not _require(req):
         return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     try:
-        from db import db
-        if db is None:
-            return JSONResponse({"ok": False, "error": "MONGO_URL not set", "items": []})
-        docs = await db.bookings.find({}, {"_id": 0}).sort("createdAt", -1).to_list(500)
-        return JSONResponse({"ok": True, "count": len(docs), "items": docs})
+        from db import get_pool
+        import json
+        pool = await get_pool()
+        rows = await pool.fetch("SELECT * FROM bookings ORDER BY created_at DESC LIMIT 500")
+        items = []
+        for row in rows:
+            d = dict(row)
+            # Map snake_case DB columns to camelCase for frontend
+            d["pickupAddress"] = d.pop("pickup_address", None)
+            d["dropoffAddress"] = d.pop("dropoff_address", None)
+            d["totalPrice"] = float(d.pop("total_price", 0) or 0)
+            d["serviceType"] = d.pop("service_type", None)
+            d["createdAt"] = d.pop("created_at", None)
+            d["updatedAt"] = d.pop("updated_at", None)
+            d["vipPickup"] = d.pop("vip_pickup", False)
+            d["oversizedLuggage"] = d.pop("oversized_luggage", False)
+            d["returnTrip"] = d.pop("return_trip", False)
+            d["departureFlightNumber"] = d.pop("departure_flight_number", None)
+            d["departureTime"] = d.pop("departure_time", None)
+            d["arrivalFlightNumber"] = d.pop("arrival_flight_number", None)
+            d["arrivalTime"] = d.pop("arrival_time", None)
+            d["additionalPickups"] = d.pop("additional_pickups", [])
+            # Convert Decimal to float for JSON serialisation
+            for k in ["driver_payout", "return_driver_payout"]:
+                if d.get(k) is not None:
+                    d[k] = float(d[k])
+            items.append(d)
+        return JSONResponse({"ok": True, "count": len(items), "items": items})
     except Exception as e:
         logger.error(f"admin_bookings_list error: {e}")
         return JSONResponse({"ok": False, "error": str(e), "items": []})
