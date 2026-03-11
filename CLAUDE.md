@@ -21,6 +21,7 @@
 - **SMS:** Twilio
 - **Email:** Mailgun HTTP API — DO NOT use Gmail API or raw SMTP
 - **Analytics:** PostHog
+- **Geocoding / Autocomplete:** Google Maps API (`@react-google-maps/api`) — API key set in Vercel as `REACT_APP_GOOGLE_MAPS_API_KEY`. Falls back to plain text inputs when key is missing.
 
 ## Important Rules for AI Sessions
 
