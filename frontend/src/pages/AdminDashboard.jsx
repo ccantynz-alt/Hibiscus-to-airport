@@ -132,13 +132,15 @@ const AdminDashboard = () => {
         .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
       
       setStats({ total, pending, confirmed, totalRevenue });
-      setLoading(false);
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem('admin_token');
         navigate('/admin/login');
+        return;
       }
       toast({ title: 'Error', description: 'Failed to fetch bookings', variant: 'destructive' });
+    } finally {
+      setLoading(false);
     }
   };
 
