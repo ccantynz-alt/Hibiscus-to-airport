@@ -3,7 +3,8 @@
 export const BACKEND_URL =
   process.env.REACT_APP_BACKEND_URL || 'https://hibiscus-to-airport-1.onrender.com';
 
-// Google Maps API key — set REACT_APP_GOOGLE_MAPS_API_KEY in your environment
-// for production.  The fallback key is the project's shared dev key.
+// Google Maps API key — MUST be set via REACT_APP_GOOGLE_MAPS_API_KEY env var
+// in Vercel (or .env.local for local dev). No fallback — autocomplete will
+// gracefully degrade to plain text inputs when the key is missing.
 export const GOOGLE_MAPS_API_KEY =
-  process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyCWCQ_4vQX3j9i19Qg6-Fjzg0Muv1KtK5U';
+  process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '';
