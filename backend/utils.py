@@ -779,7 +779,7 @@ def send_cancellation_email(booking: dict):
         
         <p style="margin-top: 20px; color: #666;">
           <strong>Contact Us:</strong><br>
-          Phone: 021 123 4567<br>
+          Phone: 021 743 321<br>
           Email: info@bookaride.co.nz
         </p>
       </div>
@@ -797,7 +797,7 @@ def send_cancellation_sms(booking: dict):
 Ref: {booking_ref}
 Date: {formatted_date} at {booking['time']}
 
-Your booking has been cancelled. Contact us if you have questions: 021 123 4567"""
+Your booking has been cancelled. Contact us if you have questions: 021 743 321"""
     
     return send_sms(booking['phone'], message)
 
