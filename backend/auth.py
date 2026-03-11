@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import logging
+import os
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import os
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -15,8 +16,6 @@ if not SECRET_KEY:
     import secrets as _secrets
     SECRET_KEY = _secrets.token_urlsafe(64)
     logging.getLogger(__name__).warning("JWT_SECRET_KEY not set — using random key (tokens will not survive restarts)")
-
-import logging
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
