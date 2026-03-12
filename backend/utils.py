@@ -1,15 +1,11 @@
 import os
 import requests
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 from twilio.rest import Client
 import logging
 from datetime import datetime
 import vobject
 import uuid
+from db import get_pool
 
 # iCloud/CardDAV Configuration
 ICLOUD_USERNAME = os.environ.get('ICLOUD_USERNAME', '')
@@ -18,22 +14,21 @@ CARDDAV_URL = "https://contacts.icloud.com"
 
 
 # Booking Reference Generator
-async def generate_booking_reference(db):
+async def generate_booking_reference():
     """Generate booking reference starting from H1, H2, H3..."""
     try:
-        # Get the last booking to determine next number
-        last_booking = await db.bookings.find_one(
-            {"booking_ref": {"$exists": True}},
-            sort=[("createdAt", -1)]
+        pool = await get_pool()
+        row = await pool.fetchrow(
+            "SELECT booking_ref FROM bookings WHERE booking_ref LIKE 'H%' ORDER BY booking_ref DESC LIMIT 1"
         )
-        
-        if last_booking and 'booking_ref' in last_booking:
+
+        if row and row['booking_ref']:
             # Extract number from H123 format
-            last_num = int(last_booking['booking_ref'][1:])
+            last_num = int(row['booking_ref'][1:])
             next_num = last_num + 1
         else:
             next_num = 1
-        
+
         return f"H{next_num}"
     except Exception as e:
         logger.error(f"Error generating booking reference: {str(e)}")
@@ -113,45 +108,38 @@ def sync_contact_to_icloud(booking: dict):
         # Method 2: Email vCard to iCloud email (opens as contact on iPhone)
         # Send vCard as email attachment to iCloud email
         icloud_email = f"{ICLOUD_USERNAME}@icloud.com" if ICLOUD_USERNAME else None
-        
+
         if icloud_email:
             try:
-                # Create email with vCard attachment
-                from email.mime.multipart import MIMEMultipart
-                from email.mime.text import MIMEText
-                from email.mime.base import MIMEBase
-                from email import encoders
-                import smtplib
-                
-                msg = MIMEMultipart()
-                msg['From'] = os.environ.get('SENDER_EMAIL', 'noreply@bookaride.co.nz')
-                msg['To'] = icloud_email
-                msg['Subject'] = f"New Customer Contact - {booking.get('name')} ({booking_ref})"
-                
-                body = f"New booking customer:\n\nName: {booking.get('name')}\nPhone: {booking.get('phone')}\nEmail: {booking.get('email')}\nBooking: {booking_ref}\n\nOpen the attached vCard to add to contacts."
-                msg.attach(MIMEText(body, 'plain'))
-                
-                # Attach vCard
-                vcard_attachment = MIMEBase('text', 'vcard', name=f"{booking.get('name', 'contact')}.vcf")
-                vcard_attachment.set_payload(vcard_data)
-                encoders.encode_base64(vcard_attachment)
-                vcard_attachment.add_header('Content-Disposition', 'attachment', filename=f"{booking.get('name', 'contact')}.vcf")
-                msg.attach(vcard_attachment)
-                
-                # Send via SMTP
-                smtp_server = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
-                smtp_port = int(os.environ.get('SMTP_PORT', 587))
-                smtp_user = os.environ.get('SMTP_USERNAME')
-                smtp_pass = os.environ.get('SMTP_PASSWORD')
-                
-                with smtplib.SMTP(smtp_server, smtp_port) as server:
-                    server.starttls()
-                    server.login(smtp_user, smtp_pass)
-                    server.send_message(msg)
-                
-                logger.info(f"Contact vCard emailed to iCloud: {booking.get('name')} ({booking_ref})")
-                return True
-                
+                # Send vCard via Mailgun with attachment
+                api_key = os.environ.get('MAILGUN_API_KEY')
+                domain = os.environ.get('MAILGUN_DOMAIN')
+                if not api_key or not domain:
+                    logger.warning("Mailgun not configured, skipping iCloud vCard sync")
+                    return False
+
+                subject = f"New Customer Contact - {booking.get('name')} ({booking_ref})"
+                text_body = f"New booking customer:\n\nName: {booking.get('name')}\nPhone: {booking.get('phone')}\nEmail: {booking.get('email')}\nBooking: {booking_ref}\n\nOpen the attached vCard to add to contacts."
+
+                response = requests.post(
+                    f"https://api.mailgun.net/v3/{domain}/messages",
+                    auth=("api", api_key),
+                    files=[("attachment", (f"{booking.get('name', 'contact')}.vcf", vcard_data, "text/vcard"))],
+                    data={
+                        "from": os.environ.get('SENDER_EMAIL', 'noreply@bookaride.co.nz'),
+                        "to": icloud_email,
+                        "subject": subject,
+                        "text": text_body,
+                    }
+                )
+
+                if response.status_code == 200:
+                    logger.info(f"Contact vCard emailed to iCloud: {booking.get('name')} ({booking_ref})")
+                    return True
+                else:
+                    logger.error(f"Mailgun vCard send failed ({response.status_code}): {response.text}")
+                    return False
+
             except Exception as email_error:
                 logger.error(f"Failed to email vCard to iCloud: {str(email_error)}")
                 return False
@@ -329,57 +317,23 @@ def calculate_price(distance_km: float, passengers: int = 1, vip_pickup: bool = 
         'ratePerKm': rate_per_km
     }
 
-# Email Notifications — via Gmail API (service account or OAuth)
+# Email Notifications — via Mailgun HTTP API
 #
-# Requires either:
-#   GOOGLE_SERVICE_ACCOUNT_FILE  – path to service-account JSON with domain-wide delegation
-#   GOOGLE_CREDENTIALS_JSON      – inline JSON credentials (for container deployments)
-# And:
-#   SENDER_EMAIL                 – the "from" address (must be in the Google Workspace domain)
-#
-# Falls back to SMTP if GOOGLE_SERVICE_ACCOUNT_FILE / GOOGLE_CREDENTIALS_JSON are not set
-# (so the old SMTP_* env vars still work as a safety net).
-
-def _get_gmail_service():
-    """Build a Gmail API service using service-account credentials with domain-wide delegation."""
-    try:
-        from google.oauth2 import service_account
-        from googleapiclient.discovery import build
-        import json
-
-        SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-        sender = os.environ.get('SENDER_EMAIL', 'noreply@bookaride.co.nz')
-
-        sa_file = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE', '')
-        sa_json = os.environ.get('GOOGLE_CREDENTIALS_JSON', '')
-
-        if sa_file:
-            creds = service_account.Credentials.from_service_account_file(
-                sa_file, scopes=SCOPES
-            ).with_subject(sender)
-        elif sa_json:
-            info = json.loads(sa_json)
-            creds = service_account.Credentials.from_service_account_info(
-                info, scopes=SCOPES
-            ).with_subject(sender)
-        else:
-            return None  # no credentials — fall through to SMTP
-
-        return build('gmail', 'v1', credentials=creds, cache_discovery=False)
-    except Exception as e:
-        logger.error(f"Failed to build Gmail API service: {e}")
-        return None
+# Requires:
+#   MAILGUN_API_KEY   – Mailgun API key
+#   MAILGUN_DOMAIN    – Mailgun sending domain
+#   SENDER_EMAIL      – the "from" address (default: noreply@bookaride.co.nz)
 
 def send_email(to_email: str, subject: str, body: str, calendar_invite=None):
-    """Send email via Gmail API (preferred) with SMTP fallback."""
+    """Send email via Mailgun HTTP API."""
     try:
+        api_key = os.environ.get('MAILGUN_API_KEY')
+        domain = os.environ.get('MAILGUN_DOMAIN')
         sender_email = os.environ.get('SENDER_EMAIL', 'noreply@bookaride.co.nz')
 
-        # Build MIME message
-        msg = MIMEMultipart('mixed')
-        msg['From'] = sender_email
-        msg['To'] = to_email
-        msg['Subject'] = subject
+        if not api_key or not domain:
+            logger.error("Mailgun not configured (set MAILGUN_API_KEY and MAILGUN_DOMAIN)")
+            return False
 
         html_body = f"""
         <html>
@@ -388,41 +342,32 @@ def send_email(to_email: str, subject: str, body: str, calendar_invite=None):
           </body>
         </html>
         """
-        msg.attach(MIMEText(html_body, 'html'))
 
+        data = {
+            "from": sender_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body,
+        }
+
+        files = []
         if calendar_invite:
-            ical_part = MIMEBase('text', 'calendar', method='REQUEST', name='booking.ics')
-            ical_part.set_payload(calendar_invite)
-            encoders.encode_base64(ical_part)
-            ical_part.add_header('Content-Disposition', 'attachment', filename='booking.ics')
-            msg.attach(ical_part)
+            invite_bytes = calendar_invite if isinstance(calendar_invite, bytes) else calendar_invite.encode('utf-8')
+            files.append(("attachment", ("booking.ics", invite_bytes, "text/calendar")))
 
-        # --- Try Gmail API first ---
-        gmail = _get_gmail_service()
-        if gmail:
-            import base64
-            raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-            gmail.users().messages().send(
-                userId='me', body={'raw': raw}
-            ).execute()
-            logger.info(f"Email sent via Gmail API to {to_email}")
+        response = requests.post(
+            f"https://api.mailgun.net/v3/{domain}/messages",
+            auth=("api", api_key),
+            data=data,
+            files=files if files else None,
+        )
+
+        if response.status_code == 200:
+            logger.info(f"Email sent via Mailgun to {to_email}")
             return True
-
-        # --- SMTP fallback ---
-        smtp_server = os.environ.get('SMTP_SERVER', '')
-        smtp_username = os.environ.get('SMTP_USERNAME', '')
-        smtp_password = os.environ.get('SMTP_PASSWORD', '')
-        if smtp_server and smtp_username:
-            smtp_port = int(os.environ.get('SMTP_PORT', 587))
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_username, smtp_password)
-                server.send_message(msg)
-            logger.info(f"Email sent via SMTP to {to_email}")
-            return True
-
-        logger.error("No email provider configured (set GOOGLE_SERVICE_ACCOUNT_FILE or SMTP_SERVER)")
-        return False
+        else:
+            logger.error(f"Mailgun API error ({response.status_code}): {response.text}")
+            return False
     except Exception as e:
         logger.error(f"Error sending email: {str(e)}")
         return False

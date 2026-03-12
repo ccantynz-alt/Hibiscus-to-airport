@@ -166,7 +166,7 @@ def agents_ping():
 try:
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     from apscheduler.triggers.cron import CronTrigger
-    from db import db as shared_db
+    from db import get_pool, close_pool
 
     scheduler = AsyncIOScheduler()
 
@@ -174,17 +174,17 @@ try:
         """Send reminders for bookings happening tomorrow — runs daily at 6 PM NZ time."""
         try:
             logger.info("Running day-before reminder job...")
-            if shared_db is None:
-                logger.warning("MongoDB not connected, skipping reminders")
-                return
+            pool = await get_pool()
             tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
-            bookings = await shared_db.bookings.find({
-                "date": tomorrow,
-                "status": "confirmed",
-                "payment_status": "paid",
-                "reminder_sent": {"$ne": True}
-            }, {"_id": 0}).to_list(100)
-            logger.info(f"Found {len(bookings)} bookings for tomorrow ({tomorrow}) needing reminders")
+            rows = await pool.fetch(
+                """SELECT * FROM bookings
+                   WHERE date = $1 AND status = 'confirmed'
+                   AND payment_status = 'paid'
+                   AND (reminder_sent IS NULL OR reminder_sent = FALSE)
+                   LIMIT 100""",
+                tomorrow
+            )
+            logger.info(f"Found {len(rows)} bookings for tomorrow ({tomorrow}) needing reminders")
 
             try:
                 from utils import send_email, send_sms, format_date_nz
@@ -193,7 +193,8 @@ try:
                 return
 
             sent_count = 0
-            for booking in bookings:
+            for row in rows:
+                booking = dict(row)
                 try:
                     booking_ref = booking.get('booking_ref', 'N/A')
                     formatted_date = format_date_nz(booking['date'])
@@ -210,8 +211,8 @@ try:
                         <div style="background:#f8fafc;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #f59e0b;">
                           <p><strong>Booking:</strong> {booking_ref}</p>
                           <p><strong>Date &amp; Time:</strong> {formatted_date} at {booking['time']}</p>
-                          <p><strong>Pickup:</strong> {booking['pickupAddress']}</p>
-                          <p><strong>Drop-off:</strong> {booking['dropoffAddress']}</p>
+                          <p><strong>Pickup:</strong> {booking['pickup_address']}</p>
+                          <p><strong>Drop-off:</strong> {booking['dropoff_address']}</p>
                         </div>
                         <p>Questions? Contact us at 021 743 321 or bookings@bookaride.co.nz</p>
                       </div>
@@ -222,14 +223,14 @@ try:
                         f"REMINDER: Your airport transfer is tomorrow!\n"
                         f"Ref: {booking_ref}\n"
                         f"Pickup: {formatted_date} at {booking['time']}\n"
-                        f"From: {booking['pickupAddress'][:50]}\n"
+                        f"From: {(booking['pickup_address'] or '')[:50]}\n"
                         f"Be ready 5-10 mins early. Questions? 021 743 321"
                     )
                     send_sms(booking['phone'], sms_message)
 
-                    await shared_db.bookings.update_one(
-                        {"id": booking['id']},
-                        {"$set": {"reminder_sent": True, "reminder_sent_at": datetime.now(timezone.utc).isoformat()}}
+                    await pool.execute(
+                        "UPDATE bookings SET reminder_sent = TRUE, reminder_sent_at = $1 WHERE id = $2",
+                        datetime.now(timezone.utc).isoformat(), booking['id']
                     )
                     sent_count += 1
                     logger.info(f"Reminder sent for booking {booking_ref}")
@@ -254,7 +255,8 @@ try:
     @app.on_event("shutdown")
     async def shutdown_scheduler():
         scheduler.shutdown()
-        logger.info("Scheduler shutdown")
+        await close_pool()
+        logger.info("Scheduler and DB pool shutdown")
 
 except Exception as e:
     logger.warning(f"Scheduler not available: {e}")

@@ -222,7 +222,8 @@ const BookingPage = () => {
     arrivalTime: '',
     vipPickup: false,
     oversizedLuggage: false,
-    returnTrip: false
+    returnTrip: false,
+    paymentMethod: 'stripe'
   });
 
   // Format date for display in NZ format (e.g., "Saturday, 27/12/2025")
@@ -306,7 +307,7 @@ const BookingPage = () => {
       
       setPromoDiscount(response.data);
       toast({ 
-        title: 'ðŸŽ‰ Promo Code Applied!', 
+        title: '🎉 Promo Code Applied!', 
         description: `You saved $${response.data.discount_amount.toFixed(2)}!` 
       });
     } catch (error) {
@@ -434,7 +435,24 @@ const BookingPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    // Validate required fields that aren't covered by native `required`
+    if (!formData.serviceType) {
+      toast({ title: "Service Type Required", description: "Please select a service type", variant: "destructive" });
+      return;
+    }
+    if (!formData.date) {
+      toast({ title: "Date Required", description: "Please select a pickup date", variant: "destructive" });
+      return;
+    }
+    if (!formData.time) {
+      toast({ title: "Time Required", description: "Please select a pickup time", variant: "destructive" });
+      return;
+    }
+    if (!formData.name || !formData.email || !formData.phone) {
+      toast({ title: "Contact Details Required", description: "Please fill in your name, email, and phone number", variant: "destructive" });
+      return;
+    }
     if (!pricing) {
       toast({
         title: "Calculate Price First",
@@ -447,23 +465,28 @@ const BookingPage = () => {
     setSubmitting(true);
 
     try {
-      // Create booking first
+      // Create booking
       const bookingResponse = await axios.post(`${BACKEND_URL}/api/bookings`, {
         ...formData,
-          passengers: String(formData.passengers),
+        passengers: String(formData.passengers),
         pricing: pricing,
-        payment_method: 'stripe',
-        payment_status: 'pending'
+        payment_method: formData.paymentMethod === 'cash' ? 'cash' : 'stripe',
+        payment_status: formData.paymentMethod === 'cash' ? 'pay_on_day' : 'pending'
       });
-      
+
       const newBookingId = bookingResponse.data.booking_id;
-      
-      // Redirect to Stripe checkout
-      const checkoutResponse = await axios.post(`${BACKEND_URL}/api/payment/create-checkout`, {
-        booking_id: newBookingId
-      });
-      window.location.href = checkoutResponse.data.url;
-      
+
+      if (formData.paymentMethod === 'cash') {
+        // Cash — no Stripe checkout, redirect to confirmation
+        window.location.href = `/booking/confirmation?id=${newBookingId}&method=cash`;
+      } else {
+        // Stripe checkout
+        const checkoutResponse = await axios.post(`${BACKEND_URL}/api/payment/create-checkout`, {
+          booking_id: newBookingId
+        });
+        window.location.href = checkoutResponse.data.url;
+      }
+
     } catch (error) {
       toast({
         title: "Booking Error",
@@ -492,13 +515,13 @@ const BookingPage = () => {
             <span className="font-medium">International Bookings Welcome</span>
           </div>
           <div className="flex items-center gap-1 text-gray-300">
-            <span className="text-gold">âœ“</span> 6 Languages
+            <span className=”text-gold”>✔</span> 6 Languages
           </div>
-          <div className="flex items-center gap-1 text-gray-300">
-            <span className="text-gold">âœ“</span> 7 Currencies
+          <div className=”flex items-center gap-1 text-gray-300”>
+            <span className=”text-gold”>✔</span> 7 Currencies
           </div>
-          <div className="flex items-center gap-1 text-gray-300">
-            <span className="text-gold">âœ“</span> Worldwide Payment
+          <div className=”flex items-center gap-1 text-gray-300”>
+            <span className=”text-gold”>✔</span> Worldwide Payment
           </div>
         </div>
       </div>
@@ -512,7 +535,7 @@ const BookingPage = () => {
             Book Your Transfer
           </h1>
           <p className="text-gray-600">
-            Get instant pricing â€¢ Secure payment â€¢ Confirmation in seconds
+            Get instant pricing &bull; Secure payment &bull; Confirmation in seconds
           </p>
         </div>
       </section>
@@ -611,7 +634,7 @@ const BookingPage = () => {
                           size="sm"
                           className="h-11 px-3 border-red-300 text-red-600 hover:bg-red-50"
                         >
-                          âœ•
+                          ✕
                         </Button>
                       </div>
                     ))}
@@ -835,7 +858,7 @@ const BookingPage = () => {
                           <p className="text-xs text-gray-500">We&apos;ll contact you to arrange return details</p>
                         </div>
                       </div>
-                      <span className="font-semibold text-gold">Ã—2</span>
+                      <span className="font-semibold text-gold">×2</span>
                     </label>
                   </div>
                 </div>
@@ -948,7 +971,7 @@ const BookingPage = () => {
                       {pricing.returnTrip && (
                         <div className="flex justify-between py-2 border-b border-gray-100">
                           <span className="text-gray-600">Return Trip:</span>
-                          <span className="font-semibold text-green-600">Ã—2</span>
+                          <span className="font-semibold text-green-600">×2</span>
                         </div>
                       )}
                     </div>
@@ -966,7 +989,7 @@ const BookingPage = () => {
                         {promoDiscount ? (
                           <div className="space-y-2">
                             <div className="flex justify-between items-center text-green-600">
-                              <span className="text-sm font-medium">ðŸŽ‰ {promoDiscount.code}</span>
+                              <span className="text-sm font-medium">🎉 {promoDiscount.code}</span>
                               <span>-${promoDiscount.discount_amount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center">
@@ -1005,24 +1028,62 @@ const BookingPage = () => {
                           </div>
                         )}
                       </div>
-                      <p className="text-xs text-gray-600 mt-2">NZD â€¢ Price includes GST</p>
+                      <p className="text-xs text-gray-600 mt-2">NZD &bull; Price includes GST</p>
                     </div>
 
-                    {/* Payment Info - Stripe Only */}
-                    <div className="mt-6">
-                      <div className="flex items-center p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl">
+                    {/* Payment Method Selection */}
+                    <div className="mt-6 space-y-3">
+                      <h3 className="text-sm font-semibold text-gray-700">Payment Method</h3>
+                      <label
+                        className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          formData.paymentMethod === 'stripe'
+                            ? 'border-indigo-400 bg-gradient-to-r from-indigo-50 to-purple-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="stripe"
+                          checked={formData.paymentMethod === 'stripe'}
+                          onChange={handleChange}
+                          className="sr-only"
+                        />
                         <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center mr-4">
-                          <span className="text-white text-lg">ðŸ’³</span>
+                          <span className="text-white text-lg">💳</span>
                         </div>
                         <div>
-                          <span className="font-semibold text-gray-900">Secure Card Payment</span>
-                          <p className="text-sm text-gray-600">Pay securely with Credit or Debit Card via Stripe</p>
+                          <span className="font-semibold text-gray-900">Pay Online</span>
+                          <p className="text-sm text-gray-600">Credit or Debit Card via Stripe</p>
                         </div>
                         <div className="ml-auto flex items-center gap-1">
                           <span className="text-xs text-gray-500">Powered by</span>
                           <span className="font-bold text-indigo-600">Stripe</span>
                         </div>
-                      </div>
+                      </label>
+                      <label
+                        className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          formData.paymentMethod === 'cash'
+                            ? 'border-green-400 bg-green-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="cash"
+                          checked={formData.paymentMethod === 'cash'}
+                          onChange={handleChange}
+                          className="sr-only"
+                        />
+                        <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+                          <DollarSign className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-900">Pay Cash</span>
+                          <p className="text-sm text-gray-600">Pay the driver on the day</p>
+                        </div>
+                      </label>
                     </div>
                   </div>
                 )}
@@ -1039,7 +1100,8 @@ const BookingPage = () => {
                       Processing...
                     </>
                   ) : (
-                    <>ðŸ’³ Pay with Card</>
+                    <>{formData.paymentMethod === 'cash' ? 'Confirm Booking' : '💳 Pay with Card'}</>
+
                   )}
                 </Button>
               </div>
