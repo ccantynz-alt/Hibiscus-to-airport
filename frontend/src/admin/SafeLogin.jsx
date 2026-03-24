@@ -14,7 +14,7 @@ export default function SafeLogin({ onAuthed }) {
 
   const apiBase = useMemo(() => {
     // Prefer explicit env; fallback to your known backend domain.
-    const base = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_BASE || "https://api.hibiscustoairport.co.nz";
+    const base = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_BASE || "";
     return base.replace(/\/+$/, "");
   }, []);
 
