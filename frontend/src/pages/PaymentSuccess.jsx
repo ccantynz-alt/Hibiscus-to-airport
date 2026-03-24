@@ -10,13 +10,15 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const sessionId = searchParams.get('session_id');
+  const method = searchParams.get('method');
+  const isCash = method === 'cash';
 
   useEffect(() => {
-    // Simulate verification
+    // Brief loading state for UX
     setTimeout(() => {
       setLoading(false);
-    }, 2000);
-  }, [sessionId]);
+    }, isCash ? 500 : 2000);
+  }, [sessionId, isCash]);
 
   if (loading) {
     return (
@@ -39,13 +41,15 @@ const PaymentSuccess = () => {
             <CheckCircle2 className="w-24 h-24 text-green-500 mx-auto mb-6" />
             
             <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Payment Successful!
+              {isCash ? 'Booking Confirmed!' : 'Payment Successful!'}
             </h1>
-            
+
             <div className="w-24 h-1 bg-gold mx-auto mb-6"></div>
-            
+
             <p className="text-xl text-gray-300 mb-8">
-              Thank you for your booking! We've received your payment and sent confirmation details to your email and phone.
+              {isCash
+                ? 'Thank you for your booking! You can pay the driver on the day. Confirmation details have been sent to your email and phone.'
+                : "Thank you for your booking! We've received your payment and sent confirmation details to your email and phone."}
             </p>
             
             <div className="bg-black/50 border border-gold/30 rounded-xl p-6 mb-8">
