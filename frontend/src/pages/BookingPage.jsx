@@ -478,7 +478,7 @@ const BookingPage = () => {
 
       if (formData.paymentMethod === 'cash') {
         // Cash — no Stripe checkout, redirect to confirmation
-        window.location.href = `/booking/confirmation?id=${newBookingId}&method=cash`;
+        window.location.href = `/payment/success?booking_id=${newBookingId}&method=cash`;
       } else {
         // Stripe checkout
         const checkoutResponse = await axios.post(`${BACKEND_URL}/api/payment/create-checkout`, {
@@ -899,7 +899,7 @@ const BookingPage = () => {
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
-                          placeholder="+64 21 123 4567"
+                          placeholder="021 743 321"
                           required
                           className="h-11 rounded-md"
                         />

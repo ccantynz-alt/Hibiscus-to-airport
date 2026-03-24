@@ -189,6 +189,8 @@ class PriceCalculation(BaseModel):
     passengers: int = 1
 
 class BookingCreate(BaseModel):
+    model_config = {"extra": "ignore"}
+
     name: str
     email: str
     phone: str
@@ -202,6 +204,7 @@ class BookingCreate(BaseModel):
     totalPrice: Optional[float] = None
     status: Optional[str] = "pending"
     payment_status: Optional[str] = "unpaid"
+    payment_method: Optional[str] = None
     # Flight information
     departureFlightNumber: Optional[str] = ""
     departureTime: Optional[str] = ""
@@ -212,6 +215,8 @@ class BookingCreate(BaseModel):
     vipPickup: Optional[bool] = False
     oversizedLuggage: Optional[bool] = False
     returnTrip: Optional[bool] = False
+    # Multi-stop
+    additionalPickups: Optional[list] = []
 
 class AdminLogin(BaseModel):
     username: str
@@ -609,7 +614,7 @@ async def create_checkout_session(booking_data: dict):
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
-        frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000').replace('/api', '')
+        frontend_url = os.environ.get('FRONTEND_URL', os.environ.get('REACT_APP_BACKEND_URL', 'https://hibiscustoairport.co.nz')).replace('/api', '')
         success_url = f"{frontend_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{frontend_url}/payment/cancel"
         
@@ -651,7 +656,7 @@ async def send_payment_link(booking_id: str):
             raise HTTPException(status_code=400, detail="This booking is already paid")
         
         # Create Stripe checkout session
-        frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000').replace('/api', '')
+        frontend_url = os.environ.get('FRONTEND_URL', os.environ.get('REACT_APP_BACKEND_URL', 'https://hibiscustoairport.co.nz')).replace('/api', '')
         success_url = f"{frontend_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{frontend_url}/payment/cancel"
         
@@ -3071,12 +3076,12 @@ async def send_tomorrow_reminders(current_user: dict = Depends(get_current_user)
         
         # Find all confirmed bookings for tomorrow that haven't received reminders
         pool = await get_pool()
-        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow_date)
+        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow)
         bookings = [row_to_booking(r) for r in rows]
-        
+
         sent_count = 0
         failed_count = 0
-        
+
         for booking in bookings:
             success = await send_booking_reminder(booking)
             if success:
@@ -3105,7 +3110,7 @@ async def get_pending_reminders(current_user: dict = Depends(get_current_user)):
         tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
         
         pool = await get_pool()
-        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow_date)
+        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow)
         bookings = [row_to_booking(r) for r in rows]
         
         return {

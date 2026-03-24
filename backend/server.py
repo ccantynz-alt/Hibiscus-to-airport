@@ -64,7 +64,7 @@ app.add_middleware(NoCacheMiddleware)
 # CORS — allow the known frontend origins (set CORS_ORIGINS env var for custom list)
 _CORS_ORIGINS = os.environ.get(
     "CORS_ORIGINS",
-    "https://hibiscustoairport.co.nz,http://localhost:3000"
+    "https://hibiscustoairport.co.nz,https://www.hibiscustoairport.co.nz,http://localhost:3000"
 ).split(",")
 app.add_middleware(
     CORSMiddleware,

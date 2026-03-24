@@ -28,7 +28,7 @@ Subject: Booking Confirmation - H123
 | Total: $180.65 NZD                             |
 |                                                  |
 | Contact Us                                       |
-| Phone: 021 123 4567                            |
+| Phone: 021 743 321                              |
 | Email: bookings@bookaride.co.nz                 |
 +--------------------------------------------------+
 ```
