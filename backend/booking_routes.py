@@ -3076,12 +3076,12 @@ async def send_tomorrow_reminders(current_user: dict = Depends(get_current_user)
         
         # Find all confirmed bookings for tomorrow that haven't received reminders
         pool = await get_pool()
-        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow_date)
+        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow)
         bookings = [row_to_booking(r) for r in rows]
-        
+
         sent_count = 0
         failed_count = 0
-        
+
         for booking in bookings:
             success = await send_booking_reminder(booking)
             if success:
@@ -3110,7 +3110,7 @@ async def get_pending_reminders(current_user: dict = Depends(get_current_user)):
         tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
         
         pool = await get_pool()
-        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow_date)
+        rows = await pool.fetch("SELECT * FROM bookings WHERE status = 'confirmed' AND date = $1 AND (reminder_sent IS NULL OR reminder_sent = FALSE)", tomorrow)
         bookings = [row_to_booking(r) for r in rows]
         
         return {

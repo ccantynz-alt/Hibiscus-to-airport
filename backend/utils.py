@@ -570,7 +570,7 @@ def send_admin_notification(booking: dict):
     """Send new booking notification to admin"""
     booking_ref = booking.get('booking_ref', 'N/A')
     formatted_date = format_date_with_day(booking['date'])
-    admin_email = os.environ.get('ADMIN_EMAIL')
+    admin_email = os.environ.get('ADMIN_EMAIL', 'bookings@bookaride.co.nz')
     
     # Flight information
     departure_flight = booking.get('departureFlightNumber', '')
@@ -786,7 +786,7 @@ def send_urgent_admin_email(booking: dict, hours_until: float):
     """Send URGENT booking alert email to admin"""
     booking_ref = booking.get('booking_ref', 'N/A')
     formatted_date = format_date_with_day(booking['date'])
-    admin_email = os.environ.get('ADMIN_EMAIL')
+    admin_email = os.environ.get('ADMIN_EMAIL', 'bookings@bookaride.co.nz')
     
     subject = f"🚨 URGENT BOOKING - {booking_ref} - {int(hours_until)}hrs NOTICE!"
     
