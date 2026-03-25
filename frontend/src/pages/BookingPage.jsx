@@ -11,7 +11,7 @@ import axios from 'axios';
 // Safety: prevent hung requests (no UI change)
 axios.defaults.timeout = 15000;
 
-import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import { useLoadScript } from '@react-google-maps/api';
 import PageMeta from '../components/PageMeta';
 
 import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
@@ -182,8 +182,10 @@ const BookingPage = () => {
   const [isPending, startTransition] = React.useTransition();
   const [calculating, setCalculating] = useState(false);
   const [pricing, setPricing] = useState(null);
-  const [pickupAutocomplete, setPickupAutocomplete] = useState(null);
-  const [dropoffAutocomplete, setDropoffAutocomplete] = useState(null);
+  const pickupInputRef = useRef(null);
+  const dropoffInputRef = useRef(null);
+  const pickupACRef = useRef(null);
+  const dropoffACRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
@@ -357,43 +359,51 @@ const BookingPage = () => {
     setPromoDiscount(null);
   };
 
-  const onPickupLoad = (autocomplete) => {
-    setPickupAutocomplete(autocomplete);
-  };
+  // Attach Google's native Autocomplete to plain <input> elements.
+  // Google renders its own .pac-container dropdown in the real DOM,
+  // completely outside React — no Radix/portal conflicts.
+  useEffect(() => {
+    if (!mapsAvailable || !window.google) return;
 
-  const onPickupPlaceChanged = () => {
-    if (pickupAutocomplete !== null) {
-      const place = pickupAutocomplete.getPlace();
-      const address = place.formatted_address || place.name;
-      setFormData({
-        ...formData,
-        pickupAddress: address
+    const acOptions = {
+      componentRestrictions: { country: 'nz' },
+      fields: ['formatted_address', 'name'],
+    };
+
+    if (pickupInputRef.current && !pickupACRef.current) {
+      const ac = new window.google.maps.places.Autocomplete(pickupInputRef.current, acOptions);
+      pickupACRef.current = ac;
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        const address = place.formatted_address || place.name || '';
+        setFormData(prev => {
+          const updated = { ...prev, pickupAddress: address };
+          if (prev.dropoffAddress) {
+            setTimeout(() => calculatePriceWithAddresses(address, prev.dropoffAddress), 300);
+          }
+          return updated;
+        });
+        if (pickupInputRef.current) pickupInputRef.current.value = address;
       });
-      
-      if (formData.dropoffAddress) {
-        setTimeout(() => calculatePriceWithAddresses(address, formData.dropoffAddress), 300);
-      }
     }
-  };
 
-  const onDropoffLoad = (autocomplete) => {
-    setDropoffAutocomplete(autocomplete);
-  };
-
-  const onDropoffPlaceChanged = () => {
-    if (dropoffAutocomplete !== null) {
-      const place = dropoffAutocomplete.getPlace();
-      const address = place.formatted_address || place.name;
-      setFormData({
-        ...formData,
-        dropoffAddress: address
+    if (dropoffInputRef.current && !dropoffACRef.current) {
+      const ac = new window.google.maps.places.Autocomplete(dropoffInputRef.current, acOptions);
+      dropoffACRef.current = ac;
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        const address = place.formatted_address || place.name || '';
+        setFormData(prev => {
+          const updated = { ...prev, dropoffAddress: address };
+          if (prev.pickupAddress) {
+            setTimeout(() => calculatePriceWithAddresses(prev.pickupAddress, address), 300);
+          }
+          return updated;
+        });
+        if (dropoffInputRef.current) dropoffInputRef.current.value = address;
       });
-      
-      if (formData.pickupAddress) {
-        setTimeout(() => calculatePriceWithAddresses(formData.pickupAddress, address), 300);
-      }
     }
-  };
+  }, [mapsAvailable]);
 
   const calculatePriceWithAddresses = async (pickup, dropoff) => {
     if (!pickup || !dropoff) return;
@@ -636,36 +646,17 @@ const BookingPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Pickup Address
                       </label>
-                      {mapsAvailable ? (
-                        <Autocomplete
-                          onLoad={onPickupLoad}
-                          onPlaceChanged={onPickupPlaceChanged}
-                          options={{
-                            componentRestrictions: { country: 'nz' },
-                            fields: ['formatted_address', 'name']
-                          }}
-                        >
-                          <Input
-                            type="text"
-                            name="pickupAddress"
-                            value={formData.pickupAddress}
-                            onChange={handleChange}
-                            placeholder="Enter pickup address..."
-                            required
-                            className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
-                          />
-                        </Autocomplete>
-                      ) : (
-                        <Input
-                          type="text"
-                          name="pickupAddress"
-                          value={formData.pickupAddress}
-                          onChange={handleChange}
-                          placeholder="Enter pickup address..."
-                          required
-                          className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
-                        />
-                      )}
+                      <input
+                        ref={pickupInputRef}
+                        type="text"
+                        name="pickupAddress"
+                        defaultValue={formData.pickupAddress}
+                        onChange={handleChange}
+                        placeholder="Enter pickup address..."
+                        required
+                        autoComplete="off"
+                        className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                      />
                     </div>
                     
                     {/* Add Another Pickup */}
@@ -705,36 +696,17 @@ const BookingPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Drop-off Address
                       </label>
-                      {mapsAvailable ? (
-                        <Autocomplete
-                          onLoad={onDropoffLoad}
-                          onPlaceChanged={onDropoffPlaceChanged}
-                          options={{
-                            componentRestrictions: { country: 'nz' },
-                            fields: ['formatted_address', 'name']
-                          }}
-                        >
-                          <Input
-                            type="text"
-                            name="dropoffAddress"
-                            value={formData.dropoffAddress}
-                            onChange={handleChange}
-                            placeholder="Enter drop-off address..."
-                            required
-                            className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
-                          />
-                        </Autocomplete>
-                      ) : (
-                        <Input
-                          type="text"
-                          name="dropoffAddress"
-                          value={formData.dropoffAddress}
-                          onChange={handleChange}
-                          placeholder="Enter drop-off address..."
-                          required
-                          className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
-                        />
-                      )}
+                      <input
+                        ref={dropoffInputRef}
+                        type="text"
+                        name="dropoffAddress"
+                        defaultValue={formData.dropoffAddress}
+                        onChange={handleChange}
+                        placeholder="Enter drop-off address..."
+                        required
+                        autoComplete="off"
+                        className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                      />
                     </div>
                     
                     {/* Date and Time */}
