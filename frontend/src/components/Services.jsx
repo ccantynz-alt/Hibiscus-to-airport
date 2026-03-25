@@ -29,10 +29,10 @@ const Services = () => {
           {services.map((service) => {
             const IconComponent = iconMap[service.icon];
             return (
-              <Card key={service.id} className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 group bg-white">
+              <Card key={service.id} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group">
                 <CardHeader>
-                  <div className="w-14 h-14 bg-gold/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-gold transition-all duration-300">
-                    <IconComponent className="w-7 h-7 text-gold group-hover:text-black transition-colors duration-300" />
+                  <div className="w-14 h-14 bg-gold/10 rounded-full flex items-center justify-center mb-4">
+                    <IconComponent className="w-7 h-7 text-gold" />
                   </div>
                   <CardTitle className="text-lg font-bold text-gray-900 mb-2">
                     {service.title}
