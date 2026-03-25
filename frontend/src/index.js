@@ -1,24 +1,14 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import "index.css";
 import App from "App";
 
-const rootElement = document.getElementById("root");
-if (rootElement.hasChildNodes()) {
-  ReactDOM.hydrate(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-    rootElement,
-  );
-} else {
-  ReactDOM.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-    rootElement,
-  );
-}
+const root = createRoot(document.getElementById("root"));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
 
 // Report Web Vitals (INP, CLS, LCP) for performance monitoring
 if (typeof window !== 'undefined') {
