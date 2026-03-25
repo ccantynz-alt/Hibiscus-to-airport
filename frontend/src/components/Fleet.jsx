@@ -51,7 +51,7 @@ const Fleet = () => {
   };
 
   return (
-    <section id="fleet" className="py-20 bg-gray-50">
+    <section id="fleet" className="py-20 bg-gray-50 reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -73,7 +73,7 @@ const Fleet = () => {
           {/* Desktop View */}
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             {fleet.map((vehicle) => (
-              <Card key={vehicle.id} className="overflow-hidden border border-gray-200 hover:border-gold hover:shadow-xl transition-all duration-300 bg-white relative rounded-xl">
+              <Card key={vehicle.id} className="overflow-hidden border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 bg-white relative rounded-xl">
                 {vehicle.badge && (
                   <div className={`absolute top-4 right-4 ${vehicle.badgeColor || 'bg-gold text-black'} px-3 py-1 rounded-full text-xs font-bold z-10`}>
                     {vehicle.badge}
@@ -136,14 +136,14 @@ const Fleet = () => {
           
           {/* Features */}
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div className="flex items-center bg-white border-2 border-gray-200 rounded-lg p-6">
+            <div className="flex items-center bg-white border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 rounded-lg p-6">
               <Shield className="w-10 h-10 text-gold mr-4 flex-shrink-0" />
               <div>
                 <h4 className="font-bold text-gray-900 mb-1">Fully Licensed & Insured</h4>
                 <p className="text-sm text-gray-600">All vehicles meet safety standards</p>
               </div>
             </div>
-            <div className="flex items-center bg-white border-2 border-gray-200 rounded-lg p-6">
+            <div className="flex items-center bg-white border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 rounded-lg p-6">
               <Clock className="w-10 h-10 text-gold mr-4 flex-shrink-0" />
               <div>
                 <h4 className="font-bold text-gray-900 mb-1">24/7 Service Available</h4>

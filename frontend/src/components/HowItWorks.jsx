@@ -4,7 +4,7 @@ import { howItWorks } from '../mock';
 
 const HowItWorks = () => {
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-gray-50">
+    <section className="py-20 bg-gradient-to-b from-white to-gray-50 reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
@@ -16,7 +16,7 @@ const HowItWorks = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {howItWorks.map((step, index) => (
             <div key={step.step} className="relative">
-              <Card className="border-2 hover:border-gold hover:shadow-xl transition-all duration-300 h-full">
+              <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 h-full">
                 <CardContent className="p-8">
                   <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mb-6 text-black text-2xl font-bold shadow-lg">
                     {step.step}

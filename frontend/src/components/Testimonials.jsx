@@ -35,7 +35,7 @@ const Testimonials = () => {
           {/* Desktop View */}
           <div className="hidden md:grid md:grid-cols-3 gap-8">
             {visibleTestimonials.map((testimonial, idx) => (
-              <Card key={`${testimonial.id}-${idx}`} className="border-2 hover:border-gold hover:shadow-xl transition-all duration-300">
+              <Card key={`${testimonial.id}-${idx}`} className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
                 <CardContent className="p-8">
                   <div className="flex mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
@@ -62,7 +62,7 @@ const Testimonials = () => {
 
           {/* Mobile View */}
           <div className="md:hidden">
-            <Card className="border-2">
+            <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
               <CardContent className="p-8">
                 <div className="flex mb-4">
                   {[...Array(testimonials[currentIndex].rating)].map((_, i) => (

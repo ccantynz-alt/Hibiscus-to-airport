@@ -8,7 +8,7 @@ const Contact = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="contact" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+    <section id="contact" className="py-20 bg-gradient-to-b from-gray-50 to-white reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">Ready to Book Your Ride?</h2>
@@ -36,7 +36,7 @@ const Contact = () => {
 
           {/* Contact Information */}
           <div className="space-y-4">
-            <Card className="border-2">
+            <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
                   <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
@@ -50,7 +50,7 @@ const Contact = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2">
+            <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
                   <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
@@ -65,7 +65,7 @@ const Contact = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2">
+            <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
                   <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">

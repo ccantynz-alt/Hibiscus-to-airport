@@ -26,7 +26,7 @@ const iconMap = {
 
 const Features = () => {
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-gray-50 reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -93,7 +93,7 @@ const Features = () => {
           {features.map((feature) => {
             const IconComponent = iconMap[feature.icon];
             return (
-              <Card key={feature.id} className="border-2 border-gray-200 hover:border-gold hover:shadow-xl transition-all duration-300 bg-white group">
+              <Card key={feature.id} className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 bg-white group">
                 <CardHeader className="p-6">
                   <div className="w-12 h-12 bg-gold/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-gold transition-all duration-300">
                     <IconComponent className="w-6 h-6 text-gold group-hover:text-black transition-colors duration-300" />
