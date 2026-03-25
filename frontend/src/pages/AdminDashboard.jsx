@@ -600,7 +600,70 @@ const AdminDashboard = () => {
 
   const openViewDetails = (booking) => {
     setSelectedBooking(booking);
+    setSelectedDriverId(booking.assigned_driver_id || '');
+    setDriverPayout(booking.driver_payout || (booking.totalPrice ? (booking.totalPrice * 0.8).toFixed(2) : ''));
+    setDriverNotes('');
     setShowDetailsModal(true);
+  };
+
+  const handleAssignDriver = async (bookingId) => {
+    if (!selectedDriverId) {
+      toast({ title: 'Error', description: 'Please select a driver', variant: 'destructive' });
+      return;
+    }
+    try {
+      setAssigningDriver(true);
+      const token = localStorage.getItem('admin_token');
+      await axios.post(`${BACKEND_URL}/api/bookings/${bookingId}/assign-driver`, {
+        driver_id: parseInt(selectedDriverId),
+        driver_payout: parseFloat(driverPayout) || 0,
+        notes_to_driver: driverNotes
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast({ title: 'Driver Assigned', description: 'Driver has been notified' });
+      await fetchBookings();
+      // Update selected booking with fresh data
+      const updatedBookings = (await axios.get(`${BACKEND_URL}/api/bookings`, {
+        headers: { Authorization: `Bearer ${token}`, 'Cache-Control': 'no-cache' }
+      })).data;
+      const updated = updatedBookings.find(b => b.id === bookingId);
+      if (updated) {
+        setSelectedBooking(updated);
+        setSelectedDriverId(updated.assigned_driver_id || '');
+        setDriverPayout(updated.driver_payout || '');
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: error.response?.data?.detail || 'Failed to assign driver', variant: 'destructive' });
+    } finally {
+      setAssigningDriver(false);
+    }
+  };
+
+  const handleUnassignDriver = async (bookingId) => {
+    if (!window.confirm('Unassign driver from this booking?')) return;
+    try {
+      setAssigningDriver(true);
+      const token = localStorage.getItem('admin_token');
+      await axios.post(`${BACKEND_URL}/api/bookings/${bookingId}/unassign-driver`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast({ title: 'Driver Unassigned', description: 'Driver has been removed from this booking' });
+      await fetchBookings();
+      const updatedBookings = (await axios.get(`${BACKEND_URL}/api/bookings`, {
+        headers: { Authorization: `Bearer ${token}`, 'Cache-Control': 'no-cache' }
+      })).data;
+      const updated = updatedBookings.find(b => b.id === bookingId);
+      if (updated) {
+        setSelectedBooking(updated);
+        setSelectedDriverId('');
+        setDriverPayout(updated.totalPrice ? (updated.totalPrice * 0.8).toFixed(2) : '');
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: error.response?.data?.detail || 'Failed to unassign driver', variant: 'destructive' });
+    } finally {
+      setAssigningDriver(false);
+    }
   };
 
   // Navigation items
