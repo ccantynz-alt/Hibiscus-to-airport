@@ -16,7 +16,12 @@ const DevonportShuttle = createSuburbPage(
     'Restaurants',
     'Ferry Terminal',
     'Boutique Shops'
-  ]
+  ],
+  {
+    title: 'Devonport to Auckland Airport Shuttle',
+    description: 'Airport shuttle from Devonport to Auckland Airport. Skip the ferry hassle with direct transfers. Book online 24/7.',
+    path: '/devonport-airport-shuttle'
+  }
 );
 
 export default DevonportShuttle;
