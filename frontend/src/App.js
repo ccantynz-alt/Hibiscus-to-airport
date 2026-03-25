@@ -70,9 +70,10 @@ const MatakanaFarmersMarketShuttle = lazy(() => import("./pages/MatakanaFarmersM
 const MatakanaWineryShuttle = lazy(() => import("./pages/MatakanaWineryShuttle"));
 const MatakanaVillageShuttle = lazy(() => import("./pages/MatakanaVillageShuttle"));
 
-// Payment pages
+// Payment / booking pages
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
+const MyBooking = lazy(() => import("./pages/MyBooking"));
 
 // Driver / tracking pages
 const DriverPortal = lazy(() => import("./pages/DriverPortal"));
@@ -226,9 +227,10 @@ function PublicRoutes() {
       {/* Pricing */}
       <Route path="/pricing" element={<Pricing />} />
 
-      {/* Payment */}
+      {/* Payment & Booking Lookup */}
       <Route path="/payment/success" element={<PaymentSuccess />} />
       <Route path="/payment/cancel" element={<PaymentCancel />} />
+      <Route path="/my-booking" element={<MyBooking />} />
 
       {/* Suburb shuttle pages - Hibiscus Coast */}
       <Route path="/orewa-airport-shuttle" element={<OrewaShuttle />} />
