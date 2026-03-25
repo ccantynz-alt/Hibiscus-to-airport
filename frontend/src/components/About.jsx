@@ -9,6 +9,7 @@ const About = () => {
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             About <span className="text-gold">Hibiscus to Airport</span>
           </h2>
+          <div className="w-16 h-1 bg-gradient-to-r from-gold to-amber-400 mx-auto mb-4 rounded-full"></div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Your trusted airport shuttle service connecting the Hibiscus Coast to Auckland Airport
           </p>
@@ -16,7 +17,8 @@ const About = () => {
 
         <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
           <div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h3>
+            <h3 className="text-3xl font-bold text-gray-900 mb-2">Why Choose Us</h3>
+            <div className="w-12 h-1 bg-gradient-to-r from-gold to-amber-400 rounded-full mb-6"></div>
             <p className="text-gray-700 mb-4 leading-relaxed">
               Hibiscus to Airport was founded with a simple mission: to provide reliable, comfortable, and affordable airport transportation for residents and visitors of the beautiful Hibiscus Coast region.
             </p>
