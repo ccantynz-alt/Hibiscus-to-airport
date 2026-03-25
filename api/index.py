@@ -235,3 +235,67 @@ async def cron_day_before_reminders(request: Request):
     except Exception as e:
         logger.error(f"Cron reminder error: {e}")
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+# ---------------------------------------------------------------------------
+# IndexNow: Submit URLs to search engines on demand
+# Called by Vercel deploy hook or manually
+# ---------------------------------------------------------------------------
+@app.post("/api/indexnow/submit")
+async def indexnow_submit(request: Request):
+    """Submit URLs to IndexNow for instant indexing by Bing/Yandex."""
+    import requests as http_requests
+
+    cron_secret = os.environ.get("CRON_SECRET", "")
+    auth_header = request.headers.get("authorization", "")
+    if cron_secret and auth_header != f"Bearer {cron_secret}":
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+
+    key = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+    host = "hibiscustoairport.co.nz"
+
+    urls = [
+        f"https://{host}/",
+        f"https://{host}/booking",
+        f"https://{host}/pricing",
+        f"https://{host}/faq",
+        f"https://{host}/service-areas",
+        f"https://{host}/north-shore-airport-shuttle",
+        f"https://{host}/orewa-airport-shuttle",
+        f"https://{host}/whangaparaoa-airport-shuttle",
+        f"https://{host}/silverdale-airport-shuttle",
+        f"https://{host}/red-beach-airport-shuttle",
+        f"https://{host}/gulf-harbour-airport-shuttle",
+        f"https://{host}/stanmore-bay-airport-shuttle",
+        f"https://{host}/albany-airport-shuttle",
+        f"https://{host}/browns-bay-airport-shuttle",
+        f"https://{host}/takapuna-airport-shuttle",
+        f"https://{host}/devonport-airport-shuttle",
+        f"https://{host}/auckland-airport-transfers",
+        f"https://{host}/corporate-airport-transfers",
+        f"https://{host}/early-morning-airport-shuttle",
+        f"https://{host}/late-night-airport-shuttle",
+        f"https://{host}/family-airport-shuttle",
+        f"https://{host}/student-airport-shuttle",
+        f"https://{host}/cruise-transfers",
+        f"https://{host}/best-airport-shuttle",
+    ]
+
+    payload = {
+        "host": host,
+        "key": key,
+        "keyLocation": f"https://{host}/{key}.txt",
+        "urlList": urls
+    }
+
+    try:
+        resp = http_requests.post(
+            "https://api.indexnow.org/IndexNow",
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        logger.info(f"IndexNow submitted {len(urls)} URLs, status: {resp.status_code}")
+        return {"ok": True, "urls_submitted": len(urls), "status": resp.status_code}
+    except Exception as e:
+        logger.error(f"IndexNow submit error: {e}")
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)

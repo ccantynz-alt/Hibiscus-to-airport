@@ -7,6 +7,7 @@ import About from '../components/About';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
+import GeoContent from '../components/GeoContent';
 
 const HomePage = () => {
   return (
@@ -22,6 +23,7 @@ const HomePage = () => {
       <Services />
       <Fleet />
       <About />
+      <GeoContent />
       <Contact />
       <Footer />
     </div>

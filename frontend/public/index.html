@@ -175,6 +175,49 @@
       }
     }
     </script>
+    <!-- WebSite Schema with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Hibiscus to Airport",
+      "url": "https://hibiscustoairport.co.nz",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://hibiscustoairport.co.nz/service-areas?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Speculation Rules API for instant page pre-rendering -->
+    <meta http-equiv="Accept-CH" content="Sec-CH-Prefers-Reduced-Motion">
+    <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "where": {
+            "href_matches": ["/booking", "/book-now", "/pricing"]
+          },
+          "eagerness": "moderate"
+        }
+      ],
+      "prefetch": [
+        {
+          "where": {
+            "and": [
+              {"href_matches": "/*"},
+              {"not": {"href_matches": "/admin/*"}},
+              {"not": {"href_matches": "/api/*"}},
+              {"not": {"href_matches": "/payment/*"}},
+              {"not": {"selector_matches": "[data-no-prefetch]"}}
+            ]
+          },
+          "eagerness": "moderate"
+        }
+      ]
+    }
+    </script>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
