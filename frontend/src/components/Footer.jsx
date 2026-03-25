@@ -1,5 +1,5 @@
 import React from 'react';
-import { Facebook, Instagram, Twitter, Mail, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
 import { trustBadges } from '../mock';
 import Logo from './Logo';
 
@@ -33,17 +33,10 @@ const Footer = () => {
             <p className="text-gray-400 mb-6 leading-relaxed font-light">
               Premium airport shuttle and private transfer service connecting Hibiscus Coast to Auckland Airport with unmatched elegance and reliability.
             </p>
-            <div className="flex space-x-4">
-              <a href="#" className="w-11 h-11 bg-gray-800 hover:bg-gold rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-11 h-11 bg-gray-800 hover:bg-gold rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-11 h-11 bg-gray-800 hover:bg-gold rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
-                <Twitter className="w-5 h-5" />
-              </a>
-            </div>
+            <a href="tel:021743321" className="inline-flex items-center text-gold hover:text-amber-400 transition-colors duration-300 font-medium text-lg">
+              <Phone className="w-5 h-5 mr-2" />
+              021 743 321
+            </a>
           </div>
 
           {/* Quick Links */}
@@ -94,6 +87,12 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-bold mb-6 text-gold tracking-wide" style={{ fontFamily: 'Montserrat, sans-serif' }}>Contact Us</h4>
             <ul className="space-y-4">
+              <li className="flex items-start">
+                <Phone className="w-5 h-5 mr-3 text-gold flex-shrink-0 mt-0.5" />
+                <a href="tel:021743321" className="text-gray-400 hover:text-gold transition-colors duration-300 font-light">
+                  021 743 321
+                </a>
+              </li>
               <li className="flex items-start">
                 <Mail className="w-5 h-5 mr-3 text-gold flex-shrink-0 mt-0.5" />
                 <a href="mailto:info@bookaride.co.nz" className="text-gray-400 hover:text-gold transition-colors duration-300 font-light">
