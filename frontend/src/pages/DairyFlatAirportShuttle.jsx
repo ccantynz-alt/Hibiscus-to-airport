@@ -1,15 +1,21 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Clock, Phone, Building } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const DairyFlatAirportShuttle = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Dairy Flat to Auckland Airport Shuttle"
+        description="Airport shuttle from Dairy Flat and Albany Heights to Auckland Airport. Fast motorway access, professional service. Book online 24/7."
+        path="/dairy-flat-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

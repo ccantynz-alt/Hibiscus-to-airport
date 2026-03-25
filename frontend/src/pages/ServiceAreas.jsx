@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import { MapPin, ArrowRight } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Link } from 'react-router-dom';
 
 const ServiceAreas = () => {
@@ -25,6 +26,11 @@ const ServiceAreas = () => {
 
   return (
     <div className="min-h-screen bg-black">
+      <PageMeta
+        title="Service Areas - Suburbs We Cover"
+        description="Airport shuttle service areas across Hibiscus Coast, Orewa, Whangaparaoa, Silverdale and North Shore to Auckland Airport. Book online 24/7."
+        path="/service-areas"
+      />
       <Header />
       
       {/* Hero */}

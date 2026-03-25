@@ -1,12 +1,18 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Ship, MapPin, Clock, Luggage } from 'lucide-react';
 
 const CruiseTransfers = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Cruise Ship Transfers Auckland"
+        description="Cruise ship transfers between Auckland Port and Auckland Airport. Luggage-friendly vehicles, meet and greet. Book online 24/7."
+        path="/cruise-ship-transfers"
+      />
       <Header />
       
       <section className="pt-32 pb-20 bg-gradient-to-br from-gray-900 via-gray-800 to-black">

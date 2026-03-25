@@ -2,11 +2,17 @@ import React from 'react';
 import { CheckCircle, X } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 
 const BestAirportShuttle = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Best Airport Shuttle Hibiscus Coast"
+        description="Compare Hibiscus Coast airport shuttles to Auckland Airport. See why we are rated #1 for service and reliability. Book online today."
+        path="/best-airport-shuttle-hibiscus-coast"
+      />
       <Header />
       
       {/* Hero Section */}

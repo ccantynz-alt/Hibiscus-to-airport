@@ -16,7 +16,12 @@ const OrewaCollegeShuttle = createSuburbPage(
     'Orewa Estates',
     'Milldale',
     'Silverdale'
-  ]
+  ],
+  {
+    title: 'Orewa College to Auckland Airport Shuttle',
+    description: 'Airport shuttle for Orewa College students to Auckland Airport. Safe, reliable transfers for international students. Book online 24/7.',
+    path: '/orewa-college-airport-shuttle'
+  }
 );
 
 export default OrewaCollegeShuttle;

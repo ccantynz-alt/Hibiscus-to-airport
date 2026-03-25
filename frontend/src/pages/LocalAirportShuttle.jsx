@@ -1,12 +1,18 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Phone, Star, Clock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const LocalAirportShuttle = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Local Hibiscus Coast Airport Shuttle"
+        description="Locally owned airport shuttle serving Hibiscus Coast to Auckland Airport. Community trusted, 5-star rated. Book online 24/7."
+        path="/local-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

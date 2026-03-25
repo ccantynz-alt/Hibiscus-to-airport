@@ -16,7 +16,12 @@ const MatakanaVillageShuttle = createSuburbPage(
     'Day Trips',
     'Weekend Outings',
     'Group Shopping Tours'
-  ]
+  ],
+  {
+    title: 'Matakana Village Shuttle Transport',
+    description: 'Shuttle to Matakana Village for shopping, dining and galleries. Comfortable rides from Hibiscus Coast. Book online.',
+    path: '/matakana-village-shuttle'
+  }
 );
 
 export default MatakanaVillageShuttle;

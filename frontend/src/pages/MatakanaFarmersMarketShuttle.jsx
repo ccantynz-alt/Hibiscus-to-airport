@@ -16,7 +16,12 @@ const MatakanaFarmersMarketShuttle = createSuburbPage(
     'Parking Areas',
     'Market Drop-off Points',
     'Matakana Cinema'
-  ]
+  ],
+  {
+    title: 'Matakana Farmers Market Shuttle',
+    description: 'Shuttle service to Matakana Farmers Market every Saturday. Door-to-door from Hibiscus Coast. Book online today.',
+    path: '/matakana-farmers-market-shuttle'
+  }
 );
 
 export default MatakanaFarmersMarketShuttle;

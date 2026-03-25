@@ -1,15 +1,21 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Clock, Phone, TreePine } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const PuhoiAirportShuttle = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Puhoi to Auckland Airport Shuttle"
+        description="Airport shuttle from Puhoi village to Auckland Airport. Scenic route, professional drivers, reliable service. Book online 24/7."
+        path="/puhoi-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

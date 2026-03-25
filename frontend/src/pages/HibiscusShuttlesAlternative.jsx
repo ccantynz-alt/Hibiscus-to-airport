@@ -1,12 +1,18 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { ArrowRight, X, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const HibiscusShuttlesAlternative = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Hibiscus Shuttles Alternative"
+        description="Looking for a Hibiscus Shuttles alternative? Premium airport transfers, modern booking, luxury vehicles. Book online for competitive pricing."
+        path="/hibiscus-shuttles-alternative"
+      />
       <Header />
       
       {/* Hero Section */}

@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import { ArrowRight, GraduationCap, Users, DollarSign, Shield, Clock, Luggage, Globe, Phone } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 
 const StudentAirportTransfers = () => {
   const schools = [
@@ -18,6 +19,11 @@ const StudentAirportTransfers = () => {
 
   return (
     <div className="min-h-screen bg-black">
+      <PageMeta
+        title="Student Airport Transfers"
+        description="Affordable student airport transfers from Hibiscus Coast schools to Auckland Airport. Safe, reliable for international students. Book online 24/7."
+        path="/student-airport-transfers"
+      />
       <Header />
       
       {/* Hero Section */}

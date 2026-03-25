@@ -16,7 +16,12 @@ const MatakanaConcertShuttle = createSuburbPage(
     'Group Bookings',
     'Safe Transport',
     'Return Trips'
-  ]
+  ],
+  {
+    title: 'Matakana Concert Shuttle Transport',
+    description: 'Shuttle to Matakana concerts and live music events. Late night pickups available. Book your safe ride home online.',
+    path: '/matakana-concert-shuttle'
+  }
 );
 
 export default MatakanaConcertShuttle;
