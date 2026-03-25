@@ -15,7 +15,6 @@ export const createSuburbPage = (suburbName, travelTime, localAreas, meta = {}) 
     "name": `Hibiscus to Airport - ${suburbName} Shuttle`,
     "description": `Airport shuttle service from ${suburbName} to Auckland Airport`,
     "url": `https://hibiscustoairport.co.nz${slug}`,
-    "telephone": "+64-21-743-321",
     "email": "info@bookaride.co.nz",
     "areaServed": {
       "@type": "Place",
