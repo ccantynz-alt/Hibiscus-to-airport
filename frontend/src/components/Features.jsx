@@ -57,13 +57,13 @@ const Features = () => {
             <div className="text-center">
               <h4 className="text-xl font-bold text-gold mb-4">✨ Hibiscus to Airport</h4>
               <ul className="text-left space-y-3">
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Luxury Toyota Hiace vehicles</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Professional uniformed drivers</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Advanced online booking system</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Flight monitoring & real-time updates</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Complimentary Wi-Fi & charging</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> 24/7 premium customer service</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Guaranteed pickup times</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Luxury Toyota Hiace vehicles</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Professional uniformed drivers</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Advanced online booking system</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Flight monitoring & real-time updates</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Complimentary Wi-Fi & charging</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> 24/7 premium customer service</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Guaranteed pickup times</li>
               </ul>
             </div>
             <div className="text-center">
