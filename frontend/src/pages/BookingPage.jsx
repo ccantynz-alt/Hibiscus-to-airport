@@ -520,13 +520,13 @@ const BookingPage = () => {
             <span className="font-medium">International Bookings Welcome</span>
           </div>
           <div className="flex items-center gap-1 text-gray-300">
-            <span className=”text-gold”>✔</span> 6 Languages
+            <span className="text-gold">✔</span> 6 Languages
           </div>
-          <div className=”flex items-center gap-1 text-gray-300”>
-            <span className=”text-gold”>✔</span> 7 Currencies
+          <div className="flex items-center gap-1 text-gray-300">
+            <span className="text-gold">✔</span> 7 Currencies
           </div>
-          <div className=”flex items-center gap-1 text-gray-300”>
-            <span className=”text-gold”>✔</span> Worldwide Payment
+          <div className="flex items-center gap-1 text-gray-300">
+            <span className="text-gold">✔</span> Worldwide Payment
           </div>
         </div>
       </div>
