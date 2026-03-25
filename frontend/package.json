@@ -92,7 +92,11 @@
       "/leigh-airport-shuttle", "/snells-beach-airport-shuttle",
       "/warkworth-airport-shuttle", "/wellsford-airport-shuttle",
       "/matakana-shuttle", "/early-morning-shuttle",
-      "/orewa-to-airport"
+      "/orewa-to-airport",
+      "/my-booking", "/north-shore-airport-shuttle",
+      "/hibiscus-shuttles-alternative", "/business-airport-transfer",
+      "/airport-shuttle-orewa", "/airport-arrivals",
+      "/local-airport-shuttle"
     ]
   },
   "browserslist": {

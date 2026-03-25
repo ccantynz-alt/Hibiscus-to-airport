@@ -278,6 +278,13 @@ async def indexnow_submit(request: Request):
         f"https://{host}/student-airport-shuttle",
         f"https://{host}/cruise-transfers",
         f"https://{host}/best-airport-shuttle",
+        f"https://{host}/my-booking",
+        f"https://{host}/hibiscus-shuttles-alternative",
+        f"https://{host}/business-airport-transfer",
+        f"https://{host}/airport-shuttle-orewa",
+        f"https://{host}/airport-arrivals",
+        f"https://{host}/local-airport-shuttle",
+        f"https://{host}/orewa-to-airport",
     ]
 
     payload = {
