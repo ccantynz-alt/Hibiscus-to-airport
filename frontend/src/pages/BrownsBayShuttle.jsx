@@ -16,7 +16,12 @@ const BrownsBayShuttle = createSuburbPage(
     'Schools',
     'Medical Centre',
     'Library'
-  ]
+  ],
+  {
+    title: 'Browns Bay to Auckland Airport Shuttle',
+    description: 'Airport shuttle from Browns Bay to Auckland Airport. Reliable North Shore transfers with experienced drivers. Book online 24/7.',
+    path: '/browns-bay-airport-shuttle'
+  }
 );
 
 export default BrownsBayShuttle;

@@ -3,10 +3,16 @@ import { MapPin, Clock, Users, Phone, Coffee, Plane, ArrowRight, CheckCircle } f
 import { Card, CardContent } from '../components/ui/card';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 
 const AirportArrivals = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Auckland Airport Arrivals Pickup Guide"
+        description="Meeting your driver at Auckland Airport? Our arrivals guide covers pickup points, wait times and tips. Book your Hibiscus Coast transfer online."
+        path="/airport-arrivals"
+      />
       <Header />
       
       {/* Hero Section */}

@@ -9,6 +9,7 @@ import BookingPage from "./pages/BookingPage";
 // --- Lazy loaded public pages ---
 const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
 const FAQ = lazy(() => import("./pages/FAQ"));
+const Pricing = lazy(() => import("./pages/Pricing"));
 
 // Suburb shuttle pages
 const OrewaShuttle = lazy(() => import("./pages/OrewaShuttle"));
@@ -52,6 +53,7 @@ const LateNightAirportShuttle = lazy(() => import("./pages/LateNightAirportShutt
 const EarlyMorningShuttle = lazy(() => import("./pages/EarlyMorningShuttle"));
 const EarlyMorningFlightShuttle = lazy(() => import("./pages/EarlyMorningFlightShuttle"));
 const AirportArrivals = lazy(() => import("./pages/AirportArrivals"));
+const NorthShoreAirportShuttle = lazy(() => import("./pages/NorthShoreAirportShuttle"));
 
 // School pages
 const OrewaCollegeShuttle = lazy(() => import("./pages/OrewaCollegeShuttle"));
@@ -221,6 +223,9 @@ function PublicRoutes() {
       {/* FAQ */}
       <Route path="/faq" element={<FAQ />} />
 
+      {/* Pricing */}
+      <Route path="/pricing" element={<Pricing />} />
+
       {/* Payment */}
       <Route path="/payment/success" element={<PaymentSuccess />} />
       <Route path="/payment/cancel" element={<PaymentCancel />} />
@@ -271,6 +276,7 @@ function PublicRoutes() {
       <Route path="/early-morning-airport-shuttle" element={<EarlyMorningShuttle />} />
       <Route path="/early-morning-flight-shuttle" element={<EarlyMorningFlightShuttle />} />
       <Route path="/airport-arrivals" element={<AirportArrivals />} />
+      <Route path="/north-shore-airport-shuttle" element={<NorthShoreAirportShuttle />} />
 
       {/* School pages */}
       <Route path="/orewa-college-airport-shuttle" element={<OrewaCollegeShuttle />} />

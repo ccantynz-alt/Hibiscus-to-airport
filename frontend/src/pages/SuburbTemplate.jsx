@@ -1,13 +1,48 @@
 // Template component for creating suburb-specific pages
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '../components/ui/button';
 import { ArrowRight, MapPin, Clock, DollarSign, Zap, Shield } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 
-export const createSuburbPage = (suburbName, travelTime, localAreas) => {
+export const createSuburbPage = (suburbName, travelTime, localAreas, meta = {}) => {
+  const slug = meta.path || '/';
+  const localBusinessSchema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": `Hibiscus to Airport - ${suburbName} Shuttle`,
+    "description": `Airport shuttle service from ${suburbName} to Auckland Airport`,
+    "url": `https://hibiscustoairport.co.nz${slug}`,
+    "telephone": "+64-21-743-321",
+    "email": "info@bookaride.co.nz",
+    "areaServed": {
+      "@type": "Place",
+      "name": `${suburbName}, Auckland, New Zealand`
+    },
+    "serviceType": "Airport Shuttle Service",
+    "priceRange": "$$",
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+      "opens": "00:00",
+      "closes": "23:59"
+    }
+  });
+
   return () => (
     <div className="min-h-screen bg-white">
+      {meta.title && (
+        <PageMeta
+          title={meta.title}
+          description={meta.description}
+          path={meta.path}
+        />
+      )}
+      <Helmet>
+        <script type="application/ld+json">{localBusinessSchema}</script>
+      </Helmet>
       <Header />
       
       {/* Hero Section with Background Image */}

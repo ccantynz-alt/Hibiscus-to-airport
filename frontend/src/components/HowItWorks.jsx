@@ -4,7 +4,7 @@ import { howItWorks } from '../mock';
 
 const HowItWorks = () => {
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-gray-50">
+    <section className="py-20 bg-gradient-to-b from-white to-gray-50 reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
@@ -16,9 +16,9 @@ const HowItWorks = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {howItWorks.map((step, index) => (
             <div key={step.step} className="relative">
-              <Card className="border-2 hover:border-blue-400 hover:shadow-xl transition-all duration-300 h-full">
+              <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 h-full">
                 <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-6 text-white text-2xl font-bold shadow-lg">
+                  <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mb-6 text-black text-2xl font-bold shadow-lg">
                     {step.step}
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
@@ -27,7 +27,7 @@ const HowItWorks = () => {
               </Card>
               {index < howItWorks.length - 1 && (
                 <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
-                  <div className="w-8 h-0.5 bg-blue-300"></div>
+                  <div className="w-8 h-0.5 bg-gold/40"></div>
                 </div>
               )}
             </div>

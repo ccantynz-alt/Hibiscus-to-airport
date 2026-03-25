@@ -1,15 +1,21 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Users, Phone, Heart, Car } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const FamilyAirportShuttle = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Family Airport Shuttle Hibiscus Coast"
+        description="Family-friendly airport shuttle from Hibiscus Coast to Auckland Airport. Child seats available, spacious vehicles. Book online 24/7."
+        path="/family-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

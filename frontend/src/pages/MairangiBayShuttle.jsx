@@ -16,7 +16,12 @@ const MairangiBayShuttle = createSuburbPage(
     'Parks',
     'Residential Areas',
     'Public Transport'
-  ]
+  ],
+  {
+    title: 'Mairangi Bay to Auckland Airport Shuttle',
+    description: 'Airport shuttle from Mairangi Bay and Murrays Bay to Auckland Airport. Comfortable transfers. Book online for instant pricing.',
+    path: '/mairangi-bay-airport-shuttle'
+  }
 );
 
 export default MairangiBayShuttle;

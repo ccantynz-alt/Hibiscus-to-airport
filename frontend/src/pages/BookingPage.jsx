@@ -179,6 +179,7 @@ const TimePickerModal = ({ isOpen, onClose, onSelect, selectedTime, label }) => 
 
 const BookingPage = () => {
   const { toast } = useToast();
+  const [isPending, startTransition] = React.useTransition();
   const [calculating, setCalculating] = useState(false);
   const [pricing, setPricing] = useState(null);
   const [pickupAutocomplete, setPickupAutocomplete] = useState(null);
@@ -383,11 +384,13 @@ const BookingPage = () => {
       let totalPrice = response.data.totalPrice + additionalFees;
       if (formData.returnTrip) totalPrice *= 2;
       
-      setPricing({
-        ...response.data,
-        additionalServices: additionalFees,
-        returnTrip: formData.returnTrip,
-        totalPrice: totalPrice
+      startTransition(() => {
+        setPricing({
+          ...response.data,
+          additionalServices: additionalFees,
+          returnTrip: formData.returnTrip,
+          totalPrice: totalPrice
+        });
       });
     } catch (error) {
       console.error('Price calculation error:', error);
@@ -408,19 +411,21 @@ const BookingPage = () => {
         dropoffAddress: formData.dropoffAddress,
         passengers: parseInt(formData.passengers)
       });
-      
+
       let additionalFees = 0;
       if (formData.vipPickup) additionalFees += 15;
       if (formData.oversizedLuggage) additionalFees += 25;
-      
+
       let totalPrice = response.data.totalPrice + additionalFees;
       if (formData.returnTrip) totalPrice *= 2;
-      
-      setPricing({
-        ...response.data,
-        additionalServices: additionalFees,
-        returnTrip: formData.returnTrip,
-        totalPrice: totalPrice
+
+      startTransition(() => {
+        setPricing({
+          ...response.data,
+          additionalServices: additionalFees,
+          returnTrip: formData.returnTrip,
+          totalPrice: totalPrice
+        });
       });
     } catch (error) {
       toast({

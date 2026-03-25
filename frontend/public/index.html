@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://hibiscustoairport.co.nz/" />
     <meta property="og:site_name" content="Hibiscus to Airport" />
     <meta property="og:locale" content="en_NZ" />
-    <meta property="og:image" content="https://hibiscustoairport.co.nz/og-image.jpg" />
+    <meta property="og:image" content="https://hibiscustoairport.co.nz/og-image.svg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Hibiscus to Airport - Premium Airport Shuttle Service from Hibiscus Coast to Auckland Airport" />
@@ -27,7 +27,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Hibiscus to Airport - Premium Airport Shuttle Service" />
     <meta name="twitter:description" content="Premium airport shuttle service from Hibiscus Coast to Auckland Airport. Professional drivers, luxury vehicles, 24/7 service." />
-    <meta name="twitter:image" content="https://hibiscustoairport.co.nz/og-image.jpg" />
+    <meta name="twitter:image" content="https://hibiscustoairport.co.nz/og-image.svg" />
     
     <!-- Local Business Schema -->
     <script type="application/ld+json">
@@ -173,6 +173,49 @@
         "serviceUrl": "https://hibiscustoairport.co.nz/booking",
         "serviceName": "Online Booking"
       }
+    }
+    </script>
+    <!-- WebSite Schema with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Hibiscus to Airport",
+      "url": "https://hibiscustoairport.co.nz",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://hibiscustoairport.co.nz/service-areas?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Speculation Rules API for instant page pre-rendering -->
+    <meta http-equiv="Accept-CH" content="Sec-CH-Prefers-Reduced-Motion">
+    <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "where": {
+            "href_matches": ["/booking", "/book-now", "/pricing"]
+          },
+          "eagerness": "moderate"
+        }
+      ],
+      "prefetch": [
+        {
+          "where": {
+            "and": [
+              {"href_matches": "/*"},
+              {"not": {"href_matches": "/admin/*"}},
+              {"not": {"href_matches": "/api/*"}},
+              {"not": {"href_matches": "/payment/*"}},
+              {"not": {"selector_matches": "[data-no-prefetch]"}}
+            ]
+          },
+          "eagerness": "moderate"
+        }
+      ]
     }
     </script>
     </head>

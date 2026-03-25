@@ -1,15 +1,21 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Clock, Phone, Star, Shield, Car } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const WarkworthAirportShuttle = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Warkworth to Auckland Airport Shuttle"
+        description="Airport shuttle from Warkworth to Auckland Airport. Serving Warkworth and surrounding Rodney areas. Book online 24/7."
+        path="/warkworth-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

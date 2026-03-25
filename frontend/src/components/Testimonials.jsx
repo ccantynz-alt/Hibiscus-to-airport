@@ -22,7 +22,7 @@ const Testimonials = () => {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">What Our Customers Say</h2>
@@ -35,11 +35,11 @@ const Testimonials = () => {
           {/* Desktop View */}
           <div className="hidden md:grid md:grid-cols-3 gap-8">
             {visibleTestimonials.map((testimonial, idx) => (
-              <Card key={`${testimonial.id}-${idx}`} className="border-2 hover:border-blue-400 hover:shadow-xl transition-all duration-300">
+              <Card key={`${testimonial.id}-${idx}`} className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
                 <CardContent className="p-8">
                   <div className="flex mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                      <Star key={i} className="w-5 h-5 text-gold fill-current" />
                     ))}
                   </div>
                   <p className="text-gray-700 mb-6 italic leading-relaxed">"{testimonial.content}"</p>
@@ -62,11 +62,11 @@ const Testimonials = () => {
 
           {/* Mobile View */}
           <div className="md:hidden">
-            <Card className="border-2">
+            <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
               <CardContent className="p-8">
                 <div className="flex mb-4">
                   {[...Array(testimonials[currentIndex].rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                    <Star key={i} className="w-5 h-5 text-gold fill-current" />
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 italic leading-relaxed">"{testimonials[currentIndex].content}"</p>
@@ -92,7 +92,7 @@ const Testimonials = () => {
               variant="outline"
               size="icon"
               onClick={prevTestimonial}
-              className="w-12 h-12 rounded-full border-2 hover:border-blue-600 hover:text-blue-600"
+              className="w-12 h-12 rounded-full border-2 hover:border-gold hover:text-gold"
             >
               <ChevronLeft className="w-6 h-6" />
             </Button>
@@ -100,7 +100,7 @@ const Testimonials = () => {
               variant="outline"
               size="icon"
               onClick={nextTestimonial}
-              className="w-12 h-12 rounded-full border-2 hover:border-blue-600 hover:text-blue-600"
+              className="w-12 h-12 rounded-full border-2 hover:border-gold hover:text-gold"
             >
               <ChevronRight className="w-6 h-6" />
             </Button>
@@ -113,7 +113,7 @@ const Testimonials = () => {
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  idx === currentIndex ? 'bg-blue-600 w-8' : 'bg-gray-300'
+                  idx === currentIndex ? 'bg-gold w-8' : 'bg-gray-300'
                 }`}
               />
             ))}

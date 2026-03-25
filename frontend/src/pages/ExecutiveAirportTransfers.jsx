@@ -1,15 +1,21 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Clock, Phone, Briefcase, Shield, Star } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const ExecutiveAirportTransfers = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Executive Airport Transfers"
+        description="Luxury executive airport transfers from Hibiscus Coast to Auckland Airport. Premium vehicles, VIP service. Book online 24/7."
+        path="/executive-airport-transfers"
+      />
       <Header />
       
       {/* Hero Section */}

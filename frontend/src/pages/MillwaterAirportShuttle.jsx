@@ -1,15 +1,21 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Clock, Phone, Home } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const MillwaterAirportShuttle = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Millwater to Auckland Airport Shuttle"
+        description="Airport shuttle from Millwater and Milldale to Auckland Airport. Modern service for a modern community. Book online 24/7."
+        path="/millwater-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

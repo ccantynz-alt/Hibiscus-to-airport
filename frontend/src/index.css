@@ -113,3 +113,63 @@ code {
 .bg-elegant-darker {
   background-color: #0f0f0f;
 }
+
+/* View Transitions API — smooth page-to-page animations */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: fade-out 150ms ease-out;
+}
+
+::view-transition-new(root) {
+  animation: fade-in 150ms ease-in;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Elegant section transitions */
+.section-light {
+  @apply bg-white;
+}
+.section-muted {
+  @apply bg-gray-50;
+}
+.section-dark {
+  @apply bg-gray-900 text-white;
+}
+
+/* Subtle gradient dividers between sections */
+.section-divider-down {
+  background: linear-gradient(to bottom, transparent 0%, rgba(212, 175, 55, 0.05) 50%, transparent 100%);
+  height: 4rem;
+}
+
+/* Scroll-triggered fade-in for sections (progressive enhancement) */
+@supports (animation-timeline: view()) {
+  .reveal-on-scroll {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 30%;
+  }
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

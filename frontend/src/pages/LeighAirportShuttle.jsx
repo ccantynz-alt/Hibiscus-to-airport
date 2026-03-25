@@ -1,15 +1,21 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Clock, Phone, Fish } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const LeighAirportShuttle = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Leigh to Auckland Airport Shuttle"
+        description="Airport shuttle from Leigh and Goat Island area to Auckland Airport. Coastal village pickup, reliable transfers. Book online 24/7."
+        path="/leigh-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

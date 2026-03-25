@@ -26,7 +26,7 @@ const iconMap = {
 
 const Features = () => {
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-gray-50 reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -49,7 +49,7 @@ const Features = () => {
         </div>
 
         {/* Competitive Comparison Section */}
-        <div className="bg-white rounded-2xl border-2 border-gold p-8 mb-12">
+        <div className="bg-white rounded-2xl border border-gold/60 p-8 mb-12">
           <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">
             Hibiscus to Airport vs Traditional Shuttles
           </h3>
@@ -57,13 +57,13 @@ const Features = () => {
             <div className="text-center">
               <h4 className="text-xl font-bold text-gold mb-4">✨ Hibiscus to Airport</h4>
               <ul className="text-left space-y-3">
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Luxury Toyota Hiace vehicles</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Professional uniformed drivers</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Advanced online booking system</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Flight monitoring & real-time updates</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Complimentary Wi-Fi & charging</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> 24/7 premium customer service</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Guaranteed pickup times</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Luxury Toyota Hiace vehicles</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Professional uniformed drivers</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Advanced online booking system</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Flight monitoring & real-time updates</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Complimentary Wi-Fi & charging</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> 24/7 premium customer service</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-gold mr-2" /> Guaranteed pickup times</li>
               </ul>
             </div>
             <div className="text-center">
@@ -93,7 +93,7 @@ const Features = () => {
           {features.map((feature) => {
             const IconComponent = iconMap[feature.icon];
             return (
-              <Card key={feature.id} className="border-2 border-gray-200 hover:border-gold hover:shadow-xl transition-all duration-300 bg-white group">
+              <Card key={feature.id} className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 bg-white group">
                 <CardHeader className="p-6">
                   <div className="w-12 h-12 bg-gold/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-gold transition-all duration-300">
                     <IconComponent className="w-6 h-6 text-gold group-hover:text-black transition-colors duration-300" />

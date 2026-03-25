@@ -1,12 +1,18 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Clock, Shield, Star, Mail } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const EarlyMorningShuttle = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Early Morning Airport Shuttle"
+        description="Early morning airport shuttle from Hibiscus Coast. 4AM-7AM transfers to Auckland Airport with guaranteed pickup times. Book online now."
+        path="/early-morning-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

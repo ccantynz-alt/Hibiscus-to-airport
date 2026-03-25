@@ -1,12 +1,18 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Star, Clock, Mail } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const AirportShuttleOrewa = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Airport Shuttle Orewa - Premium Transfers"
+        description="Orewa's top-rated airport shuttle to Auckland Airport. Local drivers, door-to-door service, luxury vehicles. Book online for instant pricing."
+        path="/airport-shuttle-orewa"
+      />
       <Header />
       
       {/* Hero Section */}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Phone } from 'lucide-react';
 import Logo from './Logo';
 
 const Header = () => {
@@ -54,6 +54,10 @@ const Header = () => {
             >
               Contact
             </button>
+            <a href="tel:021743321" className="flex items-center text-gold hover:text-amber-400 transition-colors font-medium tracking-wide text-sm">
+              <Phone className="w-4 h-4 mr-1.5" />
+              021 743 321
+            </a>
             <a href="/booking">
               <Button className="bg-gold hover:bg-amber-500 text-black font-bold tracking-wide shadow-lg shadow-gold/20 hover:shadow-gold/40 transition-all duration-300">
                 Book Now
@@ -61,14 +65,19 @@ const Header = () => {
             </a>
           </nav>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Phone Icon + Menu Button */}
+          <div className="flex items-center space-x-3 md:hidden">
+            <a href="tel:021743321" className="text-gold hover:text-amber-400 transition-colors" aria-label="Call 021 743 321">
+              <Phone className="w-6 h-6" />
+            </a>
           <button
-            className="md:hidden text-gold"
+            className="text-gold"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
+          </div>
         </div>
       </div>
 

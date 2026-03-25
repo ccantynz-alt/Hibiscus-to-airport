@@ -3,12 +3,13 @@ import { Shield, Award, Users, Clock } from 'lucide-react';
 
 const About = () => {
   return (
-    <section id="about" className="py-20 bg-gray-50">
+    <section id="about" className="py-20 bg-gray-50 reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             About <span className="text-gold">Hibiscus to Airport</span>
           </h2>
+          <div className="w-16 h-1 bg-gradient-to-r from-gold to-amber-400 mx-auto mb-4 rounded-full"></div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Your trusted airport shuttle service connecting the Hibiscus Coast to Auckland Airport
           </p>
@@ -16,7 +17,8 @@ const About = () => {
 
         <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
           <div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h3>
+            <h3 className="text-3xl font-bold text-gray-900 mb-2">Why Choose Us</h3>
+            <div className="w-12 h-1 bg-gradient-to-r from-gold to-amber-400 rounded-full mb-6"></div>
             <p className="text-gray-700 mb-4 leading-relaxed">
               Hibiscus to Airport was founded with a simple mission: to provide reliable, comfortable, and affordable airport transportation for residents and visitors of the beautiful Hibiscus Coast region.
             </p>
@@ -29,23 +31,31 @@ const About = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gold/20">
-              <Shield className="w-12 h-12 text-gold mb-4" />
+            <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 group">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gold/20 to-amber-200/30 flex items-center justify-center mb-4 group-hover:border group-hover:border-gold/40 transition-all duration-300">
+                <Shield className="w-7 h-7 text-gold" />
+              </div>
               <h4 className="font-bold text-xl mb-2">Fully Licensed</h4>
               <p className="text-gray-600 text-sm">All drivers are licensed and insured for your safety</p>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gold/20">
-              <Award className="w-12 h-12 text-gold mb-4" />
+            <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 group">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gold/20 to-amber-200/30 flex items-center justify-center mb-4 group-hover:border group-hover:border-gold/40 transition-all duration-300">
+                <Award className="w-7 h-7 text-gold" />
+              </div>
               <h4 className="font-bold text-xl mb-2">5+ Years</h4>
               <p className="text-gray-600 text-sm">Experience serving the Hibiscus Coast community</p>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gold/20">
-              <Users className="w-12 h-12 text-gold mb-4" />
+            <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 group">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gold/20 to-amber-200/30 flex items-center justify-center mb-4 group-hover:border group-hover:border-gold/40 transition-all duration-300">
+                <Users className="w-7 h-7 text-gold" />
+              </div>
               <h4 className="font-bold text-xl mb-2">1000+ Customers</h4>
               <p className="text-gray-600 text-sm">Trusted by thousands of satisfied passengers</p>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gold/20">
-              <Clock className="w-12 h-12 text-gold mb-4" />
+            <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300 group">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gold/20 to-amber-200/30 flex items-center justify-center mb-4 group-hover:border group-hover:border-gold/40 transition-all duration-300">
+                <Clock className="w-7 h-7 text-gold" />
+              </div>
               <h4 className="font-bold text-xl mb-2">24/7 Available</h4>
               <p className="text-gray-600 text-sm">Ready to serve you any time of day or night</p>
             </div>

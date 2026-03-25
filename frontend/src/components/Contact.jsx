@@ -8,7 +8,7 @@ const Contact = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="contact" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+    <section id="contact" className="py-20 bg-gradient-to-b from-gray-50 to-white reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">Ready to Book Your Ride?</h2>
@@ -27,8 +27,8 @@ const Contact = () => {
               Book Now
             </Button>
             <div className="flex items-center justify-center lg:justify-start gap-3 pt-2">
-              <Phone className="w-5 h-5 text-blue-600" />
-              <a href="tel:021743321" className="text-lg text-gray-700 hover:text-blue-600 font-medium">
+              <Phone className="w-5 h-5 text-gold" />
+              <a href="tel:021743321" className="text-lg text-gray-700 hover:text-gold font-medium">
                 021 743 321
               </a>
             </div>
@@ -36,25 +36,25 @@ const Contact = () => {
 
           {/* Contact Information */}
           <div className="space-y-4">
-            <Card className="border-2">
+            <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <Mail className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <Mail className="w-6 h-6 text-gold" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">Email</h3>
-                    <a href="mailto:info@bookaride.co.nz" className="text-gray-600 hover:text-blue-600">info@bookaride.co.nz</a>
+                    <a href="mailto:info@bookaride.co.nz" className="text-gray-600 hover:text-gold">info@bookaride.co.nz</a>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2">
+            <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <MapPin className="w-6 h-6 text-gold" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">Service Area</h3>
@@ -65,11 +65,11 @@ const Contact = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2">
+            <Card className="border border-gray-200 hover:border-gold/60 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <Clock className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <Clock className="w-6 h-6 text-gold" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">Operating Hours</h3>

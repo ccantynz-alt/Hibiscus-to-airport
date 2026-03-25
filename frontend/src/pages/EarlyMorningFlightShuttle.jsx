@@ -1,15 +1,21 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { MapPin, Clock, Phone, Sun, Sunrise } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 const EarlyMorningFlightShuttle = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Early Morning Flight Shuttle Service"
+        description="Catch your early flight from Hibiscus Coast. Airport shuttle from 3AM, guaranteed on-time pickup to Auckland Airport. Book online now."
+        path="/early-morning-flight-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}
