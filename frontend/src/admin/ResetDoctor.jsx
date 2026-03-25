@@ -7,7 +7,7 @@ export default function ResetDoctor() {
   const [lastPath, setLastPath] = useState("");
 
   const apiBase = useMemo(() => {
-    return (process.env.REACT_APP_API_BASE || "https://api.hibiscustoairport.co.nz").replace(/\/+$/, "");
+    return (process.env.REACT_APP_API_BASE || process.env.REACT_APP_BACKEND_URL || "").replace(/\/+$/, "");
   }, []);
 
   const resetPaths = ["/admin/reset-password","/auth/reset-password","/admin/request-password-reset","/auth/request-password-reset"];
