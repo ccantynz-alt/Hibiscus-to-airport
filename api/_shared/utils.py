@@ -670,7 +670,7 @@ Ref: {booking_ref}
 {booking['pickupAddress']} to {booking['dropoffAddress']}
 {booking['passengers']} passengers | ${booking.get('totalPrice', booking['pricing']['totalPrice']):.2f}
 
-Questions? 021 743 321
+Questions? Email info@bookaride.co.nz
 hibiscustoairport.co.nz"""
     
     return send_sms(booking['phone'], message)
@@ -724,8 +724,8 @@ def send_cancellation_email(booking: dict):
         
         <p style="margin-top: 20px; color: #666;">
           <strong>Contact Us:</strong><br>
-          Phone: 021 743 321<br>
-          Email: info@bookaride.co.nz
+          Email: info@bookaride.co.nz<br>
+          Book online: hibiscustoairport.co.nz
         </p>
       </div>
     </div>
@@ -742,7 +742,7 @@ def send_cancellation_sms(booking: dict):
 Ref: {booking_ref}
 Date: {formatted_date} at {booking['time']}
 
-Your booking has been cancelled. Contact us if you have questions: 021 743 321"""
+Your booking has been cancelled. Contact us if you have questions: info@bookaride.co.nz"""
     
     return send_sms(booking['phone'], message)
 
