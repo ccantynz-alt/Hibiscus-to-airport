@@ -1,7 +1,7 @@
 // Centralized backend URL configuration
-// With Vercel serverless, the API lives on the same domain under /api/*.
-// REACT_APP_BACKEND_URL can override for local dev (e.g. http://localhost:8000).
-// In production, empty string means same-origin requests.
+// With Vercel Serverless Functions, API routes are on the same domain.
+// BACKEND_URL defaults to empty string so all calls go to /api/... on same origin.
+// Set REACT_APP_BACKEND_URL only for local dev pointing at a separate backend.
 export const BACKEND_URL =
   process.env.REACT_APP_BACKEND_URL || '';
 
