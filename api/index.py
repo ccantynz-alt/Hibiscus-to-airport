@@ -207,7 +207,7 @@ async def cron_day_before_reminders(request: Request):
                       <p><strong>Pickup:</strong> {booking['pickup_address']}</p>
                       <p><strong>Drop-off:</strong> {booking['dropoff_address']}</p>
                     </div>
-                    <p>Questions? Contact us at 021 743 321 or bookings@bookaride.co.nz</p>
+                    <p>Questions? Email us at bookings@bookaride.co.nz</p>
                   </div>
                 </div>"""
                 send_email(booking["email"], subject, body)
@@ -217,7 +217,7 @@ async def cron_day_before_reminders(request: Request):
                     f"Ref: {booking_ref}\n"
                     f"Pickup: {formatted_date} at {booking['time']}\n"
                     f"From: {(booking['pickup_address'] or '')[:50]}\n"
-                    f"Be ready 5-10 mins early. Questions? 021 743 321"
+                    f"Be ready 5-10 mins early. Questions? info@bookaride.co.nz"
                 )
                 send_sms(booking["phone"], sms_message)
 
