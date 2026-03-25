@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { Mail, MapPin, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Contact = () => {
@@ -15,7 +15,7 @@ const Contact = () => {
             Ready to <span className="text-gold">Book</span> Your Ride?
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Book online in under 2 minutes, or give us a call. We're here 24/7.
+            Book online in under 2 minutes. We're here 24/7.
           </p>
         </div>
 
@@ -29,9 +29,9 @@ const Contact = () => {
               Book Now
             </Button>
             <div className="flex items-center justify-center lg:justify-start gap-3 pt-2">
-              <Phone className="w-5 h-5 text-gold" />
-              <a href="tel:021743321" className="text-lg text-gray-700 hover:text-gray-900 font-medium transition-colors duration-300">
-                021 743 321
+              <Mail className="w-5 h-5 text-gold" />
+              <a href="mailto:info@bookaride.co.nz" className="text-lg text-gray-700 hover:text-gray-900 font-medium transition-colors duration-300">
+                info@bookaride.co.nz
               </a>
             </div>
           </div>

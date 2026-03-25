@@ -2,7 +2,7 @@ import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
-import { Moon, Clock, Shield, Phone, Star, Plane } from 'lucide-react';
+import { Moon, Clock, Shield, Star, Plane } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,12 +39,12 @@ const LateNightAirportShuttle = () => {
             >
               Book Late Night Pickup
             </Button>
-            <Button 
+            <Button
               variant="outline"
               className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg"
-              onClick={() => window.location.href = 'tel:021743321'}
+              onClick={() => window.location.href = 'mailto:info@bookaride.co.nz'}
             >
-              <Phone className="w-5 h-5 mr-2" /> Call 021 743 321
+              Email info@bookaride.co.nz
             </Button>
           </div>
         </div>

@@ -9,7 +9,8 @@ const About = () => {
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             About <span className="text-gold">Hibiscus to Airport</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="w-16 h-0.5 bg-[#D4AF37] mx-auto mt-4 mb-6"></div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Your trusted airport shuttle service connecting the Hibiscus Coast to Auckland Airport
           </p>
         </div>
@@ -29,33 +30,33 @@ const About = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="bg-white p-8 rounded-xl border border-gray-100 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300">
               <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mb-4">
                 <Shield className="w-7 h-7 text-gold" />
               </div>
               <h4 className="font-bold text-xl text-gray-900 mb-2">Fully Licensed</h4>
-              <p className="text-gray-600 text-sm">All drivers are licensed and insured for your safety</p>
+              <p className="text-gray-600 text-sm leading-relaxed">All drivers are licensed and insured for your safety</p>
             </div>
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="bg-white p-8 rounded-xl border border-gray-100 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300">
               <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mb-4">
                 <Award className="w-7 h-7 text-gold" />
               </div>
               <h4 className="font-bold text-xl text-gray-900 mb-2">5+ Years</h4>
-              <p className="text-gray-600 text-sm">Experience serving the Hibiscus Coast community</p>
+              <p className="text-gray-600 text-sm leading-relaxed">Experience serving the Hibiscus Coast community</p>
             </div>
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="bg-white p-8 rounded-xl border border-gray-100 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300">
               <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mb-4">
                 <Users className="w-7 h-7 text-gold" />
               </div>
               <h4 className="font-bold text-xl text-gray-900 mb-2">1000+ Customers</h4>
-              <p className="text-gray-600 text-sm">Trusted by thousands of satisfied passengers</p>
+              <p className="text-gray-600 text-sm leading-relaxed">Trusted by thousands of satisfied passengers</p>
             </div>
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="bg-white p-8 rounded-xl border border-gray-100 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300">
               <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mb-4">
                 <Clock className="w-7 h-7 text-gold" />
               </div>
               <h4 className="font-bold text-xl text-gray-900 mb-2">24/7 Available</h4>
-              <p className="text-gray-600 text-sm">Ready to serve you any time of day or night</p>
+              <p className="text-gray-600 text-sm leading-relaxed">Ready to serve you any time of day or night</p>
             </div>
           </div>
         </div>

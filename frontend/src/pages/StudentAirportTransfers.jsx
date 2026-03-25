@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '../components/ui/button';
-import { ArrowRight, GraduationCap, Users, DollarSign, Shield, Clock, Luggage, Globe, Phone } from 'lucide-react';
+import { ArrowRight, GraduationCap, Users, DollarSign, Shield, Clock, Luggage, Globe, Mail } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
@@ -288,8 +288,8 @@ const StudentAirportTransfers = () => {
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button variant="outline" className="border-2 border-gold/50 hover:border-gold text-gold hover:bg-gold/10 px-10 py-7 text-lg font-semibold">
-              <Phone className="mr-2 w-5 h-5" />
-              Call Us: 021 743 321
+              <Mail className="mr-2 w-5 h-5" />
+              Email info@bookaride.co.nz
             </Button>
           </div>
         </div>

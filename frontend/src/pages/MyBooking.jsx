@@ -143,7 +143,7 @@ const MyBooking = () => {
               <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-red-400 font-medium">{error}</p>
-                <p className="text-gray-400 text-sm mt-1">If you need help, call us at <a href="tel:+6421743321" className="text-gold hover:underline">021 743 321</a></p>
+                <p className="text-gray-400 text-sm mt-1">If you need help, email us at <a href="mailto:info@bookaride.co.nz" className="text-gold hover:underline">info@bookaride.co.nz</a></p>
               </div>
             </div>
           )}
@@ -257,9 +257,7 @@ const MyBooking = () => {
           <div className="mt-8 text-center bg-gray-900/50 border border-gold/10 rounded-xl p-6">
             <p className="text-gray-300 text-sm mb-2 font-medium">Need to modify or cancel your booking?</p>
             <p className="text-gray-400 text-sm">
-              Call{' '}
-              <a href="tel:+6421743321" className="text-gold hover:underline font-medium">021 743 321</a>
-              {' '}or email{' '}
+              Email us at{' '}
               <a href="mailto:info@bookaride.co.nz" className="text-gold hover:underline font-medium">info@bookaride.co.nz</a>
             </p>
           </div>

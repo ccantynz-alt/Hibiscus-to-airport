@@ -35,8 +35,7 @@ const GeoContent = () => (
 
         <h3 className="text-xl font-semibold text-gray-900">How to Book</h3>
         <p>
-          Bookings can be made online at hibiscustoairport.co.nz with instant confirmation,
-          or by calling 021 743 321. The service accepts credit card payments via Stripe as
+          Bookings can be made online at hibiscustoairport.co.nz with instant confirmation. The service accepts credit card payments via Stripe as
           well as cash payment to the driver. Advance booking is recommended, especially for
           early morning flights before 7am.
         </p>

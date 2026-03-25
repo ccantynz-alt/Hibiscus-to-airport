@@ -33,7 +33,8 @@ const Features = () => {
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             Why Choose <span className="text-gold">Hibiscus to Airport</span>?
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="w-16 h-0.5 bg-[#D4AF37] mx-auto mt-4 mb-6"></div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Experience the perfect blend of reliability, comfort, and modern convenience
           </p>
         </div>
@@ -75,8 +76,8 @@ const Features = () => {
           {features.map((feature) => {
             const IconComponent = iconMap[feature.icon];
             return (
-              <Card key={feature.id} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-                <CardHeader className="p-6">
+              <Card key={feature.id} className="bg-white border border-gray-100 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300 group">
+                <CardHeader className="p-8">
                   <div className="w-12 h-12 bg-gold/10 rounded-full flex items-center justify-center mb-4">
                     <IconComponent className="w-6 h-6 text-gold" />
                   </div>

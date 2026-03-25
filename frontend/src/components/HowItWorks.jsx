@@ -10,7 +10,8 @@ const HowItWorks = () => {
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             How It <span className="text-gold">Works</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <div className="w-16 h-0.5 bg-[#D4AF37] mx-auto mt-4 mb-6"></div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Booking a ride is quick and easy
           </p>
         </div>
@@ -18,9 +19,9 @@ const HowItWorks = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {howItWorks.map((step, index) => (
             <div key={step.step} className="relative">
-              <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full">
+              <Card className="bg-white border border-gray-100 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300 h-full">
                 <CardContent className="p-8">
-                  <div className="w-14 h-14 bg-gold/10 rounded-full flex items-center justify-center mb-6 text-gold text-xl font-bold border border-gold/20">
+                  <div className="w-14 h-14 bg-gold/10 rounded-full flex items-center justify-center mb-6 text-gold text-2xl border border-gold/20" style={{ fontFamily: 'Playfair Display, serif' }}>
                     {step.step}
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>

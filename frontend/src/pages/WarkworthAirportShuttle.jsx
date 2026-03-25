@@ -2,7 +2,7 @@ import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
-import { MapPin, Clock, Phone, Star, Shield, Car } from 'lucide-react';
+import { MapPin, Clock, Star, Shield, Car } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 

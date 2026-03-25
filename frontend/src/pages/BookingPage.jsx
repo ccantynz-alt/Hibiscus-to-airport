@@ -932,7 +932,7 @@ const BookingPage = () => {
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
-                          placeholder="021 743 321"
+                          placeholder="021 123 4567"
                           required
                           className="h-11 rounded-md"
                         />
