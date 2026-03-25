@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { ArrowRight, Clock } from 'lucide-react';
+import { ArrowRight, Clock, MapPin } from 'lucide-react';
 
 const Hero = () => {
+  const [pickup, setPickup] = useState('');
+
+  const handleGetQuote = () => {
+    const params = new URLSearchParams();
+    if (pickup) params.set('from', pickup);
+    params.set('to', 'Auckland Airport');
+    window.location.href = `/booking?${params.toString()}`;
+  };
+
   return (
     <section className="relative pt-32 pb-24 bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden">
       {/* Elegant gold glow effects */}
@@ -86,6 +95,44 @@ const Hero = () => {
           <div className="text-center p-8 bg-gray-900/80 backdrop-blur-md rounded-2xl border-2 border-gold/20 shadow-2xl hover:border-gold/50 hover:shadow-gold/10 transition-all duration-500 group">
             <div className="text-5xl font-bold text-gold mb-2 group-hover:scale-110 transition-transform duration-300" style={{ fontFamily: 'Playfair Display, serif' }}>4.9★</div>
             <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">Rating</div>
+          </div>
+        </div>
+
+        {/* Quick Quote Widget */}
+        <div className="mt-16 max-w-2xl mx-auto">
+          <div className="bg-gray-900/80 backdrop-blur-md border-2 border-gold/30 rounded-2xl p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-white mb-6 text-center" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Get a Quick <span className="text-gold">Quote</span>
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold" />
+                <input
+                  type="text"
+                  placeholder="Enter pickup suburb"
+                  value={pickup}
+                  onChange={(e) => setPickup(e.target.value)}
+                  className="w-full pl-10 pr-4 py-4 bg-gray-800 border border-gold/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-gold transition-colors"
+                />
+              </div>
+              <div className="flex-1 relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gold" />
+                <input
+                  type="text"
+                  placeholder="Auckland Airport"
+                  value="Auckland Airport"
+                  readOnly
+                  className="w-full pl-10 pr-4 py-4 bg-gray-800 border border-gold/30 rounded-xl text-gray-300 cursor-default"
+                />
+              </div>
+              <Button
+                onClick={handleGetQuote}
+                className="bg-gold hover:bg-amber-500 text-black px-8 py-4 text-lg font-bold shadow-xl hover:scale-105 transition-all duration-300 whitespace-nowrap"
+              >
+                Get Quote
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

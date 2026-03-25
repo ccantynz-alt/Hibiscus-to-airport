@@ -12,8 +12,8 @@ const HomePage = () => {
   return (
     <div className="min-h-screen">
       <PageMeta
-        title={null}
-        description="Premium airport shuttle service from Hibiscus Coast to Auckland Airport. Professional drivers, luxury vehicles, 24/7 service. Book online instantly with guaranteed pickup times."
+        title="Hibiscus Coast Airport Shuttle | Door-to-Door Auckland Airport Transfers 24/7"
+        description="Private airport shuttle from Orewa, Whangaparaoa, Silverdale & Hibiscus Coast to Auckland Airport. Book online, flat rates, 24/7 service. Call 021 743 321."
         path="/"
       />
       <Header />
