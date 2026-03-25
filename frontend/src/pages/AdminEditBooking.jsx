@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { ArrowLeft, User, MapPin, Calendar, DollarSign, Save, Loader2, Plus, X } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
-import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import { useLoadScript } from '@react-google-maps/api';
 
 import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
 
@@ -21,9 +21,12 @@ const AdminEditBooking = () => {
   const [saving, setSaving] = useState(false);
   const [calculatingPrice, setCalculatingPrice] = useState(false);
   
-  const [pickupAutocomplete, setPickupAutocomplete] = useState(null);
-  const [dropoffAutocomplete, setDropoffAutocomplete] = useState(null);
-  const additionalAutocompleteRefs = useRef({});
+  const pickupInputRef = useRef(null);
+  const dropoffInputRef = useRef(null);
+  const pickupACRef = useRef(null);
+  const dropoffACRef = useRef(null);
+  const additionalInputRefs = useRef({});
+  const additionalACRefs = useRef({});
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -58,44 +61,60 @@ const AdminEditBooking = () => {
     fetchBooking();
   }, [navigate, bookingId]);
 
-  const onPickupLoad = (autocomplete) => {
-    setPickupAutocomplete(autocomplete);
-  };
+  // Attach native Google Maps Autocomplete to pickup/dropoff inputs
+  useEffect(() => {
+    if (!isLoaded) return;
 
-  const onPickupPlaceChanged = () => {
-    if (pickupAutocomplete !== null) {
-      const place = pickupAutocomplete.getPlace();
-      if (place.formatted_address) {
-        setFormData(prev => ({ ...prev, pickupAddress: place.formatted_address }));
-      }
+    const acOptions = {
+      componentRestrictions: { country: 'nz' },
+      fields: ['formatted_address', 'name'],
+    };
+
+    if (pickupInputRef.current && !pickupACRef.current) {
+      pickupACRef.current = new window.google.maps.places.Autocomplete(
+        pickupInputRef.current,
+        acOptions
+      );
+      pickupACRef.current.addListener('place_changed', () => {
+        const place = pickupACRef.current.getPlace();
+        const address = place.formatted_address || place.name || '';
+        setFormData(prev => ({ ...prev, pickupAddress: address }));
+      });
     }
-  };
 
-  const onDropoffLoad = (autocomplete) => {
-    setDropoffAutocomplete(autocomplete);
-  };
-
-  const onDropoffPlaceChanged = () => {
-    if (dropoffAutocomplete !== null) {
-      const place = dropoffAutocomplete.getPlace();
-      if (place.formatted_address) {
-        setFormData(prev => ({ ...prev, dropoffAddress: place.formatted_address }));
-      }
+    if (dropoffInputRef.current && !dropoffACRef.current) {
+      dropoffACRef.current = new window.google.maps.places.Autocomplete(
+        dropoffInputRef.current,
+        acOptions
+      );
+      dropoffACRef.current.addListener('place_changed', () => {
+        const place = dropoffACRef.current.getPlace();
+        const address = place.formatted_address || place.name || '';
+        setFormData(prev => ({ ...prev, dropoffAddress: address }));
+      });
     }
-  };
+  }, [isLoaded]);
 
-  const onAdditionalPickupLoad = (autocomplete, index) => {
-    additionalAutocompleteRefs.current[index] = autocomplete;
-  };
-
-  const onAdditionalPickupPlaceChanged = (index) => {
-    const autocomplete = additionalAutocompleteRefs.current[index];
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
+  const attachAdditionalAutocomplete = (index, inputEl) => {
+    if (!inputEl || !isLoaded) return;
+    additionalInputRefs.current[index] = inputEl;
+    if (additionalACRefs.current[index]) return;
+    const ac = new window.google.maps.places.Autocomplete(inputEl, {
+      componentRestrictions: { country: 'nz' },
+      fields: ['formatted_address', 'name'],
+    });
+    ac.addListener('place_changed', () => {
+      const place = ac.getPlace();
       if (place && (place.formatted_address || place.name)) {
-        updateAdditionalPickup(index, place.formatted_address || place.name);
+        const address = place.formatted_address || place.name;
+        setFormData(prev => {
+          const newPickups = [...prev.additionalPickups];
+          newPickups[index] = address;
+          return { ...prev, additionalPickups: newPickups };
+        });
       }
-    }
+    });
+    additionalACRefs.current[index] = ac;
   };
 
   const addPickupLocation = () => {
@@ -106,8 +125,9 @@ const AdminEditBooking = () => {
   };
 
   const removePickupLocation = (index) => {
+    delete additionalACRefs.current[index];
+    delete additionalInputRefs.current[index];
     const newPickups = formData.additionalPickups.filter((_, i) => i !== index);
-    delete additionalAutocompleteRefs.current[index];
     setFormData(prev => ({
       ...prev,
       additionalPickups: newPickups
@@ -309,22 +329,16 @@ const AdminEditBooking = () => {
             <CardContent className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Address</label>
-                <Autocomplete
-                  onLoad={onPickupLoad}
-                  onPlaceChanged={onPickupPlaceChanged}
-                  options={{
-                    componentRestrictions: { country: 'nz' },
-                    fields: ['formatted_address', 'name']
-                  }}
-                >
-                  <Input
-                    value={formData.pickupAddress}
-                    onChange={(e) => setFormData({ ...formData, pickupAddress: e.target.value })}
-                    placeholder="Enter pickup address"
-                    required
-                    className="h-12"
-                  />
-                </Autocomplete>
+                <input
+                  ref={pickupInputRef}
+                  type="text"
+                  value={formData.pickupAddress}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pickupAddress: e.target.value }))}
+                  placeholder="Enter pickup address"
+                  required
+                  autoComplete="off"
+                  className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                />
               </div>
 
               {/* Additional Pickup Locations */}
@@ -336,21 +350,15 @@ const AdminEditBooking = () => {
                     </label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-3 h-5 w-5 text-purple-500 z-10" />
-                      <Autocomplete
-                        onLoad={(autocomplete) => onAdditionalPickupLoad(autocomplete, index)}
-                        onPlaceChanged={() => onAdditionalPickupPlaceChanged(index)}
-                        options={{
-                          componentRestrictions: { country: 'nz' },
-                          fields: ['formatted_address', 'name']
-                        }}
-                      >
-                        <Input
-                          value={pickup}
-                          onChange={(e) => updateAdditionalPickup(index, e.target.value)}
-                          placeholder="Search for address..."
-                          className="pl-10 h-12"
-                        />
-                      </Autocomplete>
+                      <input
+                        ref={(el) => attachAdditionalAutocomplete(index, el)}
+                        type="text"
+                        value={pickup}
+                        onChange={(e) => updateAdditionalPickup(index, e.target.value)}
+                        placeholder="Search for address..."
+                        autoComplete="off"
+                        className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold pl-10 h-12"
+                      />
                     </div>
                   </div>
                   <div className="flex items-end">
@@ -378,22 +386,16 @@ const AdminEditBooking = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Drop-off Address</label>
-                <Autocomplete
-                  onLoad={onDropoffLoad}
-                  onPlaceChanged={onDropoffPlaceChanged}
-                  options={{
-                    componentRestrictions: { country: 'nz' },
-                    fields: ['formatted_address', 'name']
-                  }}
-                >
-                  <Input
-                    value={formData.dropoffAddress}
-                    onChange={(e) => setFormData({ ...formData, dropoffAddress: e.target.value })}
-                    placeholder="Enter drop-off address"
-                    required
-                    className="h-12"
-                  />
-                </Autocomplete>
+                <input
+                  ref={dropoffInputRef}
+                  type="text"
+                  value={formData.dropoffAddress}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dropoffAddress: e.target.value }))}
+                  placeholder="Enter drop-off address"
+                  required
+                  autoComplete="off"
+                  className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                />
               </div>
               <div className="grid md:grid-cols-3 gap-4">
                 <div>

@@ -105,13 +105,27 @@ code {
   color: #D4AF37;
 }
 
-/* Elegant dark backgrounds */
+/* Elegant dark backgrounds — used for footer */
 .bg-elegant-dark {
-  background-color: #1a1a1a;
+  background-color: #111827;
 }
 
 .bg-elegant-darker {
-  background-color: #0f0f0f;
+  background-color: #111827;
+}
+
+/* Section utility classes */
+.section-white {
+  @apply bg-white;
+}
+.section-light {
+  @apply bg-white;
+}
+.section-muted {
+  @apply bg-gray-50;
+}
+.section-dark {
+  @apply bg-gray-900 text-white;
 }
 
 /* View Transitions API — smooth page-to-page animations */
@@ -137,20 +151,9 @@ code {
   to { opacity: 1; }
 }
 
-/* Elegant section transitions */
-.section-light {
-  @apply bg-white;
-}
-.section-muted {
-  @apply bg-gray-50;
-}
-.section-dark {
-  @apply bg-gray-900 text-white;
-}
-
 /* Subtle gradient dividers between sections */
 .section-divider-down {
-  background: linear-gradient(to bottom, transparent 0%, rgba(212, 175, 55, 0.05) 50%, transparent 100%);
+  background: linear-gradient(to bottom, transparent 0%, rgba(212, 175, 55, 0.03) 50%, transparent 100%);
   height: 4rem;
 }
 

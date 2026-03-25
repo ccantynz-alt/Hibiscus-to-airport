@@ -1,137 +1,120 @@
-import React, { useState } from 'react';
-import { Button } from './ui/button';
-import { ArrowRight, MapPin, Plane, Shield, Clock, Star } from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Shield, Clock, Star, Phone } from 'lucide-react';
 
 const Hero = () => {
-  const [pickup, setPickup] = useState('');
-
-  const handleGetQuote = () => {
-    const params = new URLSearchParams();
-    if (pickup) params.set('from', pickup);
-    params.set('to', 'Auckland Airport');
-    window.location.href = `/booking?${params.toString()}`;
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleGetQuote();
-  };
-
   return (
-    <section className="relative pt-28 pb-20 bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden min-h-[90vh] flex items-center">
-      {/* Elegant gold glow effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-gold rounded-full blur-3xl opacity-10"></div>
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-500 rounded-full blur-3xl opacity-10"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gold rounded-full blur-3xl opacity-5"></div>
-      </div>
-
-      {/* Gold dot pattern overlay */}
-      <div className="absolute inset-0 opacity-20" style={{
-        backgroundImage: 'radial-gradient(circle at 2px 2px, #D4AF37 1px, transparent 0)',
-        backgroundSize: '50px 50px'
-      }}></div>
-
-      {/* Elegant top border */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent"></div>
+    <section className="relative pt-32 pb-20 sm:pt-36 sm:pb-28 bg-white overflow-hidden min-h-[90vh] flex items-center">
+      {/* Subtle decorative shape — top right */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-gray-50 via-gray-100/50 to-transparent rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none"></div>
+      {/* Subtle decorative shape — bottom left */}
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-gray-50 via-gray-100/30 to-transparent rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none"></div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="text-center max-w-5xl mx-auto">
-          <p className="text-gold/80 text-sm font-medium tracking-widest uppercase mb-6">
+        <div className="text-center max-w-4xl mx-auto">
+          {/* Tagline */}
+          <p className="text-gray-400 text-sm font-medium tracking-[0.2em] uppercase mb-8">
             24/7 Premium Service &bull; Fully Insured &bull; Instant Booking
           </p>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-4 leading-tight" style={{ fontFamily: 'Playfair Display, serif' }}>
-            Premium Airport Transfers
-            <span className="block bg-gradient-to-r from-gold via-amber-400 to-gold bg-clip-text text-transparent mt-2 sm:mt-3">
+          {/* Heading */}
+          <h1
+            className="text-4xl sm:text-5xl lg:text-7xl font-bold text-gray-900 mb-5 leading-[1.1]"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          >
+            Premium Airport{' '}
+            <span className="text-[#D4AF37]">Transfers</span>
+            <span className="block text-2xl sm:text-3xl lg:text-4xl font-normal text-gray-500 mt-3 sm:mt-4" style={{ fontFamily: 'inherit' }}>
               Hibiscus Coast to Auckland Airport
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed font-light">
-            Door-to-door private shuttle — no sharing, no waiting. Professional drivers, comfortable vehicles, flat rates 24/7.
+          {/* Description */}
+          <p className="text-lg sm:text-xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+            Door-to-door private shuttle — no sharing, no waiting.
+            Professional drivers, comfortable vehicles, flat rates 24/7.
           </p>
 
-          {/* ========== QUOTE WIDGET — THE HERO CTA ========== */}
-          <div className="max-w-3xl mx-auto mb-16">
-            <div className="bg-gray-900/90 backdrop-blur-xl border-2 border-gold/40 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-gold/10">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Plane className="w-6 h-6 text-gold" />
-                <h2 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
-                  Where are you <span className="text-gold">travelling from?</span>
-                </h2>
-              </div>
-              <p className="text-gray-400 text-sm mb-6">Enter your full address for an instant price</p>
+          {/* CTA buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <Link
+              to="/booking"
+              className="inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-10 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl hover:translate-y-[-1px] transition-all duration-200"
+            >
+              Book Your Transfer
+              <ArrowRight className="ml-3 w-5 h-5" />
+            </Link>
+            <a
+              href="tel:021743321"
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 px-6 py-4 text-lg font-medium transition-colors duration-200"
+            >
+              <Phone className="mr-2 w-5 h-5 text-gray-400" />
+              021 743 321
+            </a>
+          </div>
 
-              {/* Single prominent input — full width */}
-              <div className="relative mb-5">
-                <MapPin className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gold" />
-                <input
-                  type="text"
-                  placeholder="e.g. 42 Hibiscus Coast Highway, Orewa"
-                  value={pickup}
-                  onChange={(e) => setPickup(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="w-full pl-12 sm:pl-14 pr-5 py-5 sm:py-6 bg-gray-800/80 border-2 border-gold/30 rounded-2xl text-white text-base sm:text-lg placeholder-gray-500 focus:outline-none focus:border-gold focus:shadow-lg focus:shadow-gold/10 transition-all duration-300"
-                  aria-label="Pickup address"
-                />
-              </div>
-
-              {/* Destination shown as context, not a dead input */}
-              <div className="flex items-center gap-2 mb-6 px-2">
-                <div className="w-2 h-2 rounded-full bg-gold"></div>
-                <div className="h-px flex-1 bg-gold/20"></div>
-                <span className="text-gray-400 text-sm font-medium px-3">to</span>
-                <div className="h-px flex-1 bg-gold/20"></div>
-                <div className="flex items-center gap-2 bg-gray-800/60 border border-gold/20 rounded-xl px-4 py-2">
-                  <Plane className="w-4 h-4 text-gold" />
-                  <span className="text-white font-medium text-sm sm:text-base">Auckland Airport</span>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleGetQuote}
-                className="w-full bg-gold hover:bg-amber-500 text-black py-5 sm:py-6 text-lg sm:text-xl font-bold rounded-2xl shadow-xl shadow-gold/20 hover:shadow-gold/40 hover:scale-[1.02] transition-all duration-300"
-              >
-                Get Instant Price
-                <ArrowRight className="ml-3 w-6 h-6" />
-              </Button>
-
-              {/* Trust signals inside the widget */}
-              <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-gold/10">
-                <div className="flex items-center justify-center gap-1.5 text-gray-400 text-xs sm:text-sm">
-                  <Shield className="w-4 h-4 text-gold/70" />
-                  <span>Flat Rates</span>
-                </div>
-                <div className="flex items-center justify-center gap-1.5 text-gray-400 text-xs sm:text-sm">
-                  <Clock className="w-4 h-4 text-gold/70" />
-                  <span>24/7 Service</span>
-                </div>
-                <div className="flex items-center justify-center gap-1.5 text-gray-400 text-xs sm:text-sm">
-                  <Star className="w-4 h-4 text-gold/70" />
-                  <span>4.9★ Rated</span>
-                </div>
-              </div>
+          {/* Trust signals */}
+          <div className="flex items-center justify-center gap-8 sm:gap-10 mb-20">
+            <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <Shield className="w-4 h-4 text-[#D4AF37]" />
+              <span>Flat Rates</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <Clock className="w-4 h-4 text-[#D4AF37]" />
+              <span>24/7 Service</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <Star className="w-4 h-4 text-[#D4AF37]" />
+              <span>4.9&#9733; Rated</span>
             </div>
           </div>
         </div>
 
-        {/* Elegant Stats Section */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 max-w-6xl mx-auto">
-          <div className="text-center p-6 sm:p-8 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gold/20 shadow-2xl hover:border-gold/50 hover:shadow-gold/10 transition-all duration-500 group">
-            <div className="text-3xl sm:text-5xl font-bold text-gold mb-2 group-hover:scale-110 transition-transform duration-300" style={{ fontFamily: 'Playfair Display, serif' }}>5000+</div>
-            <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">Satisfied Clients</div>
+        {/* Stats Section */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
+          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
+            <div
+              className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            >
+              5000+
+            </div>
+            <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">
+              Satisfied Clients
+            </div>
           </div>
-          <div className="text-center p-6 sm:p-8 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gold/20 shadow-2xl hover:border-gold/50 hover:shadow-gold/10 transition-all duration-500 group">
-            <div className="text-3xl sm:text-5xl font-bold text-gold mb-2 group-hover:scale-110 transition-transform duration-300" style={{ fontFamily: 'Playfair Display, serif' }}>60s</div>
-            <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">Booking Time</div>
+          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
+            <div
+              className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            >
+              60s
+            </div>
+            <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">
+              Booking Time
+            </div>
           </div>
-          <div className="text-center p-6 sm:p-8 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gold/20 shadow-2xl hover:border-gold/50 hover:shadow-gold/10 transition-all duration-500 group">
-            <div className="text-3xl sm:text-5xl font-bold text-gold mb-2 group-hover:scale-110 transition-transform duration-300" style={{ fontFamily: 'Playfair Display, serif' }}>100%</div>
-            <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">Fully Insured</div>
+          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
+            <div
+              className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            >
+              100%
+            </div>
+            <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">
+              Fully Insured
+            </div>
           </div>
-          <div className="text-center p-6 sm:p-8 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gold/20 shadow-2xl hover:border-gold/50 hover:shadow-gold/10 transition-all duration-500 group">
-            <div className="text-3xl sm:text-5xl font-bold text-gold mb-2 group-hover:scale-110 transition-transform duration-300" style={{ fontFamily: 'Playfair Display, serif' }}>4.9★</div>
-            <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">Rating</div>
+          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
+            <div
+              className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            >
+              4.9&#9733;
+            </div>
+            <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">
+              Rating
+            </div>
           </div>
         </div>
       </div>
