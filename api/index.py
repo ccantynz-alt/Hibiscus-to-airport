@@ -153,3 +153,85 @@ try:
     logger.info("agent_routes mounted")
 except Exception as e:
     logger.error(f"FAILED to import agent_routes: {e}")
+
+# ---------------------------------------------------------------------------
+# Cron: day-before reminder emails & SMS
+# Vercel Cron calls GET /api/cron/reminders daily at 5:00 UTC (6 PM NZDT)
+# Secured via CRON_SECRET env var — Vercel sends it as Authorization header.
+# ---------------------------------------------------------------------------
+@app.get("/api/cron/reminders")
+async def cron_day_before_reminders(request: Request):
+    """Send reminders for bookings happening tomorrow. Called by Vercel Cron."""
+    # Verify cron secret
+    cron_secret = os.environ.get("CRON_SECRET", "")
+    auth_header = request.headers.get("authorization", "")
+    if cron_secret and auth_header != f"Bearer {cron_secret}":
+        return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
+
+    try:
+        from db import get_pool
+        from utils import send_email, send_sms, format_date_nz
+        from datetime import timezone, timedelta
+
+        pool = await get_pool()
+        tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+        rows = await pool.fetch(
+            """SELECT * FROM bookings
+               WHERE date = $1 AND status = 'confirmed'
+               AND payment_status = 'paid'
+               AND (reminder_sent IS NULL OR reminder_sent = FALSE)
+               LIMIT 100""",
+            tomorrow,
+        )
+        logger.info(f"Cron: found {len(rows)} bookings for tomorrow ({tomorrow}) needing reminders")
+
+        sent_count = 0
+        for row in rows:
+            booking = dict(row)
+            try:
+                booking_ref = booking.get("booking_ref", "N/A")
+                formatted_date = format_date_nz(booking["date"])
+                subject = f"Reminder: Your Airport Transfer Tomorrow - {booking_ref}"
+                body = f"""
+                <div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;">
+                  <div style="background:linear-gradient(135deg,#1f2937,#111827);color:#fff;padding:30px;border-radius:10px 10px 0 0;">
+                    <h1 style="margin:0;font-size:24px;">Transfer Reminder</h1>
+                    <p style="margin:8px 0 0;color:#f59e0b;">Your transfer is tomorrow!</p>
+                  </div>
+                  <div style="background:#fff;padding:30px;border-radius:0 0 10px 10px;border:1px solid #e5e7eb;">
+                    <p>Hi {booking['name']},</p>
+                    <p>Just a friendly reminder that your airport transfer is scheduled for <strong>tomorrow</strong>.</p>
+                    <div style="background:#f8fafc;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #f59e0b;">
+                      <p><strong>Booking:</strong> {booking_ref}</p>
+                      <p><strong>Date &amp; Time:</strong> {formatted_date} at {booking['time']}</p>
+                      <p><strong>Pickup:</strong> {booking['pickup_address']}</p>
+                      <p><strong>Drop-off:</strong> {booking['dropoff_address']}</p>
+                    </div>
+                    <p>Questions? Contact us at 021 743 321 or bookings@bookaride.co.nz</p>
+                  </div>
+                </div>"""
+                send_email(booking["email"], subject, body)
+
+                sms_message = (
+                    f"REMINDER: Your airport transfer is tomorrow!\n"
+                    f"Ref: {booking_ref}\n"
+                    f"Pickup: {formatted_date} at {booking['time']}\n"
+                    f"From: {(booking['pickup_address'] or '')[:50]}\n"
+                    f"Be ready 5-10 mins early. Questions? 021 743 321"
+                )
+                send_sms(booking["phone"], sms_message)
+
+                await pool.execute(
+                    "UPDATE bookings SET reminder_sent = TRUE, reminder_sent_at = $1 WHERE id = $2",
+                    datetime.now(timezone.utc).isoformat(),
+                    booking["id"],
+                )
+                sent_count += 1
+                logger.info(f"Reminder sent for booking {booking_ref}")
+            except Exception as e:
+                logger.error(f"Failed to send reminder for booking {booking.get('booking_ref')}: {e}")
+
+        return {"ok": True, "reminders_sent": sent_count, "date": tomorrow}
+    except Exception as e:
+        logger.error(f"Cron reminder error: {e}")
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
