@@ -69,6 +69,20 @@ const FAQ = () => {
       />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "HowTo",
+          "name": "How to Book an Airport Shuttle from Hibiscus Coast to Auckland Airport",
+          "description": "Step-by-step guide to booking a private airport shuttle from the Hibiscus Coast to Auckland Airport.",
+          "step": [
+            {"@type": "HowToStep", "position": 1, "name": "Visit the booking page", "text": "Go to hibiscustoairport.co.nz/booking and enter your pickup address."},
+            {"@type": "HowToStep", "position": 2, "name": "Select date and time", "text": "Choose your travel date, pickup time, and number of passengers."},
+            {"@type": "HowToStep", "position": 3, "name": "Get instant price", "text": "The system calculates your fare based on distance. No surge pricing."},
+            {"@type": "HowToStep", "position": 4, "name": "Confirm and pay", "text": "Pay securely via Stripe or choose cash payment to the driver."},
+            {"@type": "HowToStep", "position": 5, "name": "Receive confirmation", "text": "Get instant email and SMS confirmation with your booking reference."}
+          ],
+          "totalTime": "PT2M"
+        })}</script>
       </Helmet>
       <Header />
       
