@@ -2,6 +2,7 @@
 # FINISH_TODAY_B_ADMIN_LOGIN
 
 import os
+import hmac
 import logging
 from datetime import datetime
 from fastapi import APIRouter, Request, Response, Form
@@ -19,10 +20,10 @@ def _is_authed(req: Request) -> bool:
     if ADMIN_API_KEY == "":
         return False
     h = (req.headers.get("X-Admin-Key") or "").strip()
-    if h and h == ADMIN_API_KEY:
+    if h and hmac.compare_digest(h, ADMIN_API_KEY):
         return True
     c = (req.cookies.get(ADMIN_COOKIE) or "").strip()
-    return c == ADMIN_API_KEY
+    return hmac.compare_digest(c, ADMIN_API_KEY)
 
 def _require(req: Request):
     if not _is_authed(req):

@@ -2,6 +2,7 @@
 # FINISH_TODAY_C_COCKPIT
 
 import os
+import hmac
 from datetime import datetime
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -15,10 +16,10 @@ def _is_authed(req: Request) -> bool:
     if ADMIN_API_KEY == "":
         return False
     h = (req.headers.get("X-Admin-Key") or "").strip()
-    if h and h == ADMIN_API_KEY:
+    if h and hmac.compare_digest(h, ADMIN_API_KEY):
         return True
     c = (req.cookies.get(ADMIN_COOKIE) or "").strip()
-    return c == ADMIN_API_KEY
+    return hmac.compare_digest(c, ADMIN_API_KEY)
 
 @cockpit_router.get("/admin/cockpit", response_class=HTMLResponse)
 def cockpit(req: Request):

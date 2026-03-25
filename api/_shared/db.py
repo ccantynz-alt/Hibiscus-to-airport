@@ -182,6 +182,17 @@ async def _ensure_schema(conn: asyncpg.Connection):
             scope TEXT,
             updated_at TEXT
         );
+
+
+        CREATE INDEX IF NOT EXISTS idx_bookings_booking_ref ON bookings(booking_ref);
+        CREATE INDEX IF NOT EXISTS idx_bookings_email ON bookings(email);
+        CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(date);
+        CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+        CREATE INDEX IF NOT EXISTS idx_bookings_payment_status ON bookings(payment_status);
+        CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings(created_at);
+        CREATE INDEX IF NOT EXISTS idx_deleted_bookings_booking_ref ON deleted_bookings(booking_ref);
+        CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);
+        CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);
     """)
     _schema_initialized = True
     logger.info("Database schema initialized")

@@ -292,7 +292,7 @@ async def calculate_price_endpoint(data: PriceCalculation):
         return pricing
     except Exception as e:
         logger.error(f"Price calculation error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bookings")
 async def create_booking(booking: BookingCreate):
@@ -386,7 +386,7 @@ async def create_booking(booking: BookingCreate):
         }
     except Exception as e:
         logger.error(f"Booking creation error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ============================================
@@ -413,7 +413,7 @@ def check_notification_cooldown(last_sent: str, cooldown_minutes: int = NOTIFICA
             minutes_remaining = int(cooldown_minutes - elapsed) + 1
             return False, minutes_remaining
         return True, 0
-    except:
+    except Exception:
         return True, 0
 
 @router.post("/bookings/{booking_id}/resend-email")
@@ -447,7 +447,7 @@ async def resend_email_confirmation(booking_id: str, force: bool = False):
         raise
     except Exception as e:
         logger.error(f"Resend email error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bookings/{booking_id}/resend-sms")
 async def resend_sms_confirmation(booking_id: str, force: bool = False):
@@ -480,7 +480,7 @@ async def resend_sms_confirmation(booking_id: str, force: bool = False):
         raise
     except Exception as e:
         logger.error(f"Resend SMS error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bookings/{booking_id}/resend-all")
 async def resend_all_confirmations(booking_id: str, force: bool = False):
@@ -538,7 +538,7 @@ async def resend_all_confirmations(booking_id: str, force: bool = False):
         raise
     except Exception as e:
         logger.error(f"Resend all error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bookings/{booking_id}/duplicate")
 async def duplicate_booking(booking_id: str):
@@ -602,7 +602,7 @@ async def duplicate_booking(booking_id: str):
         }
     except Exception as e:
         logger.error(f"Duplicate booking error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/payment/create-checkout")
 async def create_checkout_session(booking_data: dict):
@@ -639,7 +639,7 @@ async def create_checkout_session(booking_data: dict):
         return {"session_id": session.id, "url": session.url}
     except Exception as e:
         logger.error(f"Checkout error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/bookings/{booking_id}/send-payment-link")
@@ -761,7 +761,7 @@ Questions? 021 743 321"""
         raise
     except Exception as e:
         logger.error(f"Send payment link error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/payment/status/{booking_id}")
@@ -781,7 +781,7 @@ async def check_payment_status(booking_id: str):
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
@@ -825,7 +825,7 @@ async def stripe_webhook(request: Request):
         return {"status": "success"}
     except Exception as e:
         logger.error(f"Webhook error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # Admin Endpoints
 @router.post("/admin/login")
@@ -863,7 +863,7 @@ async def admin_login(credentials: AdminLogin):
         raise
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/admin/change-password", dependencies=[Depends(get_current_user)])
 async def change_password(password_data: PasswordChange, current_user: dict = Depends(get_current_user)):
@@ -891,7 +891,7 @@ async def change_password(password_data: PasswordChange, current_user: dict = De
         raise
     except Exception as e:
         logger.error(f"Password change error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ============================================
 # PASSWORD RESET ENDPOINTS
@@ -970,7 +970,7 @@ async def reset_password(request: PasswordResetConfirm):
         raise
     except Exception as e:
         logger.error(f"Password reset confirm error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/admin/me")
 async def get_admin_profile(request: Request):
@@ -1004,7 +1004,7 @@ async def get_admin_profile(request: Request):
         raise
     except Exception as e:
         logger.error(f"Get admin profile error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # SEO Management Endpoints
 @router.get("/seo/pages", dependencies=[Depends(get_current_user)])
@@ -1016,7 +1016,7 @@ async def get_all_seo_pages():
         pages = [row_to_seo(r) for r in rows]
         return pages
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/seo/pages/{page_slug}")
 async def get_seo_page(page_slug: str):
@@ -1038,7 +1038,7 @@ async def get_seo_page(page_slug: str):
             }
         return page
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/seo/pages", dependencies=[Depends(get_current_user)])
 async def create_or_update_seo_page(seo_data: SEOPageData):
@@ -1077,7 +1077,7 @@ async def create_or_update_seo_page(seo_data: SEOPageData):
         return {"message": "SEO page saved successfully", "page_slug": seo_data.page_slug}
     except Exception as e:
         logger.error(f"SEO page save error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.delete("/seo/pages/{page_slug}", dependencies=[Depends(get_current_user)])
 async def delete_seo_page(page_slug: str):
@@ -1090,7 +1090,7 @@ async def delete_seo_page(page_slug: str):
         raise
     except Exception as e:
         logger.error(f"SEO page delete error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 
@@ -1103,7 +1103,7 @@ async def get_all_bookings():
         bookings = [row_to_booking(r) for r in rows]
         return bookings
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/bookings/export/csv", dependencies=[Depends(get_current_user)])
 async def export_bookings_csv():
@@ -1164,7 +1164,7 @@ async def export_bookings_csv():
         )
     except Exception as e:
         logger.error(f"CSV export error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/bookings/import/template", dependencies=[Depends(get_current_user)])
 async def download_import_template():
@@ -1307,7 +1307,7 @@ async def import_bookings_csv(data: dict):
         raise
     except Exception as e:
         logger.error(f"CSV import error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/bookings/{booking_id}", dependencies=[Depends(get_current_user)])
 async def get_booking(booking_id: str):
@@ -1322,7 +1322,7 @@ async def get_booking(booking_id: str):
         raise
     except Exception as e:
         logger.error(f"Error fetching booking: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.put("/bookings/{booking_id}", dependencies=[Depends(get_current_user)])
 async def update_booking(booking_id: str, booking_update: BookingUpdate):
@@ -1356,7 +1356,7 @@ async def update_booking(booking_id: str, booking_update: BookingUpdate):
         raise
     except Exception as e:
         logger.error(f"Error updating booking: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.patch("/bookings/{booking_id}", dependencies=[Depends(get_current_user)])
 async def update_booking_status(booking_id: str, update_data: dict):
@@ -1385,7 +1385,7 @@ async def update_booking_status(booking_id: str, update_data: dict):
         
         return {"message": "Booking updated successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.delete("/bookings/{booking_id}", dependencies=[Depends(get_current_user)])
 async def delete_booking(booking_id: str):
@@ -1442,7 +1442,7 @@ async def delete_booking(booking_id: str):
         raise
     except Exception as e:
         logger.error(f"Booking deletion error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/bookings/deleted/list", dependencies=[Depends(get_current_user)])
 async def get_deleted_bookings():
@@ -1454,7 +1454,7 @@ async def get_deleted_bookings():
         return deleted
     except Exception as e:
         logger.error(f"Error fetching deleted bookings: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bookings/restore/{booking_id}", dependencies=[Depends(get_current_user)])
 async def restore_booking(booking_id: str):
@@ -1501,7 +1501,7 @@ async def restore_booking(booking_id: str):
         raise
     except Exception as e:
         logger.error(f"Error restoring booking: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.delete("/bookings/permanent/{booking_id}", dependencies=[Depends(get_current_user)])
 async def permanently_delete_booking(booking_id: str):
@@ -1516,7 +1516,7 @@ async def permanently_delete_booking(booking_id: str):
         raise
     except Exception as e:
         logger.error(f"Error permanently deleting booking: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ============================================
@@ -1533,7 +1533,7 @@ async def get_promo_codes():
         return codes
     except Exception as e:
         logger.error(f"Error fetching promo codes: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/promo-codes", dependencies=[Depends(get_current_user)])
 async def create_promo_code(promo: PromoCode):
@@ -1578,7 +1578,7 @@ async def create_promo_code(promo: PromoCode):
         raise
     except Exception as e:
         logger.error(f"Error creating promo code: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/promo-codes/validate")
 async def validate_promo_code(data: dict):
@@ -1635,7 +1635,7 @@ async def validate_promo_code(data: dict):
         raise
     except Exception as e:
         logger.error(f"Error validating promo code: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.put("/promo-codes/{promo_id}", dependencies=[Depends(get_current_user)])
 async def update_promo_code(promo_id: str, promo: PromoCode):
@@ -1649,7 +1649,7 @@ async def update_promo_code(promo_id: str, promo: PromoCode):
         raise
     except Exception as e:
         logger.error(f"Error updating promo code: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.delete("/promo-codes/{promo_id}", dependencies=[Depends(get_current_user)])
 async def delete_promo_code(promo_id: str):
@@ -1662,7 +1662,7 @@ async def delete_promo_code(promo_id: str):
         raise
     except Exception as e:
         logger.error(f"Error deleting promo code: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ============================================
 # DRIVER MANAGEMENT ENDPOINTS
@@ -1677,7 +1677,7 @@ async def get_drivers():
         return drivers
     except Exception as e:
         logger.error(f"Error fetching drivers: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/drivers", dependencies=[Depends(get_current_user)])
 async def create_driver(driver: DriverCreate):
@@ -1703,7 +1703,7 @@ async def create_driver(driver: DriverCreate):
         return {"message": "Driver created successfully", "id": driver_id}
     except Exception as e:
         logger.error(f"Error creating driver: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/drivers/{driver_id}", dependencies=[Depends(get_current_user)])
 async def get_driver(driver_id: str):
@@ -1718,7 +1718,7 @@ async def get_driver(driver_id: str):
         raise
     except Exception as e:
         logger.error(f"Error fetching driver: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.put("/drivers/{driver_id}", dependencies=[Depends(get_current_user)])
 async def update_driver(driver_id: str, driver_update: DriverUpdate):
@@ -1747,7 +1747,7 @@ async def update_driver(driver_id: str, driver_update: DriverUpdate):
         raise
     except Exception as e:
         logger.error(f"Error updating driver: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.delete("/drivers/{driver_id}", dependencies=[Depends(get_current_user)])
 async def delete_driver(driver_id: str):
@@ -1767,7 +1767,7 @@ async def delete_driver(driver_id: str):
         raise
     except Exception as e:
         logger.error(f"Error deleting driver: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ============================================
 # AUTO-DISPATCH SYSTEM
@@ -1822,7 +1822,7 @@ async def get_available_drivers_for_booking(booking_id: str, current_user: dict 
         raise
     except Exception as e:
         logger.error(f"Error getting available drivers: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bookings/{booking_id}/auto-dispatch")
 async def auto_dispatch_driver(booking_id: str, current_user: dict = Depends(get_current_user)):
@@ -1873,7 +1873,7 @@ async def auto_dispatch_driver(booking_id: str, current_user: dict = Depends(get
         raise
     except Exception as e:
         logger.error(f"Error in auto-dispatch: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ============================================
@@ -1972,7 +1972,7 @@ async def assign_driver_to_booking(booking_id: str, data: DriverAssignmentReques
         raise
     except Exception as e:
         logger.error(f"Error assigning driver: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/bookings/{booking_id}/unassign-driver")
 async def unassign_driver_from_booking(booking_id: str, data: dict = {}):
@@ -2015,7 +2015,7 @@ async def unassign_driver_from_booking(booking_id: str, data: dict = {}):
         raise
     except Exception as e:
         logger.error(f"Error unassigning driver: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 class ReturnDriverAssignment(BaseModel):
     driver_id: str
@@ -2088,7 +2088,7 @@ async def assign_return_driver(booking_id: str, data: ReturnDriverAssignment):
         raise
     except Exception as e:
         logger.error(f"Error assigning return driver: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 async def send_driver_job_notification(booking: dict, driver: dict, payout: float, token: str, notes: str = ""):
     """Send email and SMS to driver with job details"""
@@ -2220,7 +2220,7 @@ async def get_driver_job_details(booking_id: str, token: str = None):
         raise
     except Exception as e:
         logger.error(f"Error getting driver job: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/driver/job/{booking_id}/respond")
 async def driver_respond_to_job(booking_id: str, data: dict):
@@ -2297,7 +2297,7 @@ async def driver_respond_to_job(booking_id: str, data: dict):
         raise
     except Exception as e:
         logger.error(f"Error responding to job: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/tracking/start")
 async def start_driver_tracking(data: StartTracking):
@@ -2350,7 +2350,7 @@ async def start_driver_tracking(data: StartTracking):
         raise
     except Exception as e:
         logger.error(f"Error starting tracking: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/tracking/update-location")
 async def update_driver_location(data: DriverLocationUpdate):
@@ -2426,7 +2426,7 @@ async def update_driver_location(data: DriverLocationUpdate):
         raise
     except Exception as e:
         logger.error(f"Error updating location: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 async def send_5min_arrival_sms(tracking_session: dict, tracking_id: str):
     """Send SMS to customer when driver is 10 minutes away"""
@@ -2540,7 +2540,7 @@ async def get_tracking_info(tracking_ref: str):
         raise
     except Exception as e:
         logger.error(f"Error getting tracking info: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/tracking/stop/{booking_id}")
 async def stop_tracking(booking_id: str):
@@ -2562,7 +2562,7 @@ async def stop_tracking(booking_id: str):
         return {"message": "Tracking stopped", "status": "arrived"}
     except Exception as e:
         logger.error(f"Error stopping tracking: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 
@@ -2662,7 +2662,7 @@ async def track_flight(flight_number: str):
         raise
     except Exception as e:
         logger.error(f"Flight tracking error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 from fastapi import Form
@@ -2709,7 +2709,7 @@ async def get_calendar_auth_url(current_user: dict = Depends(get_current_user)):
         return {"authorization_url": auth_url}
     except Exception as e:
         logger.error(f"Error generating calendar auth URL: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/calendar/auth/callback")
 async def calendar_auth_callback(code: str = None, error: str = None):
@@ -2792,7 +2792,7 @@ async def sync_booking_to_calendar(booking_id: str, current_user: dict = Depends
         raise
     except Exception as e:
         logger.error(f"Calendar sync error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/calendar/sync-all")
@@ -2830,7 +2830,7 @@ async def sync_all_bookings_to_calendar(current_user: dict = Depends(get_current
         }
     except Exception as e:
         logger.error(f"Sync all bookings error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 async def get_calendar_credentials():
     """Get valid Google Calendar credentials with auto-refresh"""
@@ -2885,7 +2885,7 @@ async def add_booking_to_google_calendar(booking: dict):
             end_hour = int(booking_time.split(':')[0]) + 1
             end_time = f"{end_hour:02d}:{booking_time.split(':')[1]}"
             end_datetime = f"{booking_date}T{end_time}:00"
-        except:
+        except Exception:
             start_datetime = f"{booking_date}T09:00:00"
             end_datetime = f"{booking_date}T10:00:00"
         
@@ -2991,7 +2991,7 @@ async def create_test_calendar_event(current_user: dict = Depends(get_current_us
         
     except Exception as e:
         logger.error(f"Error creating test calendar event: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ============================================
@@ -3101,7 +3101,7 @@ async def send_tomorrow_reminders(current_user: dict = Depends(get_current_user)
         
     except Exception as e:
         logger.error(f"Error sending tomorrow reminders: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/reminders/pending")
 async def get_pending_reminders(current_user: dict = Depends(get_current_user)):
@@ -3121,7 +3121,7 @@ async def get_pending_reminders(current_user: dict = Depends(get_current_user)):
         
     except Exception as e:
         logger.error(f"Error fetching pending reminders: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # === DOMINAT8_ADMIN_DIAGNOSTICS_V1 ===

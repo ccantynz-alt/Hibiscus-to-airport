@@ -2,6 +2,7 @@
 # FINISH_TODAY_D_BOOKING_FORM_EDITOR
 
 import os
+import hmac
 import json
 from datetime import datetime
 from fastapi import APIRouter, Request
@@ -59,10 +60,10 @@ def _is_authed(req: Request) -> bool:
     if ADMIN_API_KEY == "":
         return False
     h = (req.headers.get("X-Admin-Key") or "").strip()
-    if h and h == ADMIN_API_KEY:
+    if h and hmac.compare_digest(h, ADMIN_API_KEY):
         return True
     c = (req.cookies.get(ADMIN_COOKIE) or "").strip()
-    return c == ADMIN_API_KEY
+    return hmac.compare_digest(c, ADMIN_API_KEY)
 
 class SaveBody(BaseModel):
     cfg: dict
