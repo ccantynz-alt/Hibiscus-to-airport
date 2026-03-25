@@ -3,10 +3,12 @@ import { Helmet } from 'react-helmet-async';
 
 const BASE_URL = 'https://hibiscustoairport.co.nz';
 
-const PageMeta = ({ title, description, path = '/', noIndex = false, breadcrumbs }) => {
-  const fullTitle = title
-    ? `${title} | Hibiscus to Airport`
-    : 'Hibiscus to Airport - Premium Airport Shuttle Service';
+const PageMeta = ({ title, description, path = '/', noIndex = false, breadcrumbs, rawTitle = false }) => {
+  const fullTitle = rawTitle && title
+    ? title
+    : title
+      ? `${title} | Hibiscus to Airport`
+      : 'Hibiscus to Airport - Premium Airport Shuttle Service';
   const url = `${BASE_URL}${path}`;
 
   // Build breadcrumb list: use provided breadcrumbs or generate default Home → current page
