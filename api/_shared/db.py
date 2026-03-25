@@ -184,6 +184,18 @@ async def _ensure_schema(conn: asyncpg.Connection):
         );
 
 
+        CREATE TABLE IF NOT EXISTS reviews (
+            id TEXT PRIMARY KEY,
+            booking_id TEXT,
+            booking_ref TEXT,
+            customer_name TEXT,
+            rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+            comment TEXT,
+            created_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_reviews_booking_id ON reviews(booking_id);
+
         CREATE INDEX IF NOT EXISTS idx_bookings_booking_ref ON bookings(booking_ref);
         CREATE INDEX IF NOT EXISTS idx_bookings_email ON bookings(email);
         CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(date);

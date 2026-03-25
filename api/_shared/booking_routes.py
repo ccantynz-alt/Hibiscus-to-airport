@@ -3258,3 +3258,56 @@ async def admin_bootstrap(body: _BootstrapBody, x_admin_token: Optional[str] = N
 
     return {"ok": True, "username": body.username}
 # === END BREAK-GLASS ADMIN BOOTSTRAP ===
+
+# ============================================
+# POST-TRIP REVIEW COLLECTION
+# ============================================
+
+class ReviewCreate(BaseModel):
+    booking_ref: str
+    rating: int  # 1-5
+    comment: Optional[str] = ""
+
+@router.post("/reviews")
+async def submit_review(review: ReviewCreate):
+    """Customer submits a review after their trip"""
+    try:
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE booking_ref = $1", review.booking_ref)
+        if not row:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        booking = dict(row)
+
+        # Check if review already exists
+        existing = await pool.fetchrow("SELECT * FROM reviews WHERE booking_ref = $1", review.booking_ref)
+        if existing:
+            raise HTTPException(status_code=400, detail="Review already submitted for this booking")
+
+        review_id = str(uuid.uuid4())
+        await pool.execute(
+            "INSERT INTO reviews (id, booking_id, booking_ref, customer_name, rating, comment, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+            review_id, booking.get("id"), review.booking_ref, booking.get("name"),
+            review.rating, review.comment, datetime.now(timezone.utc).isoformat()
+        )
+
+        logger.info(f"Review submitted for {review.booking_ref}: {review.rating}/5")
+        return {"message": "Thank you for your review!", "review_id": review_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Review submission error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/reviews")
+async def get_reviews(limit: int = 20):
+    """Get published reviews (public endpoint for testimonials)"""
+    try:
+        pool = await get_pool()
+        rows = await pool.fetch(
+            "SELECT customer_name, rating, comment, created_at FROM reviews WHERE rating >= 4 ORDER BY created_at DESC LIMIT $1",
+            limit
+        )
+        return [dict(r) for r in rows]
+    except Exception as e:
+        logger.error(f"Get reviews error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
