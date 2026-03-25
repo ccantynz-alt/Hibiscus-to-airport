@@ -1,21 +1,8 @@
-import React, { useState } from 'react';
-import { Button } from './ui/button';
-import { ArrowRight, MapPin, Plane, Shield, Clock, Star } from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Shield, Clock, Star, Phone } from 'lucide-react';
 
 const Hero = () => {
-  const [pickup, setPickup] = useState('');
-
-  const handleGetQuote = () => {
-    const params = new URLSearchParams();
-    if (pickup) params.set('from', pickup);
-    params.set('to', 'Auckland Airport');
-    window.location.href = `/booking?${params.toString()}`;
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleGetQuote();
-  };
-
   return (
     <section className="relative pt-28 pb-20 bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden min-h-[90vh] flex items-center">
       {/* Elegant gold glow effects */}
@@ -47,70 +34,41 @@ const Hero = () => {
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed font-light">
+          <p className="text-lg sm:text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
             Door-to-door private shuttle — no sharing, no waiting. Professional drivers, comfortable vehicles, flat rates 24/7.
           </p>
 
-          {/* ========== QUOTE WIDGET — THE HERO CTA ========== */}
-          <div className="max-w-3xl mx-auto mb-16">
-            <div className="bg-gray-900/90 backdrop-blur-xl border-2 border-gold/40 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-gold/10">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Plane className="w-6 h-6 text-gold" />
-                <h2 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
-                  Where are you <span className="text-gold">travelling from?</span>
-                </h2>
-              </div>
-              <p className="text-gray-400 text-sm mb-6">Enter your full address for an instant price</p>
+          {/* Clean CTA buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+            <Link
+              to="/booking"
+              className="inline-flex items-center bg-gold hover:bg-amber-500 text-black px-10 py-5 text-lg sm:text-xl font-bold rounded-2xl shadow-xl shadow-gold/20 hover:shadow-gold/40 hover:scale-[1.02] transition-all duration-300"
+            >
+              Book Your Transfer
+              <ArrowRight className="ml-3 w-6 h-6" />
+            </Link>
+            <a
+              href="tel:021743321"
+              className="inline-flex items-center border-2 border-gold/40 hover:border-gold text-white px-8 py-5 text-lg font-medium rounded-2xl hover:bg-gold/10 transition-all duration-300"
+            >
+              <Phone className="mr-3 w-5 h-5 text-gold" />
+              021 743 321
+            </a>
+          </div>
 
-              {/* Single prominent input — full width */}
-              <div className="relative mb-5">
-                <MapPin className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gold" />
-                <input
-                  type="text"
-                  placeholder="e.g. 42 Hibiscus Coast Highway, Orewa"
-                  value={pickup}
-                  onChange={(e) => setPickup(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="w-full pl-12 sm:pl-14 pr-5 py-5 sm:py-6 bg-gray-800/80 border-2 border-gold/30 rounded-2xl text-white text-base sm:text-lg placeholder-gray-500 focus:outline-none focus:border-gold focus:shadow-lg focus:shadow-gold/10 transition-all duration-300"
-                  aria-label="Pickup address"
-                />
-              </div>
-
-              {/* Destination shown as context, not a dead input */}
-              <div className="flex items-center gap-2 mb-6 px-2">
-                <div className="w-2 h-2 rounded-full bg-gold"></div>
-                <div className="h-px flex-1 bg-gold/20"></div>
-                <span className="text-gray-400 text-sm font-medium px-3">to</span>
-                <div className="h-px flex-1 bg-gold/20"></div>
-                <div className="flex items-center gap-2 bg-gray-800/60 border border-gold/20 rounded-xl px-4 py-2">
-                  <Plane className="w-4 h-4 text-gold" />
-                  <span className="text-white font-medium text-sm sm:text-base">Auckland Airport</span>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleGetQuote}
-                className="w-full bg-gold hover:bg-amber-500 text-black py-5 sm:py-6 text-lg sm:text-xl font-bold rounded-2xl shadow-xl shadow-gold/20 hover:shadow-gold/40 hover:scale-[1.02] transition-all duration-300"
-              >
-                Get Instant Price
-                <ArrowRight className="ml-3 w-6 h-6" />
-              </Button>
-
-              {/* Trust signals inside the widget */}
-              <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-gold/10">
-                <div className="flex items-center justify-center gap-1.5 text-gray-400 text-xs sm:text-sm">
-                  <Shield className="w-4 h-4 text-gold/70" />
-                  <span>Flat Rates</span>
-                </div>
-                <div className="flex items-center justify-center gap-1.5 text-gray-400 text-xs sm:text-sm">
-                  <Clock className="w-4 h-4 text-gold/70" />
-                  <span>24/7 Service</span>
-                </div>
-                <div className="flex items-center justify-center gap-1.5 text-gray-400 text-xs sm:text-sm">
-                  <Star className="w-4 h-4 text-gold/70" />
-                  <span>4.9★ Rated</span>
-                </div>
-              </div>
+          {/* Trust signals */}
+          <div className="flex items-center justify-center gap-6 sm:gap-8 mb-16">
+            <div className="flex items-center gap-1.5 text-gray-400 text-sm">
+              <Shield className="w-4 h-4 text-gold/70" />
+              <span>Flat Rates</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-gray-400 text-sm">
+              <Clock className="w-4 h-4 text-gold/70" />
+              <span>24/7 Service</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-gray-400 text-sm">
+              <Star className="w-4 h-4 text-gold/70" />
+              <span>4.9&#9733; Rated</span>
             </div>
           </div>
         </div>
@@ -130,7 +88,7 @@ const Hero = () => {
             <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">Fully Insured</div>
           </div>
           <div className="text-center p-6 sm:p-8 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gold/20 shadow-2xl hover:border-gold/50 hover:shadow-gold/10 transition-all duration-500 group">
-            <div className="text-3xl sm:text-5xl font-bold text-gold mb-2 group-hover:scale-110 transition-transform duration-300" style={{ fontFamily: 'Playfair Display, serif' }}>4.9★</div>
+            <div className="text-3xl sm:text-5xl font-bold text-gold mb-2 group-hover:scale-110 transition-transform duration-300" style={{ fontFamily: 'Playfair Display, serif' }}>4.9&#9733;</div>
             <div className="text-gray-400 font-medium tracking-wider text-xs uppercase">Rating</div>
           </div>
         </div>
