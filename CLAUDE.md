@@ -12,16 +12,90 @@
 - **Hours:** 24/7 including public holidays
 - **Currency:** NZD
 
-## Architecture (DO NOT CHANGE WITHOUT OWNER APPROVAL)
+## Architecture (OWNER-APPROVED — March 2026)
 
-- **Frontend:** React app deployed on Vercel
-- **Backend:** FastAPI (Python) deployed on Render
-- **Database:** Neon (PostgreSQL) via asyncpg — DO NOT use MongoDB
-- **Payments:** Stripe
-- **SMS:** Twilio
+**Single-platform deployment on Vercel. No separate backend service.**
+
+- **Platform:** Vercel (frontend + serverless API routes — ONE deployment)
+- **Frontend:** React app (Create React App + Craco + Tailwind)
+- **API:** Vercel Serverless Functions (Node.js) in `/api/` directory
+- **Database:** Neon (PostgreSQL) via `@neondatabase/serverless` — DO NOT use MongoDB
+- **Payments:** Stripe (Node.js SDK)
+- **SMS:** Twilio (Node.js SDK)
 - **Email:** Mailgun HTTP API — DO NOT use Gmail API or raw SMTP
 - **Analytics:** PostHog
 - **Geocoding / Autocomplete:** Google Maps API (`@react-google-maps/api`) — API key set in Vercel as `REACT_APP_GOOGLE_MAPS_API_KEY`. Falls back to plain text inputs when key is missing.
+- **Scheduled Jobs:** Vercel Cron Jobs (vercel.json) — replaces APScheduler
+
+### Why Single-Platform (No Separate Backend)
+- **Zero cold starts** — Vercel serverless functions are always warm
+- **One system to monitor** — no Render, no Docker, no second deploy pipeline
+- **Faster deployments** — push to main, everything deploys together
+- **Reduced errors** — no CORS cross-origin issues, no backend/frontend version mismatches
+- **Lower cost** — one platform instead of two
+
+### What Was Removed
+- FastAPI (Python) backend on Render — **RETIRED**
+- Docker/Dockerfile — **RETIRED**
+- render.yaml — **RETIRED**
+- APScheduler — replaced by Vercel Cron Jobs
+- asyncpg — replaced by `@neondatabase/serverless` (designed for serverless)
+
+## The 10 Rules (MANDATORY — Every AI Session)
+
+> **These are the foundation of how this system is built and maintained. Non-negotiable.**
+
+| # | Rule | What It Means |
+|---|------|---------------|
+| 1 | **Scan Before You Build** | Every session starts by checking for security issues, broken code, and problems — BEFORE doing anything new. |
+| 2 | **Auto-Repair** | If you find a bug while working on anything, fix it immediately. No "that's out of scope" excuses. |
+| 3 | **Proactive Research** | Before building anything significant, check if there's a better library, technique, or approach. No guessing. |
+| 4 | **Engineering Gap Detection** | Systematically check for features that promise something the code can't deliver, missing error handling, security gaps. |
+| 5 | **Technology Currency** | Check if our tools are up to date. If there's a newer, faster, safer version — upgrade (within approved stack). |
+| 6 | **Explain Like You're Not A Developer** | All communication in plain English. "Your users were seeing X, now they see Y" — not tech jargon. |
+| 7 | **Never Leave It Worse** | Every file you touch gets cleaned up. No leaving messes behind. |
+| 8 | **Autonomous Testing** | After changes, verify everything still works. No "it should be fine". |
+| 9 | **Mandatory Documentation** | Every change gets documented so the next session knows what happened. |
+| 10 | **No Guessing** | If you don't know, research it. If you can't find the answer, ask the owner. Never assume. |
+
+## Engineering Quality Rules (MANDATORY)
+
+> **These rules enforce The 10 Rules at the code level.**
+
+### Proactive Bug Detection (Rules 1, 2, 4)
+1. **Before writing new code, scan for existing bugs** in files you're touching. Fix them.
+2. **Every function must have error handling.** No bare `try/catch` that silently swallows errors.
+3. **All user input must be validated and sanitized** before use in database queries, emails, or SMS.
+4. **HTML-escape all user-provided data** before inserting into email templates (prevent XSS/injection).
+
+### Security — Non-Negotiable (Rules 1, 4)
+5. **Never expose API keys, secrets, or tokens** in client-side code or git history.
+6. **JWT_SECRET_KEY must be a real environment variable** — never generate random secrets at runtime.
+7. **All admin endpoints must require authentication.** No exceptions.
+8. **Password reset tokens must have expiry validation** — check `expires_at` before allowing reset.
+9. **Rate limit sensitive endpoints** — booking creation, login attempts, SMS/email resend.
+
+### Performance (Rules 3, 5)
+10. **Add database indexes** on frequently queried columns (booking_ref, email, created_at, date).
+11. **Never SELECT * in list queries** — only select columns you need.
+12. **Use connection pooling** appropriate for the runtime (serverless = @neondatabase/serverless).
+
+### Frontend Reliability (Rules 2, 7, 8)
+13. **Every page component must be wrapped in an Error Boundary.** White screens are unacceptable.
+14. **All API calls must have loading states, error states, and retry logic.**
+15. **Phone number on every page must be 021 743 321.** Any other number is a bug — fix it immediately.
+
+### Code Quality (Rules 7, 9)
+16. **No dead code.** Remove unused imports, variables, and commented-out blocks.
+17. **No console.log in production.** Use proper error tracking or remove.
+18. **Consistent API response format:** `{ ok: true/false, data: ..., error: "..." }`
+19. **All dates stored in ISO 8601 UTC.** Display in NZ timezone on frontend only.
+
+### Autonomous Operation (Rules 2, 3, 4, 10)
+20. **If you find a bug while working on something else, fix it.** Don't leave it for later.
+21. **If a dependency is outdated and has known vulnerabilities, flag it.**
+22. **If an engineering gap exists (missing validation, missing error handling, missing indexes), fix it on the spot.**
+23. **Never introduce a new technology or provider without explicit owner approval.** The stack is locked.
 
 ## Important Rules for AI Sessions
 
@@ -39,8 +113,17 @@
 - `frontend/public/index.html` - SEO meta tags, JSON-LD schemas
 - `frontend/src/pages/HomePage.jsx` - Main landing page
 - `frontend/src/pages/BookingPage.jsx` - Booking form
-- `backend/booking_routes.py` - Booking API endpoints
-- `backend/admin_routes.py` - Admin dashboard API
-- `backend/utils.py` - Email (Mailgun), SMS (Twilio), pricing engine
-- `backend/server.py` - FastAPI app setup, CORS, middleware
-- `backend/db.py` - Neon PostgreSQL connection and schema init
+- `api/` - Vercel Serverless Functions (all API endpoints)
+- `api/lib/db.js` - Neon PostgreSQL connection (serverless)
+- `api/lib/email.js` - Mailgun email utilities
+- `api/lib/sms.js` - Twilio SMS utilities
+- `api/lib/pricing.js` - Pricing engine
+- `api/lib/auth.js` - JWT authentication
+- `api/bookings.js` - Booking CRUD endpoints
+- `api/admin/` - Admin dashboard API endpoints
+
+## Legacy Files (RETIRED — Do Not Use)
+
+- `backend/` - Former FastAPI backend (retired March 2026, kept for reference only)
+- `Dockerfile` - Former Docker config for Render
+- `render.yaml` - Former Render deployment config
