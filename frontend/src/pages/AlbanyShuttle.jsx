@@ -16,7 +16,12 @@ const AlbanyShuttle = createSuburbPage(
     'Hospital',
     'Commercial Hub',
     'Public Transport Centre'
-  ]
+  ],
+  {
+    title: 'Albany to Auckland Airport Shuttle',
+    description: 'Express airport shuttle from Albany to Auckland Airport. Quick motorway access, premium vehicles. Book online 24/7.',
+    path: '/albany-airport-shuttle'
+  }
 );
 
 export default AlbanyShuttle;
