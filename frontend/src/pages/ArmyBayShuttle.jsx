@@ -16,7 +16,12 @@ const ArmyBayShuttle = createSuburbPage(
     'Public Transport',
     'Commercial Area',
     'Medical Centre'
-  ]
+  ],
+  {
+    title: 'Army Bay to Auckland Airport Shuttle',
+    description: 'Reliable airport shuttle from Army Bay to Auckland Airport. Comfortable door-to-door transfers. Book online 24/7.',
+    path: '/army-bay-airport-shuttle'
+  }
 );
 
 export default ArmyBayShuttle;
