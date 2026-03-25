@@ -4,10 +4,18 @@ import { Button } from '../components/ui/button';
 import { ArrowRight, MapPin, Clock, DollarSign, Zap, Shield } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 
-export const createSuburbPage = (suburbName, travelTime, localAreas) => {
+export const createSuburbPage = (suburbName, travelTime, localAreas, meta = {}) => {
   return () => (
     <div className="min-h-screen bg-white">
+      {meta.title && (
+        <PageMeta
+          title={meta.title}
+          description={meta.description}
+          path={meta.path}
+        />
+      )}
       <Header />
       
       {/* Hero Section with Background Image */}

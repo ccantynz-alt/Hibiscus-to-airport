@@ -16,7 +16,12 @@ const GulfHarbourShuttle = createSuburbPage(
     'Premium Estates',
     'Yacht Club',
     'Local Amenities'
-  ]
+  ],
+  {
+    title: 'Gulf Harbour to Auckland Airport Shuttle',
+    description: 'Premium airport shuttle from Gulf Harbour to Auckland Airport. Luxury transfers from the marina precinct. Book online 24/7.',
+    path: '/gulf-harbour-airport-shuttle'
+  }
 );
 
 export default GulfHarbourShuttle;

@@ -16,7 +16,12 @@ const WhangaparaoaShuttle = createSuburbPage(
     'Coastal Properties',
     'Business Districts',
     'Marina Areas'
-  ]
+  ],
+  {
+    title: 'Whangaparaoa to Auckland Airport Shuttle',
+    description: 'Premium airport shuttle from Whangaparaoa Peninsula to Auckland Airport. Door-to-door service 24/7. Book online for instant confirmation.',
+    path: '/whangaparaoa-airport-shuttle'
+  }
 );
 
 export default WhangaparaoaShuttle;
