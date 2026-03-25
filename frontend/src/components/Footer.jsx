@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import { trustBadges } from '../mock';
 import Logo from './Logo';
@@ -106,6 +107,43 @@ const Footer = () => {
                 </span>
               </li>
             </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Service Areas & Pages SEO Links */}
+      <div className="border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Suburb Shuttle Links */}
+            <div>
+              <h4 className="text-sm font-bold mb-4 text-gold tracking-wide uppercase" style={{ fontFamily: 'Montserrat, sans-serif' }}>Service Areas</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2">
+                <Link to="/orewa-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Orewa</Link>
+                <Link to="/whangaparaoa-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Whangaparaoa</Link>
+                <Link to="/silverdale-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Silverdale</Link>
+                <Link to="/red-beach-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Red Beach</Link>
+                <Link to="/gulf-harbour-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Gulf Harbour</Link>
+                <Link to="/stanmore-bay-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Stanmore Bay</Link>
+                <Link to="/albany-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Albany</Link>
+                <Link to="/browns-bay-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Browns Bay</Link>
+                <Link to="/takapuna-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Takapuna</Link>
+                <Link to="/devonport-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Devonport</Link>
+                <Link to="/millwater-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Millwater</Link>
+                <Link to="/warkworth-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Warkworth</Link>
+              </div>
+            </div>
+
+            {/* Service Page Links */}
+            <div>
+              <h4 className="text-sm font-bold mb-4 text-gold tracking-wide uppercase" style={{ fontFamily: 'Montserrat, sans-serif' }}>Our Services</h4>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                <Link to="/corporate-airport-transfers" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Corporate Transfers</Link>
+                <Link to="/early-morning-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Early Morning Shuttle</Link>
+                <Link to="/family-airport-shuttle" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Family Shuttle</Link>
+                <Link to="/pricing" className="text-gray-400 hover:text-gold transition-colors duration-300 text-sm font-light">Pricing</Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
