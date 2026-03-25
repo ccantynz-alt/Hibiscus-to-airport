@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -185,7 +185,36 @@ const BookingPage = () => {
   const [pickupAutocomplete, setPickupAutocomplete] = useState(null);
   const [dropoffAutocomplete, setDropoffAutocomplete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
+
+  // Section refs for progress indicator
+  const tripRef = useRef(null);
+  const flightRef = useRef(null);
+  const contactRef = useRef(null);
+
+  // Intersection Observer to track active section
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (entry.target === tripRef.current) setActiveStep(1);
+            else if (entry.target === flightRef.current) setActiveStep(2);
+            else if (entry.target === contactRef.current) setActiveStep(3);
+          }
+        });
+      },
+      { threshold: 0.3, rootMargin: '-100px 0px 0px 0px' }
+    );
+
+    [tripRef, flightRef, contactRef].forEach(ref => {
+      if (ref.current) observer.observe(ref.current);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   // Date/Time picker state
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -532,7 +561,34 @@ const BookingPage = () => {
       </div>
 
       <Header />
-      
+
+      {/* Progress Indicator */}
+      <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 py-3 px-4 mb-0">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          {[
+            { num: 1, label: 'Trip Details' },
+            { num: 2, label: 'Flight & Add-ons' },
+            { num: 3, label: 'Contact & Pay' }
+          ].map((step, i) => (
+            <div key={step.num} className="flex items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                activeStep >= step.num ? 'bg-gold text-black' : 'bg-gray-200 text-gray-500'
+              }`}>
+                {step.num}
+              </div>
+              <span className={`ml-2 text-sm font-medium hidden sm:inline ${
+                activeStep >= step.num ? 'text-gray-900' : 'text-gray-400'
+              }`}>
+                {step.label}
+              </span>
+              {i < 2 && <div className={`w-12 sm:w-24 h-0.5 mx-3 ${
+                activeStep > step.num ? 'bg-gold' : 'bg-gray-200'
+              }`} />}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Simplified Hero Section */}
       <section className="py-8 bg-white border-b">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -553,7 +609,7 @@ const BookingPage = () => {
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Trip Details Card */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div ref={tripRef} className="bg-white rounded-lg border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6 pb-3 border-b">Trip Details</h2>
                   
                   <div className="space-y-5">
@@ -744,7 +800,7 @@ const BookingPage = () => {
                 </div>
                 
                 {/* Flight Information Card */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div ref={flightRef} className="bg-white rounded-lg border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">Flight Information <span className="text-sm font-normal text-gray-500">(Optional)</span></h2>
                   <p className="text-sm text-gray-500 mb-4">Providing flight details helps us track delays and adjust pickup times.</p>
                   <div className="grid grid-cols-2 gap-4">
@@ -869,7 +925,7 @@ const BookingPage = () => {
                 </div>
                 
                 {/* Contact Details Card */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div ref={contactRef} className="bg-white rounded-lg border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">Contact Details</h2>
                   <div className="space-y-4">
                     <div>
@@ -1093,10 +1149,21 @@ const BookingPage = () => {
                   </div>
                 )}
                 
+                {/* Terms & Conditions */}
+                <label className="flex items-start gap-3 mt-4 cursor-pointer">
+                  <input type="checkbox" checked={agreedTerms} onChange={e => setAgreedTerms(e.target.checked)}
+                    className="mt-1 w-4 h-4 accent-gold" />
+                  <span className="text-sm text-gray-600">
+                    I agree to the <a href="/terms" className="text-gold underline">Terms & Conditions</a> and
+                    <a href="/privacy" className="text-gold underline"> Privacy Policy</a>.
+                    Cancellations within 24 hours of pickup may incur a fee.
+                  </span>
+                </label>
+
                 {/* Book Now Button */}
                 <Button
                   onClick={handleSubmit}
-                  disabled={!pricing || calculating || submitting}
+                  disabled={!pricing || calculating || submitting || !agreedTerms}
                   className="w-full h-14 mt-6 bg-gold hover:bg-amber-500 text-black text-lg font-bold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting ? (

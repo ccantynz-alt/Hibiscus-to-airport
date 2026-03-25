@@ -1291,11 +1291,88 @@ const AdminDashboard = () => {
           )}
 
           {/* Analytics Tab */}
-          {activeTab === 'analytics' && (
+          {activeTab === 'analytics' && (() => {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            const activeBookings = bookings.filter(b => b.status !== 'cancelled');
+            const totalBookingsValue = activeBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+            const paidAmount = bookings.filter(b => b.payment_status === 'paid').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+            const pendingPayment = totalBookingsValue - paidAmount;
+            const todayCount = bookings.filter(b => {
+              const d = new Date(b.date); d.setHours(0,0,0,0);
+              return d.getTime() === today.getTime();
+            }).length;
+            const weekCount = bookings.filter(b => {
+              const d = new Date(b.date); d.setHours(0,0,0,0);
+              return d >= startOfWeek && d <= today;
+            }).length;
+            const monthRevenue = bookings
+              .filter(b => { const d = new Date(b.date); return d >= startOfMonth && b.payment_status === 'paid'; })
+              .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+
+            // Popular routes - group by first word of pickup address
+            const routeCounts = {};
+            activeBookings.forEach(b => {
+              if (b.pickupAddress) {
+                const suburb = b.pickupAddress.split(',')[0].trim();
+                routeCounts[suburb] = (routeCounts[suburb] || 0) + 1;
+              }
+            });
+            const popularRoutes = Object.entries(routeCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 8);
+            const maxRouteCount = popularRoutes.length > 0 ? popularRoutes[0][1] : 1;
+
+            // Booking trends - last 7 days
+            const last7Days = [];
+            for (let i = 6; i >= 0; i--) {
+              const d = new Date(today);
+              d.setDate(today.getDate() - i);
+              const dateStr = d.toISOString().split('T')[0];
+              const dayLabel = d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric' });
+              const count = bookings.filter(b => b.date === dateStr).length;
+              last7Days.push({ dateStr, dayLabel, count });
+            }
+            const maxDayCount = Math.max(...last7Days.map(d => d.count), 1);
+
+            return (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-slate-800">Analytics Overview</h2>
-              
+
+              {/* Revenue Stats Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Total Value</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">${totalBookingsValue.toFixed(0)}</p>
+                </div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Paid</p>
+                  <p className="text-2xl font-bold text-emerald-600 mt-1">${paidAmount.toFixed(0)}</p>
+                </div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Pending Payment</p>
+                  <p className="text-2xl font-bold text-amber-600 mt-1">${pendingPayment.toFixed(0)}</p>
+                </div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Today</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">{todayCount} <span className="text-sm font-normal text-slate-500">bookings</span></p>
+                </div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">This Week</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">{weekCount} <span className="text-sm font-normal text-slate-500">bookings</span></p>
+                </div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Month Revenue</p>
+                  <p className="text-2xl font-bold text-amber-600 mt-1">${monthRevenue.toFixed(0)}</p>
+                </div>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-6">
+                {/* Booking Status Distribution */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6">
                   <h3 className="font-medium text-slate-800 mb-4">Booking Status Distribution</h3>
                   <div className="space-y-3">
@@ -1305,15 +1382,26 @@ const AdminDashboard = () => {
                       { label: 'Completed', value: bookings.filter(b => b.status === 'completed').length, color: 'bg-blue-500' },
                       { label: 'Cancelled', value: bookings.filter(b => b.status === 'cancelled').length, color: 'bg-slate-400' },
                     ].map((item) => (
-                      <div key={item.label} className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                        <span className="flex-1 text-slate-600">{item.label}</span>
-                        <span className="font-semibold text-slate-800">{item.value}</span>
+                      <div key={item.label}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
+                            <span className="text-sm text-slate-600">{item.label}</span>
+                          </div>
+                          <span className="font-semibold text-slate-800">{item.value}</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${item.color} transition-all`}
+                            style={{ width: `${stats.total > 0 ? (item.value / stats.total * 100) : 0}%` }}
+                          ></div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
-                
+
+                {/* Payment Status */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6">
                   <h3 className="font-medium text-slate-800 mb-4">Payment Status</h3>
                   <div className="space-y-3">
@@ -1321,10 +1409,20 @@ const AdminDashboard = () => {
                       { label: 'Paid', value: bookings.filter(b => b.payment_status === 'paid').length, color: 'bg-emerald-500' },
                       { label: 'Unpaid', value: bookings.filter(b => b.payment_status !== 'paid').length, color: 'bg-red-500' },
                     ].map((item) => (
-                      <div key={item.label} className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                        <span className="flex-1 text-slate-600">{item.label}</span>
-                        <span className="font-semibold text-slate-800">{item.value}</span>
+                      <div key={item.label}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
+                            <span className="text-sm text-slate-600">{item.label}</span>
+                          </div>
+                          <span className="font-semibold text-slate-800">{item.value}</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${item.color} transition-all`}
+                            style={{ width: `${bookings.length > 0 ? (item.value / bookings.length * 100) : 0}%` }}
+                          ></div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1336,7 +1434,51 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
-              
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Booking Trends - Last 7 Days */}
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <h3 className="font-medium text-slate-800 mb-4">Booking Trends (Last 7 Days)</h3>
+                  <div className="flex items-end gap-2 h-40">
+                    {last7Days.map((day) => (
+                      <div key={day.dateStr} className="flex-1 flex flex-col items-center justify-end h-full">
+                        <span className="text-xs font-semibold text-slate-700 mb-1">{day.count}</span>
+                        <div
+                          className="w-full bg-gradient-to-t from-amber-500 to-amber-400 rounded-t-md transition-all min-h-[4px]"
+                          style={{ height: `${Math.max((day.count / maxDayCount) * 100, 3)}%` }}
+                        ></div>
+                        <span className="text-[10px] text-slate-500 mt-2 text-center leading-tight">{day.dayLabel}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Popular Routes */}
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <h3 className="font-medium text-slate-800 mb-4">Popular Pickup Locations</h3>
+                  {popularRoutes.length === 0 ? (
+                    <p className="text-sm text-slate-500">No booking data yet</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {popularRoutes.map(([suburb, count]) => (
+                        <div key={suburb}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-slate-600 truncate max-w-[200px]" title={suburb}>{suburb}</span>
+                            <span className="text-sm font-semibold text-slate-800">{count}</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div
+                              className="h-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all"
+                              style={{ width: `${(count / maxRouteCount) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {!calendarAuthorized && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
                   <div className="flex items-start gap-4">
@@ -1361,7 +1503,8 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
         </div>
       </main>
 
@@ -1458,27 +1601,103 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Driver */}
-              {selectedBooking.assigned_driver_name && (
-                <div>
-                  <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
-                    <Car className="w-4 h-4 text-amber-600" />
-                    Assigned Driver
-                  </h3>
-                  <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                      <Car className="w-5 h-5 text-amber-600" />
+              {/* Driver Assignment */}
+              <div>
+                <h3 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                  <Car className="w-4 h-4 text-amber-600" />
+                  Driver Assignment
+                </h3>
+                <div className="bg-slate-50 rounded-xl p-4 space-y-4">
+                  {/* Current driver info */}
+                  {selectedBooking.assigned_driver_name ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                          <Car className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-800">{selectedBooking.assigned_driver_name}</p>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              selectedBooking.driver_accepted === true
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : selectedBooking.driver_accepted === false
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {selectedBooking.driver_accepted === true ? 'Accepted' :
+                               selectedBooking.driver_accepted === false ? 'Declined' : 'Pending'}
+                            </span>
+                            {selectedBooking.driver_payout && (
+                              <span className="text-xs text-slate-500">Payout: ${parseFloat(selectedBooking.driver_payout).toFixed(2)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => handleUnassignDriver(selectedBooking.id)}
+                        disabled={assigningDriver}
+                        size="sm"
+                        variant="outline"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        {assigningDriver ? 'Processing...' : 'Unassign'}
+                      </Button>
                     </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">No driver assigned</p>
+                  )}
+
+                  {/* Assignment form */}
+                  <div className="pt-3 border-t border-slate-200 space-y-3">
                     <div>
-                      <p className="font-medium text-slate-800">{selectedBooking.assigned_driver_name}</p>
-                      <p className="text-sm text-slate-500">
-                        {selectedBooking.driver_accepted === true ? 'Accepted' :
-                         selectedBooking.driver_accepted === false ? 'Declined' : 'Pending'}
-                      </p>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">
+                        {selectedBooking.assigned_driver_name ? 'Reassign to Driver' : 'Select Driver'}
+                      </label>
+                      <select
+                        value={selectedDriverId}
+                        onChange={(e) => setSelectedDriverId(e.target.value)}
+                        className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      >
+                        <option value="">-- Select a driver --</option>
+                        {drivers.map(d => (
+                          <option key={d.id} value={d.id}>{d.name} ({d.vehicle})</option>
+                        ))}
+                      </select>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Payout (NZD)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={driverPayout}
+                          onChange={(e) => setDriverPayout(e.target.value)}
+                          placeholder="0.00"
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Notes to Driver</label>
+                        <Input
+                          value={driverNotes}
+                          onChange={(e) => setDriverNotes(e.target.value)}
+                          placeholder="Optional notes..."
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => handleAssignDriver(selectedBooking.id)}
+                      disabled={assigningDriver || !selectedDriverId}
+                      size="sm"
+                      className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white disabled:opacity-50"
+                    >
+                      {assigningDriver ? 'Assigning...' : selectedBooking.assigned_driver_name ? 'Reassign Driver' : 'Assign Driver'}
+                    </Button>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Notes */}
               {selectedBooking.notes && (

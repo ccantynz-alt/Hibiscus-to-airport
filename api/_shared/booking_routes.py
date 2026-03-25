@@ -3298,6 +3298,102 @@ async def submit_review(review: ReviewCreate):
         logger.error(f"Review submission error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@router.get("/bookings/lookup/{booking_ref}")
+async def lookup_booking_public(booking_ref: str):
+    """Public endpoint for customers to view their booking by reference."""
+    try:
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE booking_ref = $1", booking_ref)
+        booking = row_to_booking(row)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        # Return limited info (no driver details, no internal fields)
+        return {
+            "booking_ref": booking.get("booking_ref"),
+            "name": booking.get("name"),
+            "email": booking.get("email"),
+            "phone": booking.get("phone"),
+            "pickupAddress": booking.get("pickupAddress"),
+            "dropoffAddress": booking.get("dropoffAddress"),
+            "date": booking.get("date"),
+            "time": booking.get("time"),
+            "passengers": booking.get("passengers"),
+            "totalPrice": booking.get("totalPrice"),
+            "status": booking.get("status"),
+            "payment_status": booking.get("payment_status"),
+            "trackingId": booking.get("trackingId"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Booking lookup error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/bookings/lookup-by-session/{session_id}")
+async def lookup_booking_by_session(session_id: str):
+    """Lookup booking by Stripe checkout session ID."""
+    try:
+        stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+        session = stripe.checkout.Session.retrieve(session_id)
+        booking_id = session.metadata.get("booking_id")
+        if not booking_id:
+            raise HTTPException(status_code=404, detail="Booking not found in session")
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        return {
+            "booking_ref": booking.get("booking_ref"),
+            "name": booking.get("name"),
+            "email": booking.get("email"),
+            "phone": booking.get("phone"),
+            "pickupAddress": booking.get("pickupAddress"),
+            "dropoffAddress": booking.get("dropoffAddress"),
+            "date": booking.get("date"),
+            "time": booking.get("time"),
+            "passengers": booking.get("passengers"),
+            "totalPrice": booking.get("totalPrice"),
+            "status": booking.get("status"),
+            "payment_status": booking.get("payment_status"),
+            "trackingId": booking.get("trackingId"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Session lookup error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/bookings/lookup-by-id/{booking_id}")
+async def lookup_booking_by_id(booking_id: str):
+    """Public endpoint to lookup booking by internal ID (for cash bookings redirect)."""
+    try:
+        pool = await get_pool()
+        row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
+        booking = row_to_booking(row)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        return {
+            "booking_ref": booking.get("booking_ref"),
+            "name": booking.get("name"),
+            "email": booking.get("email"),
+            "phone": booking.get("phone"),
+            "pickupAddress": booking.get("pickupAddress"),
+            "dropoffAddress": booking.get("dropoffAddress"),
+            "date": booking.get("date"),
+            "time": booking.get("time"),
+            "passengers": booking.get("passengers"),
+            "totalPrice": booking.get("totalPrice"),
+            "status": booking.get("status"),
+            "payment_status": booking.get("payment_status"),
+            "trackingId": booking.get("trackingId"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Booking ID lookup error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @router.get("/reviews")
 async def get_reviews(limit: int = 20):
     """Get published reviews (public endpoint for testimonials)"""
