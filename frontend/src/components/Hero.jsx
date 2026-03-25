@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Shield, Clock, Star, Phone } from 'lucide-react';
+import { ArrowRight, Shield, Clock, Star } from 'lucide-react';
 
 const Hero = () => {
   return (
@@ -24,10 +24,12 @@ const Hero = () => {
           >
             Premium Airport{' '}
             <span className="text-[#D4AF37]">Transfers</span>
-            <span className="block text-2xl sm:text-3xl lg:text-4xl font-normal text-gray-500 mt-3 sm:mt-4" style={{ fontFamily: 'inherit' }}>
-              Hibiscus Coast to Auckland Airport
-            </span>
           </h1>
+          {/* Subtle gold divider */}
+          <div className="w-20 h-[1px] bg-[#D4AF37]/20 mx-auto mb-5"></div>
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-normal text-gray-500 tracking-wider mb-2" style={{ fontFamily: 'Playfair Display, serif', letterSpacing: '0.08em' }}>
+            Hibiscus Coast to Auckland Airport
+          </p>
 
           {/* Description */}
           <p className="text-lg sm:text-xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
@@ -39,22 +41,15 @@ const Hero = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <Link
               to="/booking"
-              className="inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-10 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl hover:translate-y-[-1px] transition-all duration-200"
+              className="inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-12 py-5 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300"
             >
               Book Your Transfer
               <ArrowRight className="ml-3 w-5 h-5" />
             </Link>
-            <a
-              href="tel:021743321"
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 px-6 py-4 text-lg font-medium transition-colors duration-200"
-            >
-              <Phone className="mr-2 w-5 h-5 text-gray-400" />
-              021 743 321
-            </a>
           </div>
 
           {/* Trust signals */}
-          <div className="flex items-center justify-center gap-8 sm:gap-10 mb-20">
+          <div className="flex items-center justify-center gap-8 sm:gap-10 mb-24">
             <div className="flex items-center gap-2 text-gray-400 text-sm">
               <Shield className="w-4 h-4 text-[#D4AF37]" />
               <span>Flat Rates</span>
@@ -72,7 +67,7 @@ const Hero = () => {
 
         {/* Stats Section */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
-          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
+          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
             <div
               className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1"
               style={{ fontFamily: 'Playfair Display, serif' }}
@@ -83,7 +78,7 @@ const Hero = () => {
               Satisfied Clients
             </div>
           </div>
-          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
+          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
             <div
               className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1"
               style={{ fontFamily: 'Playfair Display, serif' }}
@@ -94,7 +89,7 @@ const Hero = () => {
               Booking Time
             </div>
           </div>
-          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
+          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
             <div
               className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1"
               style={{ fontFamily: 'Playfair Display, serif' }}
@@ -105,7 +100,7 @@ const Hero = () => {
               Fully Insured
             </div>
           </div>
-          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
+          <div className="text-center p-6 sm:p-8 bg-white rounded-2xl border border-gray-200 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300">
             <div
               className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1"
               style={{ fontFamily: 'Playfair Display, serif' }}

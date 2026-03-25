@@ -334,7 +334,7 @@ const Pricing = () => {
             </Button>
           </Link>
           <p className="text-gray-500 mt-6">
-            Or call us on <a href="tel:021743321" className="text-gold hover:underline">021 743 321</a> for a quote over the phone
+            Or email us at <a href="mailto:info@bookaride.co.nz" className="text-gold hover:underline">info@bookaride.co.nz</a> for enquiries
           </p>
         </div>
       </section>

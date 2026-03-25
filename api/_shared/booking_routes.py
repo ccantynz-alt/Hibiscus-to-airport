@@ -716,7 +716,7 @@ async def send_payment_link(booking_id: str):
               </div>
               
               <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
-                <p>Questions? Call us at 021 743 321</p>
+                <p>Questions? Email us at info@bookaride.co.nz</p>
               </div>
             </div>
             """
@@ -739,7 +739,7 @@ Pay securely here:
 {payment_url}
 
 Link expires in 24hrs.
-Questions? 021 743 321"""
+Questions? info@bookaride.co.nz"""
             send_sms(booking['phone'], sms_message)
             sms_sent = True
         except Exception as e:
@@ -3038,7 +3038,6 @@ async def send_booking_reminder(booking: dict):
             
             <p style="font-size: 14px; color: #6b7280;">
               If you need to make any changes, please contact us:<br>
-              021 743 321<br>
               bookings@bookaride.co.nz
             </p>
           </div>
@@ -3056,7 +3055,7 @@ Pickup: {formatted_date} at {booking['time']}
 From: {booking['pickupAddress'][:50]}...
 
 Be ready 5-10 mins early.
-Questions? 021 743 321"""
+Questions? info@bookaride.co.nz"""
         
         send_sms(booking['phone'], sms_message)
         

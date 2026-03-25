@@ -2,7 +2,7 @@ import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
-import { MapPin, Phone, Star, Clock } from 'lucide-react';
+import { MapPin, Mail, Star, Clock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const LocalAirportShuttle = () => {
@@ -53,7 +53,7 @@ const LocalAirportShuttle = () => {
               <span className="text-black text-sm">Know every street & shortcut</span>
             </div>
             <div className="flex flex-col items-center">
-              <Phone className="w-8 h-8 text-black mb-2" />
+              <Mail className="w-8 h-8 text-black mb-2" />
               <span className="text-black font-bold">Local Support</span>
               <span className="text-black text-sm">Based right here on the Coast</span>
             </div>
@@ -230,9 +230,9 @@ const LocalAirportShuttle = () => {
               </div>
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <Phone className="w-8 h-8 text-gold mx-auto mb-2" />
-                  <p className="font-bold text-gray-900">Local Phone</p>
-                  <p className="text-gold font-bold">021 743 321</p>
+                  <Mail className="w-8 h-8 text-gold mx-auto mb-2" />
+                  <p className="font-bold text-gray-900">Email</p>
+                  <p className="text-gold font-bold">info@bookaride.co.nz</p>
                 </div>
                 <div>
                   <Clock className="w-8 h-8 text-gold mx-auto mb-2" />

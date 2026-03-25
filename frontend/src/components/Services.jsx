@@ -20,7 +20,8 @@ const Services = () => {
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             Our <span className="text-gold">Services</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="w-16 h-0.5 bg-[#D4AF37] mx-auto mt-4 mb-6"></div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Professional airport transportation solutions for every need
           </p>
         </div>
@@ -29,8 +30,8 @@ const Services = () => {
           {services.map((service) => {
             const IconComponent = iconMap[service.icon];
             return (
-              <Card key={service.id} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-                <CardHeader>
+              <Card key={service.id} className="bg-white border border-gray-100 border-t-2 border-t-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300 group">
+                <CardHeader className="p-8">
                   <div className="w-14 h-14 bg-gold/10 rounded-full flex items-center justify-center mb-4">
                     <IconComponent className="w-7 h-7 text-gold" />
                   </div>
@@ -41,7 +42,7 @@ const Services = () => {
                     {service.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-8 pb-8">
                   <ul className="space-y-3">
                     {service.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start">

@@ -202,8 +202,6 @@ const PaymentSuccess = () => {
             <div className="text-center text-gray-400 text-sm space-y-1">
               <p>Need to modify your booking? Contact us:</p>
               <p>
-                <a href="tel:+6421743321" className="text-gold hover:underline font-medium">021 743 321</a>
-                {' '}&bull;{' '}
                 <a href="mailto:info@bookaride.co.nz" className="text-gold hover:underline font-medium">info@bookaride.co.nz</a>
               </p>
             </div>

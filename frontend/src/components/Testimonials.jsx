@@ -22,9 +22,9 @@ const Testimonials = () => {
   ];
 
   const TestimonialCard = ({ testimonial }) => (
-    <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full">
+    <Card className="bg-white border border-gray-100 border-l-2 border-l-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300 h-full">
       <CardContent className="p-8">
-        <Quote className="w-8 h-8 text-gray-200 mb-4" />
+        <span className="text-5xl leading-none text-[#D4AF37]/30 font-serif select-none" style={{ fontFamily: 'Playfair Display, serif' }}>"</span>
         <div className="flex mb-4">
           {[...Array(testimonial.rating)].map((_, i) => (
             <Star key={i} className="w-5 h-5 text-gold fill-current" />
@@ -54,7 +54,8 @@ const Testimonials = () => {
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             What Our <span className="text-gold">Customers</span> Say
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <div className="w-16 h-0.5 bg-[#D4AF37] mx-auto mt-4 mb-6"></div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Don't just take our word for it - hear from our satisfied customers
           </p>
         </div>

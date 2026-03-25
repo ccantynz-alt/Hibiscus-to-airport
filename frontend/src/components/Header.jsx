@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Phone } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -80,13 +80,6 @@ const Header = () => {
               Contact
             </button>
             <a
-              href="tel:021743321"
-              className="flex items-center text-gray-500 hover:text-gray-900 transition-colors font-medium text-sm"
-            >
-              <Phone className="w-4 h-4 mr-1.5" />
-              021 743 321
-            </a>
-            <a
               href="/booking"
               className="inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
             >
@@ -94,15 +87,8 @@ const Header = () => {
             </a>
           </nav>
 
-          {/* Mobile Phone Icon + Menu Button */}
+          {/* Mobile Menu Button */}
           <div className="flex items-center space-x-3 md:hidden">
-            <a
-              href="tel:021743321"
-              className="text-gray-500 hover:text-gray-900 transition-colors"
-              aria-label="Call 021 743 321"
-            >
-              <Phone className="w-5 h-5" />
-            </a>
             <button
               className="text-gray-700 hover:text-gray-900 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

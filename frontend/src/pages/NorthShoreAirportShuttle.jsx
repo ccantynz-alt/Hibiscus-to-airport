@@ -263,8 +263,7 @@ const NorthShoreAirportShuttle = () => {
             Ready to Book Your <span className="text-gold">North Shore Airport Transfer</span>?
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Flat rates, professional drivers, and door-to-door service from any North Shore suburb. Book online in under two minutes or call us on{' '}
-            <a href="tel:+64-21-743-321" className="text-gold hover:underline">021 743 321</a>.
+            Flat rates, professional drivers, and door-to-door service from any North Shore suburb. Book online in under two minutes.
           </p>
           <Link to="/booking">
             <Button className="bg-gold hover:bg-amber-500 text-black font-bold text-lg px-10 py-6">
