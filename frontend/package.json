@@ -62,42 +62,7 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "postbuild": "react-snap",
     "test": "craco test"
-  },
-  "reactSnap": {
-    "source": "build",
-    "inlineCss": true,
-    "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"],
-    "skipThirdPartyRequests": true,
-    "include": [
-      "/", "/booking", "/book-now", "/faq", "/service-areas", "/pricing",
-      "/orewa-airport-shuttle", "/whangaparaoa-airport-shuttle",
-      "/silverdale-airport-shuttle", "/red-beach-airport-shuttle",
-      "/gulf-harbour-airport-shuttle", "/stanmore-bay-airport-shuttle",
-      "/arkles-bay-airport-shuttle", "/army-bay-airport-shuttle",
-      "/hatfields-beach-airport-shuttle", "/manly-airport-shuttle",
-      "/albany-airport-shuttle", "/takapuna-airport-shuttle",
-      "/browns-bay-airport-shuttle", "/mairangi-bay-airport-shuttle",
-      "/devonport-airport-shuttle",
-      "/auckland-airport-transfers", "/corporate-airport-transfers",
-      "/student-airport-shuttle", "/executive-airport-transfers",
-      "/family-airport-shuttle", "/cruise-transfers",
-      "/early-morning-airport-shuttle", "/late-night-airport-shuttle",
-      "/local-airport-shuttle", "/best-airport-shuttle",
-      "/hibiscus-shuttles-alternative", "/business-airport-transfer",
-      "/airport-arrivals", "/airport-shuttle-orewa",
-      "/dairy-flat-airport-shuttle", "/millwater-airport-shuttle",
-      "/omaha-airport-shuttle", "/puhoi-airport-shuttle",
-      "/leigh-airport-shuttle", "/snells-beach-airport-shuttle",
-      "/warkworth-airport-shuttle", "/wellsford-airport-shuttle",
-      "/matakana-shuttle", "/early-morning-shuttle",
-      "/orewa-to-airport",
-      "/my-booking", "/north-shore-airport-shuttle",
-      "/hibiscus-shuttles-alternative", "/business-airport-transfer",
-      "/airport-shuttle-orewa", "/airport-arrivals",
-      "/local-airport-shuttle"
-    ]
   },
   "browserslist": {
     "production": [
@@ -123,7 +88,6 @@
     "eslint-plugin-react-hooks": "5.2.0",
     "globals": "15.15.0",
     "postcss": "^8.4.49",
-    "react-snap": "^1.23.0",
     "tailwindcss": "^3.4.17"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
