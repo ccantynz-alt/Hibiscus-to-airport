@@ -73,12 +73,25 @@ const MyBooking = () => {
   };
 
   // Auto-search if ref was passed via URL
+  const initialRefValue = initialRef;
   React.useEffect(() => {
-    if (initialRef) {
-      handleLookup();
+    if (initialRefValue) {
+      setRef(initialRefValue);
+      const doLookup = async () => {
+        setLoading(true);
+        setError('');
+        try {
+          const res = await axios.get(`${BACKEND_URL}/api/bookings/lookup/${initialRefValue}`);
+          setBooking(res.data);
+        } catch (err) {
+          setError(err.response?.status === 404 ? 'Booking not found. Please check your reference.' : 'Unable to look up booking. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      };
+      doLookup();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialRefValue]);
 
   return (
     <div className="min-h-screen bg-black">
