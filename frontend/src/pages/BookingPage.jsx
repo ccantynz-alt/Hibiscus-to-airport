@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -11,7 +11,7 @@ import axios from 'axios';
 // Safety: prevent hung requests (no UI change)
 axios.defaults.timeout = 15000;
 
-import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import { useLoadScript } from '@react-google-maps/api';
 import PageMeta from '../components/PageMeta';
 
 import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
@@ -179,12 +179,44 @@ const TimePickerModal = ({ isOpen, onClose, onSelect, selectedTime, label }) => 
 
 const BookingPage = () => {
   const { toast } = useToast();
+  const [isPending, startTransition] = React.useTransition();
   const [calculating, setCalculating] = useState(false);
   const [pricing, setPricing] = useState(null);
-  const [pickupAutocomplete, setPickupAutocomplete] = useState(null);
-  const [dropoffAutocomplete, setDropoffAutocomplete] = useState(null);
+  const pickupInputRef = useRef(null);
+  const dropoffInputRef = useRef(null);
+  const pickupACRef = useRef(null);
+  const dropoffACRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
-  
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
+
+  // Section refs for progress indicator
+  const tripRef = useRef(null);
+  const flightRef = useRef(null);
+  const contactRef = useRef(null);
+
+  // Intersection Observer to track active section
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (entry.target === tripRef.current) setActiveStep(1);
+            else if (entry.target === flightRef.current) setActiveStep(2);
+            else if (entry.target === contactRef.current) setActiveStep(3);
+          }
+        });
+      },
+      { threshold: 0.3, rootMargin: '-100px 0px 0px 0px' }
+    );
+
+    [tripRef, flightRef, contactRef].forEach(ref => {
+      if (ref.current) observer.observe(ref.current);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   // Date/Time picker state
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -327,43 +359,51 @@ const BookingPage = () => {
     setPromoDiscount(null);
   };
 
-  const onPickupLoad = (autocomplete) => {
-    setPickupAutocomplete(autocomplete);
-  };
+  // Attach Google's native Autocomplete to plain <input> elements.
+  // Google renders its own .pac-container dropdown in the real DOM,
+  // completely outside React — no Radix/portal conflicts.
+  useEffect(() => {
+    if (!mapsAvailable || !window.google) return;
 
-  const onPickupPlaceChanged = () => {
-    if (pickupAutocomplete !== null) {
-      const place = pickupAutocomplete.getPlace();
-      const address = place.formatted_address || place.name;
-      setFormData({
-        ...formData,
-        pickupAddress: address
+    const acOptions = {
+      componentRestrictions: { country: 'nz' },
+      fields: ['formatted_address', 'name'],
+    };
+
+    if (pickupInputRef.current && !pickupACRef.current) {
+      const ac = new window.google.maps.places.Autocomplete(pickupInputRef.current, acOptions);
+      pickupACRef.current = ac;
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        const address = place.formatted_address || place.name || '';
+        setFormData(prev => {
+          const updated = { ...prev, pickupAddress: address };
+          if (prev.dropoffAddress) {
+            setTimeout(() => calculatePriceWithAddresses(address, prev.dropoffAddress), 300);
+          }
+          return updated;
+        });
+        if (pickupInputRef.current) pickupInputRef.current.value = address;
       });
-      
-      if (formData.dropoffAddress) {
-        setTimeout(() => calculatePriceWithAddresses(address, formData.dropoffAddress), 300);
-      }
     }
-  };
 
-  const onDropoffLoad = (autocomplete) => {
-    setDropoffAutocomplete(autocomplete);
-  };
-
-  const onDropoffPlaceChanged = () => {
-    if (dropoffAutocomplete !== null) {
-      const place = dropoffAutocomplete.getPlace();
-      const address = place.formatted_address || place.name;
-      setFormData({
-        ...formData,
-        dropoffAddress: address
+    if (dropoffInputRef.current && !dropoffACRef.current) {
+      const ac = new window.google.maps.places.Autocomplete(dropoffInputRef.current, acOptions);
+      dropoffACRef.current = ac;
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        const address = place.formatted_address || place.name || '';
+        setFormData(prev => {
+          const updated = { ...prev, dropoffAddress: address };
+          if (prev.pickupAddress) {
+            setTimeout(() => calculatePriceWithAddresses(prev.pickupAddress, address), 300);
+          }
+          return updated;
+        });
+        if (dropoffInputRef.current) dropoffInputRef.current.value = address;
       });
-      
-      if (formData.pickupAddress) {
-        setTimeout(() => calculatePriceWithAddresses(formData.pickupAddress, address), 300);
-      }
     }
-  };
+  }, [mapsAvailable]);
 
   const calculatePriceWithAddresses = async (pickup, dropoff) => {
     if (!pickup || !dropoff) return;
@@ -383,11 +423,13 @@ const BookingPage = () => {
       let totalPrice = response.data.totalPrice + additionalFees;
       if (formData.returnTrip) totalPrice *= 2;
       
-      setPricing({
-        ...response.data,
-        additionalServices: additionalFees,
-        returnTrip: formData.returnTrip,
-        totalPrice: totalPrice
+      startTransition(() => {
+        setPricing({
+          ...response.data,
+          additionalServices: additionalFees,
+          returnTrip: formData.returnTrip,
+          totalPrice: totalPrice
+        });
       });
     } catch (error) {
       console.error('Price calculation error:', error);
@@ -408,19 +450,21 @@ const BookingPage = () => {
         dropoffAddress: formData.dropoffAddress,
         passengers: parseInt(formData.passengers)
       });
-      
+
       let additionalFees = 0;
       if (formData.vipPickup) additionalFees += 15;
       if (formData.oversizedLuggage) additionalFees += 25;
-      
+
       let totalPrice = response.data.totalPrice + additionalFees;
       if (formData.returnTrip) totalPrice *= 2;
-      
-      setPricing({
-        ...response.data,
-        additionalServices: additionalFees,
-        returnTrip: formData.returnTrip,
-        totalPrice: totalPrice
+
+      startTransition(() => {
+        setPricing({
+          ...response.data,
+          additionalServices: additionalFees,
+          returnTrip: formData.returnTrip,
+          totalPrice: totalPrice
+        });
       });
     } catch (error) {
       toast({
@@ -515,19 +559,46 @@ const BookingPage = () => {
             <span className="font-medium">International Bookings Welcome</span>
           </div>
           <div className="flex items-center gap-1 text-gray-300">
-            <span className=”text-gold”>✔</span> 6 Languages
+            <span className="text-gold">✔</span> 6 Languages
           </div>
-          <div className=”flex items-center gap-1 text-gray-300”>
-            <span className=”text-gold”>✔</span> 7 Currencies
+          <div className="flex items-center gap-1 text-gray-300">
+            <span className="text-gold">✔</span> 7 Currencies
           </div>
-          <div className=”flex items-center gap-1 text-gray-300”>
-            <span className=”text-gold”>✔</span> Worldwide Payment
+          <div className="flex items-center gap-1 text-gray-300">
+            <span className="text-gold">✔</span> Worldwide Payment
           </div>
         </div>
       </div>
 
       <Header />
-      
+
+      {/* Progress Indicator */}
+      <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 py-3 px-4 mb-0">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          {[
+            { num: 1, label: 'Trip Details' },
+            { num: 2, label: 'Flight & Add-ons' },
+            { num: 3, label: 'Contact & Pay' }
+          ].map((step, i) => (
+            <div key={step.num} className="flex items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                activeStep >= step.num ? 'bg-gold text-black' : 'bg-gray-200 text-gray-500'
+              }`}>
+                {step.num}
+              </div>
+              <span className={`ml-2 text-sm font-medium hidden sm:inline ${
+                activeStep >= step.num ? 'text-gray-900' : 'text-gray-400'
+              }`}>
+                {step.label}
+              </span>
+              {i < 2 && <div className={`w-12 sm:w-24 h-0.5 mx-3 ${
+                activeStep > step.num ? 'bg-gold' : 'bg-gray-200'
+              }`} />}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Simplified Hero Section */}
       <section className="py-8 bg-white border-b">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -548,7 +619,7 @@ const BookingPage = () => {
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Trip Details Card */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div ref={tripRef} className="bg-white rounded-lg border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6 pb-3 border-b">Trip Details</h2>
                   
                   <div className="space-y-5">
@@ -575,36 +646,17 @@ const BookingPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Pickup Address
                       </label>
-                      {mapsAvailable ? (
-                        <Autocomplete
-                          onLoad={onPickupLoad}
-                          onPlaceChanged={onPickupPlaceChanged}
-                          options={{
-                            componentRestrictions: { country: 'nz' },
-                            fields: ['formatted_address', 'name']
-                          }}
-                        >
-                          <Input
-                            type="text"
-                            name="pickupAddress"
-                            value={formData.pickupAddress}
-                            onChange={handleChange}
-                            placeholder="Enter pickup address..."
-                            required
-                            className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
-                          />
-                        </Autocomplete>
-                      ) : (
-                        <Input
-                          type="text"
-                          name="pickupAddress"
-                          value={formData.pickupAddress}
-                          onChange={handleChange}
-                          placeholder="Enter pickup address..."
-                          required
-                          className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
-                        />
-                      )}
+                      <input
+                        ref={pickupInputRef}
+                        type="text"
+                        name="pickupAddress"
+                        defaultValue={formData.pickupAddress}
+                        onChange={handleChange}
+                        placeholder="Enter pickup address..."
+                        required
+                        autoComplete="off"
+                        className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                      />
                     </div>
                     
                     {/* Add Another Pickup */}
@@ -644,36 +696,17 @@ const BookingPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Drop-off Address
                       </label>
-                      {mapsAvailable ? (
-                        <Autocomplete
-                          onLoad={onDropoffLoad}
-                          onPlaceChanged={onDropoffPlaceChanged}
-                          options={{
-                            componentRestrictions: { country: 'nz' },
-                            fields: ['formatted_address', 'name']
-                          }}
-                        >
-                          <Input
-                            type="text"
-                            name="dropoffAddress"
-                            value={formData.dropoffAddress}
-                            onChange={handleChange}
-                            placeholder="Enter drop-off address..."
-                            required
-                            className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
-                          />
-                        </Autocomplete>
-                      ) : (
-                        <Input
-                          type="text"
-                          name="dropoffAddress"
-                          value={formData.dropoffAddress}
-                          onChange={handleChange}
-                          placeholder="Enter drop-off address..."
-                          required
-                          className="h-11 border-gray-300 focus:border-gold focus:ring-1 focus:ring-gold rounded-md"
-                        />
-                      )}
+                      <input
+                        ref={dropoffInputRef}
+                        type="text"
+                        name="dropoffAddress"
+                        defaultValue={formData.dropoffAddress}
+                        onChange={handleChange}
+                        placeholder="Enter drop-off address..."
+                        required
+                        autoComplete="off"
+                        className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                      />
                     </div>
                     
                     {/* Date and Time */}
@@ -739,7 +772,7 @@ const BookingPage = () => {
                 </div>
                 
                 {/* Flight Information Card */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div ref={flightRef} className="bg-white rounded-lg border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">Flight Information <span className="text-sm font-normal text-gray-500">(Optional)</span></h2>
                   <p className="text-sm text-gray-500 mb-4">Providing flight details helps us track delays and adjust pickup times.</p>
                   <div className="grid grid-cols-2 gap-4">
@@ -864,7 +897,7 @@ const BookingPage = () => {
                 </div>
                 
                 {/* Contact Details Card */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div ref={contactRef} className="bg-white rounded-lg border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">Contact Details</h2>
                   <div className="space-y-4">
                     <div>
@@ -1088,10 +1121,21 @@ const BookingPage = () => {
                   </div>
                 )}
                 
+                {/* Terms & Conditions */}
+                <label className="flex items-start gap-3 mt-4 cursor-pointer">
+                  <input type="checkbox" checked={agreedTerms} onChange={e => setAgreedTerms(e.target.checked)}
+                    className="mt-1 w-4 h-4 accent-gold" />
+                  <span className="text-sm text-gray-600">
+                    I agree to the <a href="/terms" className="text-gold underline">Terms & Conditions</a> and
+                    <a href="/privacy" className="text-gold underline"> Privacy Policy</a>.
+                    Cancellations within 24 hours of pickup may incur a fee.
+                  </span>
+                </label>
+
                 {/* Book Now Button */}
                 <Button
                   onClick={handleSubmit}
-                  disabled={!pricing || calculating || submitting}
+                  disabled={!pricing || calculating || submitting || !agreedTerms}
                   className="w-full h-14 mt-6 bg-gold hover:bg-amber-500 text-black text-lg font-bold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting ? (

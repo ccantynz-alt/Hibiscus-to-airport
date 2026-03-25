@@ -5,7 +5,7 @@ export default function ProbePanel() {
   const [lastStatus, setLastStatus] = useState(null);
 
   const apiBase = useMemo(() => {
-    return (process.env.REACT_APP_API_BASE || "https://api.hibiscustoairport.co.nz").replace(/\/+$/, "");
+    return (process.env.REACT_APP_API_BASE || process.env.REACT_APP_BACKEND_URL || "").replace(/\/+$/, "");
   }, []);
 
   const healthPaths = ["/debug/which","/debug/stamp","/auth/health","/health","/admin/health"];

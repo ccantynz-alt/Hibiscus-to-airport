@@ -1,12 +1,18 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Plane, Clock, Shield, DollarSign } from 'lucide-react';
 
 const AucklandAirportTransfers = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Auckland Airport Transfers"
+        description="Fast, reliable Auckland Airport transfers from Hibiscus Coast. Professional drivers and luxury vehicles. Book online 24/7."
+        path="/auckland-airport-transfers"
+      />
       <Header />
       
       <section className="pt-32 pb-20 bg-gradient-to-br from-gray-900 via-gray-800 to-black">

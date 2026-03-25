@@ -8,10 +8,12 @@ const Contact = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="contact" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+    <section id="contact" className="py-20 bg-gray-50 reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Ready to Book Your Ride?</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+            Ready to <span className="text-gold">Book</span> Your Ride?
+          </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Book online in under 2 minutes, or give us a call. We're here 24/7.
           </p>
@@ -22,13 +24,13 @@ const Contact = () => {
           <div className="text-center lg:text-left space-y-6">
             <Button
               onClick={() => navigate('/booking')}
-              className="w-full sm:w-auto bg-gold hover:bg-[#C5A028] text-white py-6 px-12 text-lg font-semibold tracking-wide"
+              className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white py-6 px-12 text-lg font-semibold tracking-wide shadow-sm"
             >
               Book Now
             </Button>
             <div className="flex items-center justify-center lg:justify-start gap-3 pt-2">
-              <Phone className="w-5 h-5 text-blue-600" />
-              <a href="tel:021743321" className="text-lg text-gray-700 hover:text-blue-600 font-medium">
+              <Phone className="w-5 h-5 text-gold" />
+              <a href="tel:021743321" className="text-lg text-gray-700 hover:text-gray-900 font-medium transition-colors duration-300">
                 021 743 321
               </a>
             </div>
@@ -36,25 +38,25 @@ const Contact = () => {
 
           {/* Contact Information */}
           <div className="space-y-4">
-            <Card className="border-2">
+            <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <Mail className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-gold/10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                    <Mail className="w-6 h-6 text-gold" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">Email</h3>
-                    <a href="mailto:info@bookaride.co.nz" className="text-gray-600 hover:text-blue-600">info@bookaride.co.nz</a>
+                    <a href="mailto:info@bookaride.co.nz" className="text-gray-600 hover:text-gray-900 transition-colors duration-300">info@bookaride.co.nz</a>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2">
+            <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-gold/10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                    <MapPin className="w-6 h-6 text-gold" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">Service Area</h3>
@@ -65,11 +67,11 @@ const Contact = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2">
+            <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
-                    <Clock className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-gold/10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                    <Clock className="w-6 h-6 text-gold" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">Operating Hours</h3>

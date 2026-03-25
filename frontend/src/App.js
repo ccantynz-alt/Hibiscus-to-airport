@@ -10,6 +10,7 @@ import BookingPage from "./pages/BookingPage";
 // --- Lazy loaded public pages ---
 const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
 const FAQ = lazy(() => import("./pages/FAQ"));
+const Pricing = lazy(() => import("./pages/Pricing"));
 
 // Suburb shuttle pages
 const OrewaShuttle = lazy(() => import("./pages/OrewaShuttle"));
@@ -53,6 +54,7 @@ const LateNightAirportShuttle = lazy(() => import("./pages/LateNightAirportShutt
 const EarlyMorningShuttle = lazy(() => import("./pages/EarlyMorningShuttle"));
 const EarlyMorningFlightShuttle = lazy(() => import("./pages/EarlyMorningFlightShuttle"));
 const AirportArrivals = lazy(() => import("./pages/AirportArrivals"));
+const NorthShoreAirportShuttle = lazy(() => import("./pages/NorthShoreAirportShuttle"));
 
 // School pages
 const OrewaCollegeShuttle = lazy(() => import("./pages/OrewaCollegeShuttle"));
@@ -69,9 +71,10 @@ const MatakanaFarmersMarketShuttle = lazy(() => import("./pages/MatakanaFarmersM
 const MatakanaWineryShuttle = lazy(() => import("./pages/MatakanaWineryShuttle"));
 const MatakanaVillageShuttle = lazy(() => import("./pages/MatakanaVillageShuttle"));
 
-// Payment pages
+// Payment / booking pages
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
+const MyBooking = lazy(() => import("./pages/MyBooking"));
 
 // Driver / tracking pages
 const DriverPortal = lazy(() => import("./pages/DriverPortal"));
@@ -222,9 +225,13 @@ function PublicRoutes() {
       {/* FAQ */}
       <Route path="/faq" element={<FAQ />} />
 
-      {/* Payment */}
+      {/* Pricing */}
+      <Route path="/pricing" element={<Pricing />} />
+
+      {/* Payment & Booking Lookup */}
       <Route path="/payment/success" element={<PaymentSuccess />} />
       <Route path="/payment/cancel" element={<PaymentCancel />} />
+      <Route path="/my-booking" element={<MyBooking />} />
 
       {/* Suburb shuttle pages - Hibiscus Coast */}
       <Route path="/orewa-airport-shuttle" element={<OrewaShuttle />} />
@@ -272,6 +279,7 @@ function PublicRoutes() {
       <Route path="/early-morning-airport-shuttle" element={<EarlyMorningShuttle />} />
       <Route path="/early-morning-flight-shuttle" element={<EarlyMorningFlightShuttle />} />
       <Route path="/airport-arrivals" element={<AirportArrivals />} />
+      <Route path="/north-shore-airport-shuttle" element={<NorthShoreAirportShuttle />} />
 
       {/* School pages */}
       <Route path="/orewa-college-airport-shuttle" element={<OrewaCollegeShuttle />} />

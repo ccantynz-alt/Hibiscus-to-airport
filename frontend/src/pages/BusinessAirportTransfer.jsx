@@ -1,12 +1,18 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Building, Shield, Clock, Star } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const BusinessAirportTransfer = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Business Airport Transfer Service"
+        description="Professional business airport transfers from Hibiscus Coast to Auckland Airport. Punctual, luxury vehicles for executives. Book online 24/7."
+        path="/business-airport-transfer"
+      />
       <Header />
       
       {/* Hero Section */}

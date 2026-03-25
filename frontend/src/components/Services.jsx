@@ -14,7 +14,7 @@ const iconMap = {
 
 const Services = () => {
   return (
-    <section id="services" className="py-20 bg-white">
+    <section id="services" className="py-20 bg-white reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -29,10 +29,10 @@ const Services = () => {
           {services.map((service) => {
             const IconComponent = iconMap[service.icon];
             return (
-              <Card key={service.id} className="border-2 border-gray-200 hover:border-gold hover:shadow-xl transition-all duration-300 group bg-white">
+              <Card key={service.id} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group">
                 <CardHeader>
-                  <div className="w-14 h-14 bg-gold/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-gold transition-all duration-300">
-                    <IconComponent className="w-7 h-7 text-gold group-hover:text-black transition-colors duration-300" />
+                  <div className="w-14 h-14 bg-gold/10 rounded-full flex items-center justify-center mb-4">
+                    <IconComponent className="w-7 h-7 text-gold" />
                   </div>
                   <CardTitle className="text-lg font-bold text-gray-900 mb-2">
                     {service.title}

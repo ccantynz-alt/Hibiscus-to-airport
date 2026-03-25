@@ -1,12 +1,18 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Calendar, Music, Wine, ShoppingBag, MapPin, Clock } from 'lucide-react';
 
 const MatakanaShuttle = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Matakana Shuttle and Transport Service"
+        description="Shuttle service to Matakana for markets, wineries, concerts and events. Premium transport from Hibiscus Coast. Book online today."
+        path="/matakana-shuttle"
+      />
       <Header />
       
       {/* Hero */}

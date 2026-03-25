@@ -16,7 +16,12 @@ const ManlyShuttle = createSuburbPage(
     'Local Markets',
     'Seaside Properties',
     'Public Transport'
-  ]
+  ],
+  {
+    title: 'Manly to Auckland Airport Shuttle',
+    description: 'Airport shuttle from Manly, Whangaparaoa to Auckland Airport. Fast, affordable transfers. Book online for instant quotes.',
+    path: '/manly-airport-shuttle'
+  }
 );
 
 export default ManlyShuttle;

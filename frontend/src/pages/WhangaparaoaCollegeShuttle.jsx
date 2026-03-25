@@ -16,7 +16,12 @@ const WhangaparaoaCollegeShuttle = createSuburbPage(
     'Local Facilities',
     'Bus Routes',
     'Peninsula Areas'
-  ]
+  ],
+  {
+    title: 'Whangaparaoa College Airport Shuttle',
+    description: 'Airport transfers for Whangaparaoa College students to Auckland Airport. Trusted by international families. Book online 24/7.',
+    path: '/whangaparaoa-college-airport-shuttle'
+  }
 );
 
 export default WhangaparaoaCollegeShuttle;

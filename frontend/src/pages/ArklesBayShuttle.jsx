@@ -16,7 +16,12 @@ const ArklesBayShuttle = createSuburbPage(
     'Quiet Neighborhoods',
     'Beach Access Points',
     'Seaside Living'
-  ]
+  ],
+  {
+    title: 'Arkles Bay to Auckland Airport Shuttle',
+    description: 'Airport shuttle from Arkles Bay to Auckland Airport. Professional drivers, premium vehicles. Book online for guaranteed pickup.',
+    path: '/arkles-bay-airport-shuttle'
+  }
 );
 
 export default ArklesBayShuttle;

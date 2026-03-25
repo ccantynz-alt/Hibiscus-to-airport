@@ -3,10 +3,16 @@ import { Button } from '../components/ui/button';
 import { ArrowRight, MapPin, Clock, DollarSign, Zap, Shield } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 
 const OrewaShuttle = () => {
   return (
     <div className="min-h-screen bg-black">
+      <PageMeta
+        title="Orewa to Auckland Airport Shuttle"
+        description="Premium airport shuttle from Orewa to Auckland Airport via Northern Busway Express. Local drivers, 24/7 service. Book online instantly."
+        path="/orewa-airport-shuttle"
+      />
       <Header />
       
       {/* Hero Section */}

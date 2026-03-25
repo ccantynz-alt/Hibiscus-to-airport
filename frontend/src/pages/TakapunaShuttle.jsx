@@ -16,7 +16,12 @@ const TakapunaShuttle = createSuburbPage(
     'Public Library',
     'Medical Facilities',
     'Transport Hub'
-  ]
+  ],
+  {
+    title: 'Takapuna to Auckland Airport Shuttle',
+    description: 'Airport shuttle from Takapuna, North Shore to Auckland Airport. Professional transfers with luxury vehicles. Book online 24/7.',
+    path: '/takapuna-airport-shuttle'
+  }
 );
 
 export default TakapunaShuttle;

@@ -7,13 +7,15 @@ import About from '../components/About';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
+import GeoContent from '../components/GeoContent';
 
 const HomePage = () => {
   return (
     <div className="min-h-screen">
       <PageMeta
-        title={null}
-        description="Premium airport shuttle service from Hibiscus Coast to Auckland Airport. Professional drivers, luxury vehicles, 24/7 service. Book online instantly with guaranteed pickup times."
+        title="Hibiscus Coast Airport Shuttle | Door-to-Door Auckland Airport Transfers 24/7"
+        rawTitle
+        description="Private airport shuttle from Orewa, Whangaparaoa, Silverdale & Hibiscus Coast to Auckland Airport. Book online, flat rates, 24/7 service. Call 021 743 321."
         path="/"
       />
       <Header />
@@ -21,6 +23,7 @@ const HomePage = () => {
       <Services />
       <Fleet />
       <About />
+      <GeoContent />
       <Contact />
       <Footer />
     </div>
