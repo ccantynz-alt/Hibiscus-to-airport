@@ -103,7 +103,6 @@ const DriverPortal = () => {
       setTodaysBookings(relevantBookings);
       
     } catch (error) {
-      console.error('Error fetching data:', error);
       toast({
         title: 'Error',
         description: 'Failed to load bookings',
@@ -152,7 +151,6 @@ const DriverPortal = () => {
       startLocationWatch(booking);
       
     } catch (error) {
-      console.error('Error starting tracking:', error);
       toast({
         title: 'Error',
         description: 'Failed to start tracking',
@@ -170,7 +168,6 @@ const DriverPortal = () => {
         setLocationError(null);
       },
       (error) => {
-        console.error('Location error:', error);
         setLocationError('Unable to get your location. Please enable GPS.');
       },
       {
@@ -229,8 +226,8 @@ const DriverPortal = () => {
         });
       }
       
-    } catch (error) {
-      console.error('Error updating location:', error);
+    } catch {
+      // Location update failed — will retry on next interval
     }
   };
 
@@ -264,8 +261,8 @@ const DriverPortal = () => {
         description: 'Tracking stopped. Job complete!',
       });
       
-    } catch (error) {
-      console.error('Error stopping tracking:', error);
+    } catch {
+      // Stop tracking failed — non-critical
     }
   };
 

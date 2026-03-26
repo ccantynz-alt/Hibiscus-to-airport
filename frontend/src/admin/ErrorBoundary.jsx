@@ -10,9 +10,8 @@ export default class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, info) {
-    // Keep console errors for debugging
-    console.error("Admin ErrorBoundary caught:", error, info);
+  componentDidCatch() {
+    // Error details are displayed in the fallback UI
   }
 
   render() {

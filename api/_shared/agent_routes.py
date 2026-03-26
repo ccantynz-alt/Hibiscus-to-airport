@@ -7,7 +7,15 @@ from typing import Any, Dict, Optional
 import time, uuid, os
 
 router = APIRouter()
-_JOBS = []  # newest first
+_JOBS = []  # Bounded queue, max 50 items, auto-cleanup after 1 hour
+_JOBS_MAX = 50
+_JOBS_TTL_SECONDS = 3600  # 1 hour
+
+def _cleanup_jobs():
+    """Remove expired jobs."""
+    global _JOBS
+    now = int(time.time())
+    _JOBS = [j for j in _JOBS if now - j.get("ts", 0) < _JOBS_TTL_SECONDS][:_JOBS_MAX]
 
 class CockpitRun(BaseModel):
     action: str
@@ -102,11 +110,13 @@ refresh(); setInterval(refresh, 5000);
 
 @router.get("/api/cockpit/state")
 def state():
+    _cleanup_jobs()
     return JSONResponse({"ok": True, "ts": _now(), "jobs": _JOBS[:15], "jobsCount": len(_JOBS),
                          "agents": {"ping": "/api/agents/ping", "repair": "/api/agents/repair", "patchBuilder": "/api/agents/patch-builder"}})
 
 @router.post("/api/cockpit/run")
 async def run(body: CockpitRun, request: Request):
+    _cleanup_jobs()
     job = {"id": str(uuid.uuid4()), "ts": _now(), "kind": body.action, "payload": {"prompt": body.prompt or "", "meta": body.meta or {}}, "status":"queued"}
     _JOBS.insert(0, job); del _JOBS[50:]
     return JSONResponse({"ok": True, "job": job})

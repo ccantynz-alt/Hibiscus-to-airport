@@ -404,7 +404,7 @@ const BookingPage = () => {
 
   const calculatePriceWithAddresses = async (pickup, dropoff) => {
     if (!pickup || !dropoff) return;
-    
+
     setCalculating(true);
     try {
       const response = await axios.post(`${BACKEND_URL}/api/calculate-price`, {
@@ -412,14 +412,14 @@ const BookingPage = () => {
         dropoffAddress: dropoff,
         passengers: parseInt(formData.passengers)
       });
-      
+
       let additionalFees = 0;
-      if (formData.vipPickup) additionalFees += 15;
-      if (formData.oversizedLuggage) additionalFees += 25;
-      
+      if (formData.vipPickup) additionalFees += VIP_PICKUP_FEE;
+      if (formData.oversizedLuggage) additionalFees += OVERSIZED_LUGGAGE_FEE;
+
       let totalPrice = response.data.totalPrice + additionalFees;
       if (formData.returnTrip) totalPrice *= 2;
-      
+
       startTransition(() => {
         setPricing({
           ...response.data,
@@ -428,8 +428,8 @@ const BookingPage = () => {
           totalPrice: totalPrice
         });
       });
-    } catch (error) {
-      console.error('Price calculation error:', error);
+    } catch {
+      // Error is non-critical here; user can retry via Calculate Price button
     } finally {
       setCalculating(false);
     }
@@ -449,8 +449,8 @@ const BookingPage = () => {
       });
 
       let additionalFees = 0;
-      if (formData.vipPickup) additionalFees += 15;
-      if (formData.oversizedLuggage) additionalFees += 25;
+      if (formData.vipPickup) additionalFees += VIP_PICKUP_FEE;
+      if (formData.oversizedLuggage) additionalFees += OVERSIZED_LUGGAGE_FEE;
 
       let totalPrice = response.data.totalPrice + additionalFees;
       if (formData.returnTrip) totalPrice *= 2;
@@ -463,10 +463,10 @@ const BookingPage = () => {
           totalPrice: totalPrice
         });
       });
-    } catch (error) {
+    } catch (err) {
       toast({
         title: "Calculation Error",
-        description: error.response?.data?.detail || "Could not calculate distance. Please check addresses.",
+        description: err.response?.data?.detail || "Could not calculate distance. Please check addresses.",
         variant: "destructive"
       });
     } finally {
@@ -854,9 +854,9 @@ const BookingPage = () => {
                           <p className="text-xs text-gray-500">Driver meets you inside the terminal with a name sign</p>
                         </div>
                       </div>
-                      <span className="font-semibold text-gold">+$15</span>
+                      <span className="font-semibold text-gold">+${VIP_PICKUP_FEE}</span>
                     </label>
-                    
+
                     <label className="flex items-center justify-between p-3 rounded-md border border-gray-200 hover:border-gold cursor-pointer transition-colors">
                       <div className="flex items-center gap-3">
                         <input
@@ -871,7 +871,7 @@ const BookingPage = () => {
                           <p className="text-xs text-gray-500">Golf clubs, surfboards, bikes, etc.</p>
                         </div>
                       </div>
-                      <span className="font-semibold text-gold">+$25</span>
+                      <span className="font-semibold text-gold">+${OVERSIZED_LUGGAGE_FEE}</span>
                     </label>
                     
                     <label className="flex items-center justify-between p-3 rounded-md border border-gray-200 hover:border-gold cursor-pointer transition-colors">

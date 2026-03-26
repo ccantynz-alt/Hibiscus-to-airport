@@ -305,4 +305,4 @@ async def indexnow_submit(request: Request):
         return {"ok": True, "urls_submitted": len(urls), "status": resp.status_code}
     except Exception as e:
         logger.error(f"IndexNow submit error: {e}")
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+        return JSONResponse({"ok": False, "error": "Failed to submit URLs"}, status_code=500)

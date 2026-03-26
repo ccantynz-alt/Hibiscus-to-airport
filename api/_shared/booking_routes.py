@@ -12,7 +12,7 @@ import csv
 import io
 from dotenv import load_dotenv
 from pathlib import Path
-from auth import get_current_user, verify_password, create_access_token, get_password_hash
+from auth import get_current_user, verify_password, create_access_token, get_password_hash, decode_token
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
@@ -24,6 +24,8 @@ from utils import (
     send_admin_notification,
     send_admin_sms_notification,
     send_customer_sms,
+    send_email,
+    send_sms,
     generate_booking_reference,
     send_cancellation_email,
     send_cancellation_sms,
@@ -44,6 +46,23 @@ router = APIRouter()
 # Neon PostgreSQL connection pool
 from db import get_pool
 import json
+
+# Camel-to-snake column mapping for database operations
+CAMEL_TO_SNAKE = {
+    "pickupAddress": "pickup_address",
+    "dropoffAddress": "dropoff_address",
+    "totalPrice": "total_price",
+    "updatedAt": "updated_at",
+    "createdAt": "created_at",
+    "serviceType": "service_type",
+    "departureFlightNumber": "departure_flight_number",
+    "departureTime": "departure_time",
+    "arrivalFlightNumber": "arrival_flight_number",
+    "arrivalTime": "arrival_time",
+    "vipPickup": "vip_pickup",
+    "oversizedLuggage": "oversized_luggage",
+    "returnTrip": "return_trip",
+}
 
 
 # ---------- row ↔ camelCase helpers ----------
@@ -524,8 +543,7 @@ async def resend_all_confirmations(booking_id: str, force: bool = False):
         
         if update_fields:
             # Map camelCase keys to snake_case for DB columns
-            _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at","serviceType":"service_type","departureFlightNumber":"departure_flight_number","departureTime":"departure_time","arrivalFlightNumber":"arrival_flight_number","arrivalTime":"arrival_time","vipPickup":"vip_pickup","oversizedLuggage":"oversized_luggage","returnTrip":"return_trip"}
-            _mapped = {_camel_map.get(k, k): v for k, v in update_fields.items()}
+            _mapped = {CAMEL_TO_SNAKE.get(k, k): v for k, v in update_fields.items()}
             await _pg_update("bookings", _mapped, "id", booking_id)
         
         logger.info(f"Confirmations resent for booking {booking['booking_ref']}: {', '.join(messages_sent)}")
@@ -720,7 +738,6 @@ async def send_payment_link(booking_id: str):
               </div>
             </div>
             """
-            from utils import send_email
             send_email(booking['email'], email_subject, email_body)
             email_sent = True
         except Exception as e:
@@ -729,7 +746,6 @@ async def send_payment_link(booking_id: str):
         # Send SMS with payment link
         sms_sent = False
         try:
-            from utils import send_sms
             sms_message = f"""Hibiscus to Airport - Payment Request
 
 Booking: {booking.get('booking_ref', 'N/A')}
@@ -986,7 +1002,6 @@ async def get_admin_profile(request: Request):
         if not token:
             raise HTTPException(status_code=401, detail="Not authenticated")
 
-        from auth import decode_token
         payload = decode_token(token)
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -1059,9 +1074,7 @@ async def create_or_update_seo_page(seo_data: SEOPageData):
         }
         
         if existing:
-            # TODO-MIGRATE: seo_pages.update_one
-            _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at"}
-            _mapped = {_camel_map.get(k, k): v for k, v in page_doc.items()}
+            _mapped = {CAMEL_TO_SNAKE.get(k, k): v for k, v in page_doc.items()}
             await _pg_update("seo_pages", _mapped, "page_slug", seo_data.page_slug)
             logger.info(f"SEO page updated: {seo_data.page_slug}")
         else:
@@ -1337,9 +1350,8 @@ async def update_booking(booking_id: str, booking_update: BookingUpdate):
         # Build update dict, excluding None values
         update_data = {k: v for k, v in booking_update.model_dump().items() if v is not None}
         update_data["updatedAt"] = datetime.utcnow().isoformat()
-        
-        _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at"}
-        _mapped = {_camel_map.get(k, k): v for k, v in update_data.items()}
+
+        _mapped = {CAMEL_TO_SNAKE.get(k, k): v for k, v in update_data.items()}
         await _pg_update("bookings", _mapped, "id", booking_id)
         
         # Get updated booking
@@ -1365,9 +1377,8 @@ async def update_booking_status(booking_id: str, update_data: dict):
         pool = await get_pool()
         row = await pool.fetchrow("SELECT * FROM bookings WHERE id = $1", booking_id)
         current_booking = row_to_booking(row)
-        
-        _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at"}
-        _mapped = {_camel_map.get(k, k): v for k, v in update_data.items()}
+
+        _mapped = {CAMEL_TO_SNAKE.get(k, k): v for k, v in update_data.items()}
         await _pg_update("bookings", _mapped, "id", booking_id)
         
         # If status changed to confirmed, sync to Google Calendar
@@ -1732,8 +1743,7 @@ async def update_driver(driver_id: str, driver_update: DriverUpdate):
         update_data = {k: v for k, v in driver_update.model_dump().items() if v is not None}
         update_data["updatedAt"] = datetime.utcnow().isoformat()
         
-        _camel_map = {"pickupAddress":"pickup_address","dropoffAddress":"dropoff_address","totalPrice":"total_price","updatedAt":"updated_at","createdAt":"created_at"}
-        _mapped = {_camel_map.get(k, k): v for k, v in update_data.items()}
+        _mapped = {CAMEL_TO_SNAKE.get(k, k): v for k, v in update_data.items()}
         await _pg_update("drivers", _mapped, "id", driver_id)
         
         pool = await get_pool()
@@ -2153,7 +2163,6 @@ async def send_driver_job_notification(booking: dict, driver: dict, payout: floa
             </div>
             """
             
-            from utils import send_email
             send_email(driver_email, subject, email_body)
             logger.info(f"Job notification email sent to driver {driver_name} at {driver_email}")
         
@@ -2169,7 +2178,6 @@ Payout: ${payout:.2f}
 Click to accept/decline:
 {accept_url}"""
             
-            from utils import send_sms
             send_sms(driver_phone, sms_message)
             logger.info(f"Job notification SMS sent to driver {driver_name} at {driver_phone}")
             
@@ -2259,7 +2267,6 @@ async def driver_respond_to_job(booking_id: str, data: dict):
             
             # Notify admin
             admin_email = os.environ.get('ADMIN_EMAIL', 'bookings@bookaride.co.nz')
-            from utils import send_email
             send_email(
                 admin_email,
                 f"Driver ACCEPTED: {booking.get('booking_ref')}",
@@ -2280,7 +2287,6 @@ async def driver_respond_to_job(booking_id: str, data: dict):
             
             # Notify admin
             admin_email = os.environ.get('ADMIN_EMAIL', 'bookings@bookaride.co.nz')
-            from utils import send_email
             send_email(
                 admin_email,
                 f"Driver DECLINED: {booking.get('booking_ref')}",
@@ -3044,7 +3050,6 @@ async def send_booking_reminder(booking: dict):
         </div>
         """
         
-        from utils import send_email, send_sms
         send_email(booking['email'], subject, body)
         
         # Send reminder SMS

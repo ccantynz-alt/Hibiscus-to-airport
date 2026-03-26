@@ -79,8 +79,8 @@ const AdminDashboard = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCalendarAuthorized(response.data.authorized);
-      } catch (error) {
-        console.error('Failed to check calendar status:', error);
+      } catch {
+        // Non-critical — calendar status check failed silently
       }
     };
     checkCalendarStatus();
@@ -151,8 +151,8 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPromoCodes(response.data);
-    } catch (error) {
-      console.error('Error fetching promo codes:', error);
+    } catch {
+      // Promo codes fetch failed — non-critical
     }
   };
 
@@ -209,8 +209,8 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDeletedBookings(response.data);
-    } catch (error) {
-      console.error('Error fetching deleted bookings:', error);
+    } catch {
+      // Deleted bookings fetch failed — non-critical
     }
   };
 
@@ -257,8 +257,8 @@ const AdminDashboard = () => {
         }
       });
       setDrivers(response.data);
-    } catch (error) {
-      console.log('Drivers not loaded:', error.message);
+    } catch {
+      // Drivers fetch failed — non-critical
     }
   };
 
