@@ -122,8 +122,8 @@
 - `api/bookings.js` - Booking CRUD endpoints
 - `api/admin/` - Admin dashboard API endpoints
 
-## Legacy Files (RETIRED — Do Not Use)
+## Legacy Files (DELETED — March 2026)
 
-- `backend/` - Former FastAPI backend (retired March 2026, kept for reference only)
-- `Dockerfile` - Former Docker config for Render
-- `render.yaml` - Former Render deployment config
+- `backend/` - Former FastAPI backend — **DELETED** (code lives in `api/_shared/`)
+- `Dockerfile` - Former Docker config — **DELETED**
+- `render.yaml` - Former Render config — **DELETED**
