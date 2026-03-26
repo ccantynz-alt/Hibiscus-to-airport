@@ -91,11 +91,17 @@
 18. **Consistent API response format:** `{ ok: true/false, data: ..., error: "..." }`
 19. **All dates stored in ISO 8601 UTC.** Display in NZ timezone on frontend only.
 
+### Build Verification (MANDATORY — No Exceptions)
+20. **Run `cd frontend && yarn build` after EVERY set of changes.** If it doesn't build, it doesn't get committed.
+21. **After build passes, run a full import/route crawl** — verify every page component loads, every import resolves, no undefined references.
+22. **No broken features on the live site.** If a feature doesn't work end-to-end, remove it or fix it. Never ship half-working code.
+23. **Test what you changed.** Don't just read the code — verify it compiles, verify the logic executes, verify the API endpoints respond.
+
 ### Autonomous Operation (Rules 2, 3, 4, 10)
-20. **If you find a bug while working on something else, fix it.** Don't leave it for later.
-21. **If a dependency is outdated and has known vulnerabilities, flag it.**
-22. **If an engineering gap exists (missing validation, missing error handling, missing indexes), fix it on the spot.**
-23. **Never introduce a new technology or provider without explicit owner approval.** The stack is locked.
+24. **If you find a bug while working on something else, fix it.** Don't leave it for later.
+25. **If a dependency is outdated and has known vulnerabilities, flag it.**
+26. **If an engineering gap exists (missing validation, missing error handling, missing indexes), fix it on the spot.**
+27. **Never introduce a new technology or provider without explicit owner approval.** The stack is locked.
 
 ## Important Rules for AI Sessions
 
