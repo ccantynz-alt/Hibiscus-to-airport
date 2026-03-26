@@ -8,8 +8,14 @@ import { Loader2, MapPin, Calendar, Clock, Users, Mail, Phone, User, FileText, G
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 
+// Constants
+const VIP_PICKUP_FEE = 15;
+const OVERSIZED_LUGGAGE_FEE = 25;
+const API_TIMEOUT_MS = 15000;
+const PRICE_DEBOUNCE_MS = 500;
+
 // Safety: prevent hung requests (no UI change)
-axios.defaults.timeout = 15000;
+axios.defaults.timeout = API_TIMEOUT_MS;
 
 import { useLoadScript } from '@react-google-maps/api';
 import PageMeta from '../components/PageMeta';
@@ -179,7 +185,7 @@ const TimePickerModal = ({ isOpen, onClose, onSelect, selectedTime, label }) => 
 
 const BookingPage = () => {
   const { toast } = useToast();
-  const [isPending, startTransition] = React.useTransition();
+  const [, startTransition] = React.useTransition();
   const [calculating, setCalculating] = useState(false);
   const [pricing, setPricing] = useState(null);
   const pickupInputRef = useRef(null);
@@ -285,14 +291,17 @@ const BookingPage = () => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
-    
-    if ((name === 'pickupAddress' || name === 'dropoffAddress' || name === 'passengers') && 
-        formData.pickupAddress && formData.dropoffAddress) {
-      setTimeout(() => {
-        calculatePrice();
-      }, 500);
-    }
   };
+
+  // Debounced price recalculation when address or passenger fields change
+  useEffect(() => {
+    if (formData.pickupAddress && formData.dropoffAddress) {
+      const timer = setTimeout(() => {
+        calculatePriceWithAddresses(formData.pickupAddress, formData.dropoffAddress);
+      }, PRICE_DEBOUNCE_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.pickupAddress, formData.dropoffAddress, formData.passengers]);
 
   const addPickupLocation = () => {
     setFormData({
@@ -376,13 +385,7 @@ const BookingPage = () => {
       ac.addListener('place_changed', () => {
         const place = ac.getPlace();
         const address = place.formatted_address || place.name || '';
-        setFormData(prev => {
-          const updated = { ...prev, pickupAddress: address };
-          if (prev.dropoffAddress) {
-            setTimeout(() => calculatePriceWithAddresses(address, prev.dropoffAddress), 300);
-          }
-          return updated;
-        });
+        setFormData(prev => ({ ...prev, pickupAddress: address }));
         if (pickupInputRef.current) pickupInputRef.current.value = address;
       });
     }
@@ -393,13 +396,7 @@ const BookingPage = () => {
       ac.addListener('place_changed', () => {
         const place = ac.getPlace();
         const address = place.formatted_address || place.name || '';
-        setFormData(prev => {
-          const updated = { ...prev, dropoffAddress: address };
-          if (prev.pickupAddress) {
-            setTimeout(() => calculatePriceWithAddresses(prev.pickupAddress, address), 300);
-          }
-          return updated;
-        });
+        setFormData(prev => ({ ...prev, dropoffAddress: address }));
         if (dropoffInputRef.current) dropoffInputRef.current.value = address;
       });
     }

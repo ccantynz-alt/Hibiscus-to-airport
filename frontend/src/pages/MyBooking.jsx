@@ -65,7 +65,6 @@ const MyBooking = () => {
         setError('Something went wrong. Please try again later.');
       }
     } catch (err) {
-      console.error('Lookup error:', err);
       setError('Could not connect to the server. Please try again.');
     } finally {
       setLoading(false);
@@ -73,25 +72,32 @@ const MyBooking = () => {
   };
 
   // Auto-search if ref was passed via URL
-  const initialRefValue = initialRef;
   React.useEffect(() => {
-    if (initialRefValue) {
-      setRef(initialRefValue);
+    if (initialRef) {
+      setRefInput(initialRef);
       const doLookup = async () => {
         setLoading(true);
-        setError('');
+        setError(null);
+        setSearched(true);
         try {
-          const res = await axios.get(`${BACKEND_URL}/api/bookings/lookup/${initialRefValue}`);
-          setBooking(res.data);
-        } catch (err) {
-          setError(err.response?.status === 404 ? 'Booking not found. Please check your reference.' : 'Unable to look up booking. Please try again.');
+          const response = await fetch(`${BACKEND_URL}/api/bookings/lookup/${initialRef.trim().toUpperCase()}`);
+          if (response.ok) {
+            const data = await response.json();
+            setBooking(data);
+          } else if (response.status === 404) {
+            setError('Booking not found. Please check your reference.');
+          } else {
+            setError('Unable to look up booking. Please try again.');
+          }
+        } catch {
+          setError('Could not connect to the server. Please try again.');
         } finally {
           setLoading(false);
         }
       };
       doLookup();
     }
-  }, [initialRefValue]);
+  }, [initialRef]);
 
   return (
     <div className="min-h-screen bg-black">
