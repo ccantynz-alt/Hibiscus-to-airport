@@ -100,7 +100,7 @@ const Testimonials = () => {
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  idx === currentIndex ? 'bg-gold w-8' : 'bg-gray-300'
+                  idx === currentIndex ? 'bg-[#D4AF37] w-8' : 'bg-[#E8ECF0]'
                 }`}
               />
             ))}
