@@ -59,7 +59,7 @@ const DriverTracking = () => {
         return;
       } catch (trackingError) {
         // If tracking not found, try with auth token
-        console.log('Tracking endpoint not available, trying authenticated endpoint');
+        // Tracking endpoint not available, try authenticated endpoint
       }
       
       // Fallback to authenticated endpoint
@@ -81,7 +81,7 @@ const DriverTracking = () => {
         setDriver(driverRes.data);
       }
     } catch (error) {
-      console.error('Error fetching booking:', error);
+      // Booking fetch failed
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ const DriverTracking = () => {
       startContinuousTracking();
       
     } catch (error) {
-      console.error('Location permission error:', error);
+      // Location permission error
       if (error.code === 1) {
         setLocationError('Location permission denied. Please enable GPS.');
       } else {
@@ -132,7 +132,7 @@ const DriverTracking = () => {
         setLocationError(null);
       },
       (error) => {
-        console.error('Location watch error:', error);
+        // GPS signal lost
         setLocationError('GPS signal lost. Please ensure GPS is enabled.');
       },
       {
@@ -167,8 +167,8 @@ const DriverTracking = () => {
       if (response.data.sms_sent && !smsSent) {
         setSmsSent(true);
       }
-    } catch (error) {
-      console.error('Error sending location update:', error);
+    } catch {
+      // Location update failed — will retry on next interval
     }
   };
 
@@ -196,8 +196,8 @@ const DriverTracking = () => {
       await axios.post(`${BACKEND_URL}/api/tracking/stop/${bookingId}`);
       stopTracking();
       alert('✅ Trip marked as arrived!');
-    } catch (error) {
-      console.error('Error stopping tracking:', error);
+    } catch {
+      // Stop tracking failed — non-critical
     }
   };
 

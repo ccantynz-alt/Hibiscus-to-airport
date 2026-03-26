@@ -19,7 +19,8 @@ const PaymentSuccess = () => {
   const isCash = method === 'cash';
 
   useEffect(() => {
-    const fetchBooking = async () => {
+    // Poll for booking data (webhook may take a moment to process)
+    const pollForBooking = async (attempts = 0) => {
       try {
         let response;
         if (bookingId) {
@@ -33,20 +34,27 @@ const PaymentSuccess = () => {
         if (response && response.ok) {
           const data = await response.json();
           setBooking(data);
+          setLoading(false);
+        } else if (attempts < 3) {
+          setTimeout(() => pollForBooking(attempts + 1), 1500);
         } else {
-          setError('Could not load booking details.');
+          setLoading(false);
+          setError('Could not load booking details. Your booking was confirmed — check your email.');
         }
-      } catch (err) {
-        console.error('Failed to fetch booking:', err);
-        setError('Could not load booking details.');
-      } finally {
-        setLoading(false);
+      } catch {
+        if (attempts < 3) {
+          setTimeout(() => pollForBooking(attempts + 1), 1500);
+        } else {
+          setLoading(false);
+          setError('Could not load booking details. Your booking was confirmed — check your email.');
+        }
       }
     };
 
-    // Small delay for Stripe webhooks to process payment status
-    const delay = isCash ? 500 : 2500;
-    setTimeout(fetchBooking, delay);
+    // Cash bookings are instant; Stripe needs a moment for the webhook
+    const initialDelay = isCash ? 500 : 1500;
+    const timeoutId = setTimeout(() => pollForBooking(0), initialDelay);
+    return () => clearTimeout(timeoutId);
   }, [sessionId, bookingId, isCash]);
 
   if (loading) {

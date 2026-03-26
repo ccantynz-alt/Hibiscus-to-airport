@@ -8,8 +8,14 @@ import { Loader2, MapPin, Calendar, Clock, Users, Mail, Phone, User, FileText, G
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
 
+// Constants
+const VIP_PICKUP_FEE = 15;
+const OVERSIZED_LUGGAGE_FEE = 25;
+const API_TIMEOUT_MS = 15000;
+const PRICE_DEBOUNCE_MS = 500;
+
 // Safety: prevent hung requests (no UI change)
-axios.defaults.timeout = 15000;
+axios.defaults.timeout = API_TIMEOUT_MS;
 
 import { useLoadScript } from '@react-google-maps/api';
 import PageMeta from '../components/PageMeta';
@@ -179,7 +185,7 @@ const TimePickerModal = ({ isOpen, onClose, onSelect, selectedTime, label }) => 
 
 const BookingPage = () => {
   const { toast } = useToast();
-  const [isPending, startTransition] = React.useTransition();
+  const [, startTransition] = React.useTransition();
   const [calculating, setCalculating] = useState(false);
   const [pricing, setPricing] = useState(null);
   const pickupInputRef = useRef(null);
@@ -285,14 +291,17 @@ const BookingPage = () => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
-    
-    if ((name === 'pickupAddress' || name === 'dropoffAddress' || name === 'passengers') && 
-        formData.pickupAddress && formData.dropoffAddress) {
-      setTimeout(() => {
-        calculatePrice();
-      }, 500);
-    }
   };
+
+  // Debounced price recalculation when address or passenger fields change
+  useEffect(() => {
+    if (formData.pickupAddress && formData.dropoffAddress) {
+      const timer = setTimeout(() => {
+        calculatePriceWithAddresses(formData.pickupAddress, formData.dropoffAddress);
+      }, PRICE_DEBOUNCE_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.pickupAddress, formData.dropoffAddress, formData.passengers]);
 
   const addPickupLocation = () => {
     setFormData({
@@ -376,13 +385,7 @@ const BookingPage = () => {
       ac.addListener('place_changed', () => {
         const place = ac.getPlace();
         const address = place.formatted_address || place.name || '';
-        setFormData(prev => {
-          const updated = { ...prev, pickupAddress: address };
-          if (prev.dropoffAddress) {
-            setTimeout(() => calculatePriceWithAddresses(address, prev.dropoffAddress), 300);
-          }
-          return updated;
-        });
+        setFormData(prev => ({ ...prev, pickupAddress: address }));
         if (pickupInputRef.current) pickupInputRef.current.value = address;
       });
     }
@@ -393,13 +396,7 @@ const BookingPage = () => {
       ac.addListener('place_changed', () => {
         const place = ac.getPlace();
         const address = place.formatted_address || place.name || '';
-        setFormData(prev => {
-          const updated = { ...prev, dropoffAddress: address };
-          if (prev.pickupAddress) {
-            setTimeout(() => calculatePriceWithAddresses(prev.pickupAddress, address), 300);
-          }
-          return updated;
-        });
+        setFormData(prev => ({ ...prev, dropoffAddress: address }));
         if (dropoffInputRef.current) dropoffInputRef.current.value = address;
       });
     }
@@ -407,7 +404,7 @@ const BookingPage = () => {
 
   const calculatePriceWithAddresses = async (pickup, dropoff) => {
     if (!pickup || !dropoff) return;
-    
+
     setCalculating(true);
     try {
       const response = await axios.post(`${BACKEND_URL}/api/calculate-price`, {
@@ -415,14 +412,14 @@ const BookingPage = () => {
         dropoffAddress: dropoff,
         passengers: parseInt(formData.passengers)
       });
-      
+
       let additionalFees = 0;
-      if (formData.vipPickup) additionalFees += 15;
-      if (formData.oversizedLuggage) additionalFees += 25;
-      
+      if (formData.vipPickup) additionalFees += VIP_PICKUP_FEE;
+      if (formData.oversizedLuggage) additionalFees += OVERSIZED_LUGGAGE_FEE;
+
       let totalPrice = response.data.totalPrice + additionalFees;
       if (formData.returnTrip) totalPrice *= 2;
-      
+
       startTransition(() => {
         setPricing({
           ...response.data,
@@ -431,8 +428,8 @@ const BookingPage = () => {
           totalPrice: totalPrice
         });
       });
-    } catch (error) {
-      console.error('Price calculation error:', error);
+    } catch {
+      // Error is non-critical here; user can retry via Calculate Price button
     } finally {
       setCalculating(false);
     }
@@ -452,8 +449,8 @@ const BookingPage = () => {
       });
 
       let additionalFees = 0;
-      if (formData.vipPickup) additionalFees += 15;
-      if (formData.oversizedLuggage) additionalFees += 25;
+      if (formData.vipPickup) additionalFees += VIP_PICKUP_FEE;
+      if (formData.oversizedLuggage) additionalFees += OVERSIZED_LUGGAGE_FEE;
 
       let totalPrice = response.data.totalPrice + additionalFees;
       if (formData.returnTrip) totalPrice *= 2;
@@ -466,10 +463,10 @@ const BookingPage = () => {
           totalPrice: totalPrice
         });
       });
-    } catch (error) {
+    } catch (err) {
       toast({
         title: "Calculation Error",
-        description: error.response?.data?.detail || "Could not calculate distance. Please check addresses.",
+        description: err.response?.data?.detail || "Could not calculate distance. Please check addresses.",
         variant: "destructive"
       });
     } finally {
@@ -857,9 +854,9 @@ const BookingPage = () => {
                           <p className="text-xs text-gray-500">Driver meets you inside the terminal with a name sign</p>
                         </div>
                       </div>
-                      <span className="font-semibold text-gold">+$15</span>
+                      <span className="font-semibold text-gold">+${VIP_PICKUP_FEE}</span>
                     </label>
-                    
+
                     <label className="flex items-center justify-between p-3 rounded-md border border-gray-200 hover:border-gold cursor-pointer transition-colors">
                       <div className="flex items-center gap-3">
                         <input
@@ -874,7 +871,7 @@ const BookingPage = () => {
                           <p className="text-xs text-gray-500">Golf clubs, surfboards, bikes, etc.</p>
                         </div>
                       </div>
-                      <span className="font-semibold text-gold">+$25</span>
+                      <span className="font-semibold text-gold">+${OVERSIZED_LUGGAGE_FEE}</span>
                     </label>
                     
                     <label className="flex items-center justify-between p-3 rounded-md border border-gray-200 hover:border-gold cursor-pointer transition-colors">

@@ -81,7 +81,7 @@ const Header = () => {
             </button>
             <a
               href="/booking"
-              className="inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+              className="inline-flex items-center bg-[#D4AF37] hover:bg-[#C4A030] text-white px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
             >
               Book Now
             </a>
@@ -131,7 +131,7 @@ const Header = () => {
             <div className="pt-3 border-t border-gray-100">
               <a
                 href="/booking"
-                className="block w-full text-center bg-gray-900 hover:bg-gray-800 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                className="block w-full text-center bg-[#D4AF37] hover:bg-[#C4A030] text-white py-3 px-6 rounded-lg font-semibold transition-colors"
               >
                 Book Now
               </a>

@@ -5,6 +5,8 @@ import logging
 from datetime import datetime
 import vobject
 import uuid
+from icalendar import Calendar, Event
+from pytz import timezone
 from db import get_pool
 
 # iCloud/CardDAV Configuration
@@ -215,9 +217,6 @@ def generate_calendar_invite(booking: dict):
     except Exception as e:
         logger.error(f"Error generating calendar invite: {str(e)}")
         return None
-
-from icalendar import Calendar, Event
-from pytz import timezone
 
 logger = logging.getLogger(__name__)
 

@@ -24,7 +24,7 @@ const Contact = () => {
           <div className="text-center lg:text-left space-y-6">
             <Button
               onClick={() => navigate('/booking')}
-              className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white py-6 px-12 text-lg font-semibold tracking-wide shadow-sm"
+              className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#C4A030] text-white py-6 px-12 text-lg font-semibold tracking-wide shadow-sm"
             >
               Book Now
             </Button>

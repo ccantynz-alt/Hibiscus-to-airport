@@ -54,7 +54,6 @@ const CustomerTracking = () => {
       setTrackingData(response.data);
       setError(null);
     } catch (err) {
-      console.error('Error fetching tracking data:', err);
       if (err.response?.status === 404) {
         setError('Tracking not found. The driver may not have started yet.');
       } else {

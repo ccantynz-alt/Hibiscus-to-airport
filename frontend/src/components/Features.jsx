@@ -103,7 +103,7 @@ const Features = () => {
             </p>
             <Button
               onClick={() => window.location.href = '/booking'}
-              className="bg-gray-900 hover:bg-gray-800 text-white px-10 py-6 text-lg font-semibold shadow-sm">
+              className="bg-[#D4AF37] hover:bg-[#C4A030] text-white px-10 py-6 text-lg font-semibold shadow-sm">
               Book Now
             </Button>
           </div>
