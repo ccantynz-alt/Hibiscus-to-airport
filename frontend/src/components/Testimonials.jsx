@@ -22,15 +22,15 @@ const Testimonials = () => {
   ];
 
   const TestimonialCard = ({ testimonial }) => (
-    <Card className="bg-white border border-gray-100 border-l-2 border-l-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300 h-full">
+    <Card className="bg-[#FAFBFC] border border-[#E8ECF0] border-l-2 border-l-[#D4AF37] shadow-sm hover:shadow-md transition-all duration-300 h-full">
       <CardContent className="p-8">
-        <span className="text-5xl leading-none text-[#D4AF37]/30 font-serif select-none" style={{ fontFamily: 'Playfair Display, serif' }}>"</span>
+        <span className="text-5xl leading-none text-[#1B2B4B]/10 font-serif select-none" style={{ fontFamily: 'Playfair Display, serif' }}>"</span>
         <div className="flex mb-4">
           {[...Array(testimonial.rating)].map((_, i) => (
             <Star key={i} className="w-5 h-5 text-gold fill-current" />
           ))}
         </div>
-        <p className="text-gray-600 mb-6 italic leading-relaxed">"{testimonial.content}"</p>
+        <p className="text-[#4A5568] mb-6 italic leading-relaxed">"{testimonial.content}"</p>
         <div className="flex items-center">
           <img
             src={testimonial.avatar}
@@ -39,8 +39,8 @@ const Testimonials = () => {
             className="w-12 h-12 rounded-full object-cover mr-4"
           />
           <div>
-            <div className="font-bold text-gray-900">{testimonial.name}</div>
-            <div className="text-sm text-gray-500">{testimonial.role}</div>
+            <div className="font-bold text-[#1B2B4B]">{testimonial.name}</div>
+            <div className="text-sm text-[#8896A6]">{testimonial.role}</div>
           </div>
         </div>
       </CardContent>
@@ -51,11 +51,11 @@ const Testimonials = () => {
     <section className="py-20 bg-white reveal-on-scroll">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-            What Our <span className="text-gold">Customers</span> Say
+          <h2 className="text-4xl font-bold text-[#1B2B4B] mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+            What Our Customers Say
           </h2>
-          <div className="w-16 h-0.5 bg-[#D4AF37] mx-auto mt-4 mb-6"></div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <div className="w-16 h-px bg-[#D4AF37] mx-auto mt-4 mb-6"></div>
+          <p className="text-xl text-[#4A5568] max-w-2xl mx-auto leading-relaxed">
             Don't just take our word for it - hear from our satisfied customers
           </p>
         </div>
@@ -79,7 +79,7 @@ const Testimonials = () => {
               variant="outline"
               size="icon"
               onClick={prevTestimonial}
-              className="w-12 h-12 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-900"
+              className="w-12 h-12 rounded-full border border-[#E8ECF0] hover:bg-[#F8FAFB] text-[#4A5568] hover:text-[#1B2B4B]"
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
@@ -87,7 +87,7 @@ const Testimonials = () => {
               variant="outline"
               size="icon"
               onClick={nextTestimonial}
-              className="w-12 h-12 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-900"
+              className="w-12 h-12 rounded-full border border-[#E8ECF0] hover:bg-[#F8FAFB] text-[#4A5568] hover:text-[#1B2B4B]"
             >
               <ChevronRight className="w-5 h-5" />
             </Button>
