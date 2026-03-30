@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 const Header = () => {
@@ -6,135 +7,88 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-      setMobileMenuOpen(false);
-    } else {
-      window.location.href = `/#${sectionId}`;
-    }
-  };
-
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-md'
-          : 'bg-white shadow-sm'
-      } border-b border-gray-200`}
-    >
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      scrolled ? 'bg-white/95 backdrop-blur-md shadow-md' : 'bg-white shadow-sm'
+    } border-b border-[#E2E8F0]`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-18">
+        <div className="flex justify-between items-center h-16 sm:h-18">
           {/* Logo */}
-          <div className="flex items-center">
-            <a href="/" className="flex flex-col leading-none py-4">
-              <div className="flex items-center gap-2.5">
-                <span className="text-lg sm:text-xl font-light text-gray-900 tracking-widest uppercase">
-                  Hibiscus
-                </span>
-                <div className="w-6 h-px bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent"></div>
-                <span className="text-lg sm:text-xl font-light text-gray-900 tracking-widest uppercase">
-                  Airport
-                </span>
-              </div>
-              <div className="mt-0.5 text-center">
-                <span className="text-[10px] font-medium text-[#D4AF37] tracking-[0.25em] uppercase">
-                  Premium Transport
-                </span>
-              </div>
-            </a>
-          </div>
+          <Link to="/" className="flex items-center gap-2">
+            <span className="text-base sm:text-lg font-light text-[#1E293B] tracking-[0.15em] uppercase">
+              Hibiscus
+            </span>
+            <div className="w-5 h-px bg-[#D4AF37]"></div>
+            <span className="text-base sm:text-lg font-light text-[#1E293B] tracking-[0.15em] uppercase">
+              Airport
+            </span>
+          </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8" aria-label="Main navigation">
-            <button
-              onClick={() => scrollToSection('services')}
-              className="text-gray-600 hover:text-gray-900 transition-colors font-medium tracking-wide text-sm"
-            >
-              Services
-            </button>
-            <button
-              onClick={() => scrollToSection('fleet')}
-              className="text-gray-600 hover:text-gray-900 transition-colors font-medium tracking-wide text-sm"
-            >
-              Fleet
-            </button>
-            <button
-              onClick={() => scrollToSection('about')}
-              className="text-gray-600 hover:text-gray-900 transition-colors font-medium tracking-wide text-sm"
-            >
-              About
-            </button>
-            <button
-              onClick={() => scrollToSection('contact')}
-              className="text-gray-600 hover:text-gray-900 transition-colors font-medium tracking-wide text-sm"
-            >
-              Contact
-            </button>
-            <a
-              href="/booking"
-              className="inline-flex items-center bg-[#D4AF37] hover:bg-[#C4A030] text-white px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
+            <Link to="/pricing" className="text-[#64748B] hover:text-[#1E293B] transition-colors text-sm font-medium">
+              Pricing
+            </Link>
+            <Link to="/service-areas" className="text-[#64748B] hover:text-[#1E293B] transition-colors text-sm font-medium">
+              Service Areas
+            </Link>
+            <Link to="/faq" className="text-[#64748B] hover:text-[#1E293B] transition-colors text-sm font-medium">
+              FAQ
+            </Link>
+            <Link to="/my-booking" className="text-[#64748B] hover:text-[#1E293B] transition-colors text-sm font-medium">
+              My Booking
+            </Link>
+            <Link
+              to="/booking"
+              className="bg-[#D4AF37] hover:bg-[#C4A030] text-white px-6 py-2.5 text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
             >
               Book Now
-            </a>
+            </Link>
           </nav>
 
-          {/* Mobile Menu Button */}
-          <div className="flex items-center space-x-3 md:hidden">
-            <button
-              className="text-gray-700 hover:text-gray-900 transition-colors"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden text-[#64748B] hover:text-[#1E293B]"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100">
-          <div className="px-4 py-4 space-y-1">
-            <button
-              onClick={() => scrollToSection('services')}
-              className="block w-full text-left text-gray-700 hover:text-gray-900 hover:bg-gray-50 py-3 px-3 rounded-lg font-medium transition-colors"
-            >
-              Services
-            </button>
-            <button
-              onClick={() => scrollToSection('fleet')}
-              className="block w-full text-left text-gray-700 hover:text-gray-900 hover:bg-gray-50 py-3 px-3 rounded-lg font-medium transition-colors"
-            >
-              Fleet
-            </button>
-            <button
-              onClick={() => scrollToSection('about')}
-              className="block w-full text-left text-gray-700 hover:text-gray-900 hover:bg-gray-50 py-3 px-3 rounded-lg font-medium transition-colors"
-            >
-              About
-            </button>
-            <button
-              onClick={() => scrollToSection('contact')}
-              className="block w-full text-left text-gray-700 hover:text-gray-900 hover:bg-gray-50 py-3 px-3 rounded-lg font-medium transition-colors"
-            >
-              Contact
-            </button>
-            <div className="pt-3 border-t border-gray-100">
-              <a
-                href="/booking"
-                className="block w-full text-center bg-[#D4AF37] hover:bg-[#C4A030] text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+        <div className="md:hidden bg-white border-t border-[#E2E8F0]">
+          <div className="px-4 py-3 space-y-1">
+            {[
+              { to: '/pricing', label: 'Pricing' },
+              { to: '/service-areas', label: 'Service Areas' },
+              { to: '/faq', label: 'FAQ' },
+              { to: '/my-booking', label: 'My Booking' },
+            ].map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className="block py-3 px-3 rounded-lg text-[#1E293B] hover:bg-[#F8FAFC] font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+            <div className="pt-2 border-t border-[#E2E8F0]">
+              <Link
+                to="/booking"
+                className="block w-full text-center bg-[#D4AF37] hover:bg-[#C4A030] text-white py-3 px-6 rounded-lg font-semibold"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Book Now
-              </a>
+              </Link>
             </div>
           </div>
         </div>
