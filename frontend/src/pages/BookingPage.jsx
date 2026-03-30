@@ -17,12 +17,10 @@ const PRICE_DEBOUNCE_MS = 500;
 // Safety: prevent hung requests (no UI change)
 axios.defaults.timeout = API_TIMEOUT_MS;
 
-import { useLoadScript } from '@react-google-maps/api';
+import { useGoogleMaps, attachAutocomplete } from '../hooks/useGoogleMaps';
 import PageMeta from '../components/PageMeta';
 
 import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
-
-const libraries = ['places'];
 
 // Compact Date Picker Modal - Clean iOS-style
 const DatePickerModal = ({ isOpen, onClose, onSelect, selectedDate }) => {
@@ -234,12 +232,7 @@ const BookingPage = () => {
   const [promoDiscount, setPromoDiscount] = useState(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
   
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries,
-  });
-
-  // If Maps fails to load (bad key, network, etc.) fall back to plain inputs
+  const { isLoaded, loadError } = useGoogleMaps(GOOGLE_MAPS_API_KEY);
   const mapsAvailable = isLoaded && !loadError;
   
   const [formData, setFormData] = useState({
@@ -368,38 +361,17 @@ const BookingPage = () => {
     setPromoDiscount(null);
   };
 
-  // Attach Google's native Autocomplete to plain <input> elements.
-  // Google renders its own .pac-container dropdown in the real DOM,
-  // completely outside React — no Radix/portal conflicts.
+  // Attach Google Places Autocomplete when API is loaded
   useEffect(() => {
-    if (!mapsAvailable || !window.google) return;
+    if (!mapsAvailable) return;
 
-    const acOptions = {
-      componentRestrictions: { country: 'nz' },
-      fields: ['formatted_address', 'name'],
-    };
+    attachAutocomplete(pickupInputRef, pickupACRef, (address) => {
+      setFormData(prev => ({ ...prev, pickupAddress: address }));
+    });
 
-    if (pickupInputRef.current && !pickupACRef.current) {
-      const ac = new window.google.maps.places.Autocomplete(pickupInputRef.current, acOptions);
-      pickupACRef.current = ac;
-      ac.addListener('place_changed', () => {
-        const place = ac.getPlace();
-        const address = place.formatted_address || place.name || '';
-        setFormData(prev => ({ ...prev, pickupAddress: address }));
-        if (pickupInputRef.current) pickupInputRef.current.value = address;
-      });
-    }
-
-    if (dropoffInputRef.current && !dropoffACRef.current) {
-      const ac = new window.google.maps.places.Autocomplete(dropoffInputRef.current, acOptions);
-      dropoffACRef.current = ac;
-      ac.addListener('place_changed', () => {
-        const place = ac.getPlace();
-        const address = place.formatted_address || place.name || '';
-        setFormData(prev => ({ ...prev, dropoffAddress: address }));
-        if (dropoffInputRef.current) dropoffInputRef.current.value = address;
-      });
-    }
+    attachAutocomplete(dropoffInputRef, dropoffACRef, (address) => {
+      setFormData(prev => ({ ...prev, dropoffAddress: address }));
+    });
   }, [mapsAvailable]);
 
   const calculatePriceWithAddresses = async (pickup, dropoff) => {

@@ -7,11 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { ArrowLeft, User, MapPin, Calendar, DollarSign, Save, Loader2, Plus, X } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
-import { useLoadScript } from '@react-google-maps/api';
+import { useGoogleMaps, attachAutocomplete } from '../hooks/useGoogleMaps';
 
 import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
-
-const libraries = ['places'];
 
 const AdminEditBooking = () => {
   const navigate = useNavigate();
@@ -28,10 +26,7 @@ const AdminEditBooking = () => {
   const additionalInputRefs = useRef({});
   const additionalACRefs = useRef({});
 
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries,
-  });
+  const { isLoaded } = useGoogleMaps(GOOGLE_MAPS_API_KEY);
 
   const [formData, setFormData] = useState({
     name: '',
