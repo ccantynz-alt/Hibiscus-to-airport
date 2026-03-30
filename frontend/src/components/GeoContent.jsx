@@ -3,11 +3,11 @@ import React from 'react';
 const GeoContent = () => (
   <section className="bg-white py-16 px-4" id="about-service">
     <div className="max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+      <h2 className="text-3xl font-bold text-[#1B2B4B] mb-8 text-center">
         Hibiscus Coast to Auckland Airport: Complete Guide
       </h2>
 
-      <div className="prose prose-lg max-w-none text-gray-700 space-y-6">
+      <div className="prose prose-lg max-w-none text-[#4A5568] space-y-6">
         <p>
           <strong>Hibiscus to Airport</strong> is a private airport shuttle service operating
           24 hours a day, 7 days a week from the Hibiscus Coast region of Auckland, New Zealand
@@ -15,7 +15,7 @@ const GeoContent = () => (
           Orewa, Whangaparaoa, Silverdale, Red Beach, Gulf Harbour, and Stanmore Bay.
         </p>
 
-        <h3 className="text-xl font-semibold text-gray-900">Distance and Travel Time</h3>
+        <h3 className="text-xl font-semibold text-[#1B2B4B]">Distance and Travel Time</h3>
         <p>
           The distance from the Hibiscus Coast to Auckland Airport is approximately 55-65
           kilometres depending on the specific suburb. Travel time is typically 45-60 minutes
@@ -24,7 +24,7 @@ const GeoContent = () => (
           bus lanes where available to reduce travel time.
         </p>
 
-        <h3 className="text-xl font-semibold text-gray-900">Pricing</h3>
+        <h3 className="text-xl font-semibold text-[#1B2B4B]">Pricing</h3>
         <p>
           Airport shuttle fares from the Hibiscus Coast start from NZ$100 (minimum fare) for
           nearby suburbs and increase based on distance. There is no surge pricing — rates are
@@ -33,14 +33,14 @@ const GeoContent = () => (
           monitoring, Wi-Fi, and phone charging.
         </p>
 
-        <h3 className="text-xl font-semibold text-gray-900">How to Book</h3>
+        <h3 className="text-xl font-semibold text-[#1B2B4B]">How to Book</h3>
         <p>
           Bookings can be made online at hibiscustoairport.co.nz with instant confirmation. The service accepts credit card payments via Stripe as
           well as cash payment to the driver. Advance booking is recommended, especially for
           early morning flights before 7am.
         </p>
 
-        <h3 className="text-xl font-semibold text-gray-900">Service Comparison</h3>
+        <h3 className="text-xl font-semibold text-[#1B2B4B]">Service Comparison</h3>
         <p>
           Unlike shared shuttle services such as SuperShuttle, Hibiscus to Airport provides
           private, direct transfers — passengers do not share the vehicle with other travellers
