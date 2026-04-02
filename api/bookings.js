@@ -40,15 +40,28 @@ async function createBooking(req, res) {
     const sql = getDb();
     const bookingId = uuid();
 
-    // Generate booking reference (atomic — uses DB)
-    const lastRef = await sql`
-      SELECT booking_ref FROM bookings
-      WHERE booking_ref LIKE 'H%'
-      ORDER BY CAST(SUBSTRING(booking_ref FROM 2) AS INTEGER) DESC
-      LIMIT 1
+    // Ensure the booking_ref sequence exists (idempotent)
+    await sql`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'booking_ref_seq') THEN
+          CREATE SEQUENCE booking_ref_seq START WITH 1;
+          -- Set sequence to current max if bookings already exist
+          PERFORM setval('booking_ref_seq',
+            COALESCE(
+              (SELECT MAX(CAST(SUBSTRING(booking_ref FROM 2) AS INTEGER))
+               FROM bookings WHERE booking_ref ~ '^H[0-9]+$'),
+              0
+            )
+          );
+        END IF;
+      END $$
     `;
-    const nextNum = lastRef.length > 0 ? parseInt(lastRef[0].booking_ref.slice(1), 10) + 1 : 1;
-    const bookingRef = `H${nextNum}`;
+
+    // Atomically generate the next booking reference using a PostgreSQL sequence.
+    // Sequences are guaranteed unique even under concurrent access.
+    const refResult = await sql`SELECT 'H' || nextval('booking_ref_seq')::TEXT AS next_ref`;
+    const bookingRef = refResult[0]?.next_ref || `H${Date.now()}`;
 
     const totalPrice = b.totalPrice != null ? b.totalPrice : (b.pricing?.totalPrice || 0);
     const createdAt = new Date().toISOString();

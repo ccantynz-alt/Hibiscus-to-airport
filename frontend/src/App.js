@@ -5,7 +5,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 
 // --- Eagerly loaded (critical path) ---
 import HomePage from "./pages/HomePage";
-import BookingPage from "./pages/BookingPage";
+import BookingPage from "./pages/BookingPage.tsx";
 
 // --- Lazy loaded public pages ---
 const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
@@ -72,9 +72,9 @@ const MatakanaWineryShuttle = lazy(() => import("./pages/MatakanaWineryShuttle")
 const MatakanaVillageShuttle = lazy(() => import("./pages/MatakanaVillageShuttle"));
 
 // Payment / booking pages
-const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
-const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
-const MyBooking = lazy(() => import("./pages/MyBooking"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess.tsx"));
+const PaymentCancel = lazy(() => import("./pages/PaymentCancel.tsx"));
+const MyBooking = lazy(() => import("./pages/MyBooking.tsx"));
 
 // Driver / tracking pages
 const DriverPortal = lazy(() => import("./pages/DriverPortal"));

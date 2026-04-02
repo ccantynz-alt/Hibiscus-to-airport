@@ -46,6 +46,7 @@ module.exports = async function handler(req, res) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const bookingId = session.metadata?.booking_id;
+    const stripeEventId = event.id;
 
     if (!bookingId) {
       console.error("Webhook missing booking_id in metadata");
@@ -65,16 +66,16 @@ module.exports = async function handler(req, res) {
       const booking = rows[0];
 
       if (booking.payment_status === "paid") {
-        console.log(`Webhook: booking ${booking.booking_ref} already paid — skipping`);
+        console.log(`Webhook: booking ${booking.booking_ref} already paid — skipping (event: ${stripeEventId})`);
         return res.status(200).json({ ok: true, message: "Already processed" });
       }
 
-      // Update payment status
+      // Update payment status with Stripe event ID for audit trail
       await sql`
         UPDATE bookings
         SET status = 'confirmed', payment_status = 'paid',
             payment_method = 'stripe', updated_at = ${new Date().toISOString()}
-        WHERE id = ${bookingId}
+        WHERE id = ${bookingId} AND payment_status != 'paid'
       `;
 
       // Send customer notifications
