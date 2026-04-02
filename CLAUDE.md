@@ -128,6 +128,73 @@
 - `api/bookings.js` - Booking CRUD endpoints
 - `api/admin/` - Admin dashboard API endpoints
 
+## v2 Rebuild — OWNER-APPROVED (April 2026)
+
+> **The booking system has had persistent issues since November 2025. After months of unreliable patches from multiple vendors, the owner has authorised a complete rebuild. This is non-negotiable.**
+
+### Why v2 Exists
+- The original booking system was built and modified by **multiple different companies/AI sessions** with no consistency
+- Customers have been lost due to booking failures, broken flows, and unreliable behaviour
+- The owner requires a **single, Claude-built, production-grade system** — no more multi-vendor chaos
+- Every component must be **high-end, polished, and bulletproof** — no raw HTML, no half-built features
+
+### v2 Development Branch
+- **Branch:** `claude/rebuild-booking-system-JIt5w`
+- **Strategy:** Rebuild on this branch, keep `main` untouched as the live system
+- **Cutover:** When v2 is fully tested and verified, swap it into `main`
+- **Database:** Preserve existing Neon PostgreSQL data — migrations only, never destructive
+
+### v2 Frontend Standards (MANDATORY)
+- **Component-only UI** — every piece of the interface must use Shadcn/UI + Radix primitives + Tailwind
+- **No raw HTML elements** for UI structure — use proper component abstractions (Card, Button, Dialog, Sheet, etc.)
+- **TypeScript migration** — all new code must be `.tsx`/`.ts` for type safety at scale
+- **React Hook Form + Zod** for all form validation — no manual state management for forms
+- **Loading skeletons, error states, and empty states** on every data-fetching component
+- **Mobile-first responsive design** — tested at 320px, 768px, 1024px, 1440px breakpoints
+- **Accessibility (WCAG 2.1 AA)** — keyboard navigation, screen reader support, proper ARIA labels
+
+### v2 Backend Standards (MANDATORY)
+- **Input validation on every endpoint** using Zod schemas
+- **Consistent API response format:** `{ ok: true/false, data: ..., error: "...", code: "ERROR_CODE" }`
+- **Rate limiting** on all public endpoints (booking creation, price calculation, login)
+- **Request logging** with correlation IDs for debugging
+- **Idempotency keys** on booking creation and payment — no duplicate bookings from retries
+- **Comprehensive error codes** — frontend can show specific, helpful error messages
+
+### AI-Intelligent Service Layer (IN DEVELOPMENT)
+
+> **Hibiscus to Airport is building its own AI-intelligent backend and frontend service — the first of its kind in NZ airport transfers. This is proprietary technology owned by Hibiscus to Airport.**
+
+- **AI Backend Service:** Intelligent booking orchestration, predictive pricing, automated driver dispatch, anomaly detection on bookings, smart scheduling optimisation
+- **AI Frontend Service:** Conversational booking assistance, intelligent form pre-fill, real-time journey updates, proactive customer communication
+- **Status:** Currently being built as a separate layer that integrates with the v2 booking system
+- **Integration:** Will connect via API to the core booking platform — does NOT replace the core system, it enhances it
+- **Ownership:** 100% owned by Hibiscus to Airport — not a third-party SaaS dependency
+
+### eSIM Integration (COMING — Target: April 2026)
+
+> **Industry-first feature: International travellers can purchase an NZ eSIM before they've even entered the country, bundled directly into their airport transfer booking.**
+
+- **What it does:** Customers can add an NZ eSIM to their booking during checkout
+- **Cost:** Added to the total booking price (eSIM fee + transfer fare = one payment)
+- **Delivery:** eSIM activation details delivered instantly via email after purchase — available before landing
+- **Target customers:** International arrivals who need mobile data from the moment they land
+- **Competitive advantage:** No other airport transfer service in NZ offers this — first mover
+- **Technical approach:** eSIM provider API integration (provider TBD — owner to confirm), Stripe handles unified payment
+- **Status:** In active development, expected live within ~1 week of April 2026
+
+### v2 Quality Gate (BEFORE CUTOVER TO MAIN)
+1. **Full booking flow tested end-to-end** — create booking, pay, receive confirmation email + SMS, look up booking, cancel booking
+2. **Admin dashboard fully functional** — view bookings, edit, assign drivers, export CSV
+3. **Driver portal working** — accept/reject jobs, navigation, status updates
+4. **All 60+ SEO suburb pages rendering** with correct metadata
+5. **Stripe webhook handling verified** — successful payments, failed payments, refunds
+6. **Mobile testing passed** — booking flow works on iPhone Safari, Android Chrome
+7. **Load testing passed** — system handles concurrent bookings without errors
+8. **Database migration verified** — all existing bookings preserved and accessible
+9. **Zero console errors** in production build
+10. **Owner sign-off** — final approval before going live
+
 ## Legacy Files (DELETED — March 2026)
 
 - `backend/` - Former FastAPI backend — **DELETED** (code lives in `api/_shared/`)
