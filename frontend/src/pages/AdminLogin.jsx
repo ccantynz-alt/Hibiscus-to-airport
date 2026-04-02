@@ -34,7 +34,7 @@ const AdminLogin = () => {
 
     try {
       const response = await axios.post(`${BACKEND_URL}/api/admin/login`, credentials);
-      localStorage.setItem('admin_token', response.data.access_token);
+      localStorage.setItem('admin_token', response.data.token);
       toast({ title: 'Login Successful!', description: 'Welcome back' });
       navigate('/admin/dashboard');
     } catch (error) {
@@ -55,7 +55,7 @@ const AdminLogin = () => {
     setResetLoading(true);
 
     try {
-      await axios.post(`${BACKEND_URL}/api/admin/forgot-password`, {
+      await axios.post(`${BACKEND_URL}/api/admin/reset-password`, {
         email: resetEmail
       });
       setResetSent(true);
