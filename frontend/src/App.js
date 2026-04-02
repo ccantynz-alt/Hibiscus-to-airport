@@ -12,6 +12,9 @@ const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 
+// Data-driven suburb shuttle page (replaces 60+ individual files)
+const SuburbShuttlePage = lazy(() => import("./pages/SuburbShuttlePage.tsx"));
+
 // Suburb shuttle pages
 const OrewaShuttle = lazy(() => import("./pages/OrewaShuttle"));
 const OrewaToAirport = lazy(() => import("./pages/OrewaToAirport"));
@@ -85,9 +88,9 @@ const FlightTracker = lazy(() => import("./pages/FlightTracker"));
 
 // --- Admin pages ---
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
-const AdminShell = lazy(() => import("./admin/AdminShell"));
+const AdminShell = lazy(() => import("./admin/AdminShell.tsx"));
 const Cockpit = lazy(() => import("./admin/Cockpit"));
-const RealAdminBookings = lazy(() => import("./pages/AdminDashboard"));
+const RealAdminBookings = lazy(() => import("./pages/AdminDashboard.tsx"));
 const AdminCreateBooking = lazy(() => import("./pages/AdminCreateBooking"));
 const AdminEditBooking = lazy(() => import("./pages/AdminEditBooking"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
@@ -303,6 +306,9 @@ function PublicRoutes() {
       <Route path="/customer-tracking" element={<CustomerTracking />} />
       <Route path="/tracking/:ref" element={<CustomerTracking />} />
       <Route path="/flight-tracker" element={<FlightTracker />} />
+
+      {/* Data-driven suburb shuttle page (catches slugs from suburbs.ts) */}
+      <Route path="/:slug" element={<SuburbShuttlePage />} />
 
       {/* Catch-all: redirect unknown routes to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
