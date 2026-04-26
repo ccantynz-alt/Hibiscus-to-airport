@@ -58,14 +58,14 @@ async function createBooking(req, res) {
       INSERT INTO bookings (
         id, booking_ref, name, email, phone, pickup_address, dropoff_address,
         date, time, passengers, notes, pricing, total_price, status, payment_status,
-        departure_flight_number, departure_time, arrival_flight_number, arrival_time,
+        payment_method, departure_flight_number, departure_time, arrival_flight_number, arrival_time,
         service_type, vip_pickup, oversized_luggage, return_trip, additional_pickups, created_at
       ) VALUES (
         ${bookingId}, ${bookingRef}, ${b.name}, ${b.email}, ${b.phone},
         ${b.pickupAddress}, ${b.dropoffAddress}, ${b.date}, ${b.time},
         ${String(b.passengers || "1")}, ${b.notes || ""}, ${JSON.stringify(pricing)},
         ${totalPrice}, ${b.status || "pending"}, ${b.payment_status || "unpaid"},
-        ${b.departureFlightNumber || ""}, ${b.departureTime || ""},
+        ${b.payment_method || null}, ${b.departureFlightNumber || ""}, ${b.departureTime || ""},
         ${b.arrivalFlightNumber || ""}, ${b.arrivalTime || ""},
         ${b.serviceType || ""}, ${b.vipPickup || false}, ${b.oversizedLuggage || false},
         ${b.returnTrip || false}, ${JSON.stringify(b.additionalPickups || [])}, ${createdAt}
@@ -104,8 +104,11 @@ async function createBooking(req, res) {
       try { await sendUrgentAdminSms(bookingDoc, hoursUntil); } catch (e) { console.error("Urgent SMS failed:", e.message); }
     }
 
-    // If confirmed+paid, send customer notifications
-    if (b.status === "confirmed" && b.payment_status === "paid") {
+    // Send customer notifications for cash bookings (pay on day) and for
+    // any booking that is already confirmed+paid at creation time (e.g. admin-created)
+    const isCash = b.payment_status === "pay_on_day";
+    const isAlreadyPaid = b.status === "confirmed" && b.payment_status === "paid";
+    if (isCash || isAlreadyPaid) {
       try { await sendCustomerConfirmation(bookingDoc); } catch (e) { console.error("Customer email failed:", e.message); }
       try { await sendCustomerSms(bookingDoc); } catch (e) { console.error("Customer SMS failed:", e.message); }
     }

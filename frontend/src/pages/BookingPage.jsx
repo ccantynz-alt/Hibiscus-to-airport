@@ -326,30 +326,52 @@ const BookingPage = () => {
       toast({ title: 'Error', description: 'Please enter a promo code', variant: 'destructive' });
       return;
     }
-    
+
     if (!pricing) {
       toast({ title: 'Error', description: 'Please calculate price first', variant: 'destructive' });
       return;
     }
-    
+
     setApplyingPromo(true);
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/promo-codes/validate`, {
-        code: promoCode,
-        booking_amount: pricing.totalPrice
+      const response = await axios.get(`${BACKEND_URL}/api/promo`, {
+        params: { validate: 'true', code: promoCode }
       });
-      
-      setPromoDiscount(response.data);
-      toast({ 
-        title: '🎉 Promo Code Applied!', 
-        description: `You saved $${response.data.discount_amount.toFixed(2)}!` 
+
+      const promo = response.data;
+
+      // Check minimum booking amount
+      if (promo.min_booking_amount && pricing.totalPrice < promo.min_booking_amount) {
+        toast({
+          title: 'Minimum Not Met',
+          description: `This code requires a minimum booking of $${promo.min_booking_amount.toFixed(2)}`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Calculate discount client-side
+      let discount_amount = 0;
+      if (promo.discount_type === 'percentage') {
+        discount_amount = pricing.totalPrice * (promo.discount_value / 100);
+      } else {
+        discount_amount = promo.discount_value;
+      }
+      discount_amount = Math.min(discount_amount, pricing.totalPrice);
+      const final_amount = Math.max(0, pricing.totalPrice - discount_amount);
+
+      const promoResult = { ...promo, discount_amount, final_amount };
+      setPromoDiscount(promoResult);
+      toast({
+        title: 'Promo Code Applied!',
+        description: `You saved $${discount_amount.toFixed(2)}!`
       });
     } catch (error) {
       setPromoDiscount(null);
-      toast({ 
-        title: 'Invalid Code', 
-        description: error.response?.data?.detail || 'Promo code is invalid or expired', 
-        variant: 'destructive' 
+      toast({
+        title: 'Invalid Code',
+        description: error.response?.data?.error || 'Promo code is invalid or expired',
+        variant: 'destructive'
       });
     } finally {
       setApplyingPromo(false);
@@ -494,7 +516,7 @@ const BookingPage = () => {
         window.location.href = `/payment/success?booking_id=${newBookingId}&method=cash`;
       } else {
         // Stripe checkout
-        const checkoutResponse = await axios.post(`${BACKEND_URL}/api/payment/create-checkout`, {
+        const checkoutResponse = await axios.post(`${BACKEND_URL}/api/stripe/create-session`, {
           booking_id: newBookingId
         });
         window.location.href = checkoutResponse.data.url;
