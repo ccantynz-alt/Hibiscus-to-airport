@@ -15,27 +15,29 @@ const PaymentSuccess = () => {
 
   const sessionId = searchParams.get('session_id');
   const bookingId = searchParams.get('booking_id');
+  const bookingRef = searchParams.get('booking_ref');
   const method = searchParams.get('method');
   const isCash = method === 'cash';
 
   useEffect(() => {
-    // Poll for booking data (webhook may take a moment to process)
+    // Poll for booking data (Stripe webhook may take a moment to mark as paid)
+    const lookup = bookingRef || bookingId;
+    if (!lookup) {
+      setLoading(false);
+      setError('Missing booking reference. Check your email for confirmation.');
+      return;
+    }
+
     const pollForBooking = async (attempts = 0) => {
       try {
-        let response;
-        if (bookingId) {
-          // Cash booking — lookup by internal ID
-          response = await fetch(`${BACKEND_URL}/api/bookings/lookup-by-id/${bookingId}`);
-        } else if (sessionId) {
-          // Stripe — lookup by session ID
-          response = await fetch(`${BACKEND_URL}/api/bookings/lookup-by-session/${sessionId}`);
-        }
-
-        if (response && response.ok) {
+        const response = await fetch(`${BACKEND_URL}/api/bookings/${encodeURIComponent(lookup)}`);
+        if (response.ok) {
           const data = await response.json();
-          setBooking(data);
+          setBooking(data.booking || data);
           setLoading(false);
-        } else if (attempts < 3) {
+          return;
+        }
+        if (attempts < 3) {
           setTimeout(() => pollForBooking(attempts + 1), 1500);
         } else {
           setLoading(false);
@@ -55,7 +57,7 @@ const PaymentSuccess = () => {
     const initialDelay = isCash ? 500 : 1500;
     const timeoutId = setTimeout(() => pollForBooking(0), initialDelay);
     return () => clearTimeout(timeoutId);
-  }, [sessionId, bookingId, isCash]);
+  }, [sessionId, bookingId, bookingRef, isCash]);
 
   if (loading) {
     return (
