@@ -326,47 +326,45 @@ const BookingPage = () => {
       toast({ title: 'Error', description: 'Please enter a promo code', variant: 'destructive' });
       return;
     }
-    
+
     if (!pricing) {
       toast({ title: 'Error', description: 'Please calculate price first', variant: 'destructive' });
       return;
     }
-    
+
     setApplyingPromo(true);
     try {
       const response = await axios.get(`${BACKEND_URL}/api/promo`, {
-        params: { validate: 'true', code: promoCode.trim().toUpperCase() }
+        params: { validate: 'true', code: promoCode }
       });
 
       const promo = response.data;
-      const minAmount = Number(promo.min_booking_amount) || 0;
-      if (minAmount > 0 && pricing.totalPrice < minAmount) {
-        setPromoDiscount(null);
+
+      // Check minimum booking amount
+      if (promo.min_booking_amount && pricing.totalPrice < promo.min_booking_amount) {
         toast({
-          title: 'Minimum not met',
-          description: `This code requires a booking of at least $${minAmount.toFixed(2)}.`,
+          title: 'Minimum Not Met',
+          description: `This code requires a minimum booking of $${promo.min_booking_amount.toFixed(2)}`,
           variant: 'destructive'
         });
         return;
       }
 
-      const value = Number(promo.discount_value) || 0;
-      let discountAmount = promo.discount_type === 'percentage'
-        ? (pricing.totalPrice * value) / 100
-        : value;
-      discountAmount = Math.min(discountAmount, pricing.totalPrice);
-      const finalAmount = Math.max(0, pricing.totalPrice - discountAmount);
+      // Calculate discount client-side
+      let discount_amount = 0;
+      if (promo.discount_type === 'percentage') {
+        discount_amount = pricing.totalPrice * (promo.discount_value / 100);
+      } else {
+        discount_amount = promo.discount_value;
+      }
+      discount_amount = Math.min(discount_amount, pricing.totalPrice);
+      const final_amount = Math.max(0, pricing.totalPrice - discount_amount);
 
-      setPromoDiscount({
-        code: promo.code,
-        discount_type: promo.discount_type,
-        discount_value: value,
-        discount_amount: discountAmount,
-        final_amount: finalAmount,
-      });
+      const promoResult = { ...promo, discount_amount, final_amount };
+      setPromoDiscount(promoResult);
       toast({
         title: 'Promo Code Applied!',
-        description: `You saved $${discountAmount.toFixed(2)}!`
+        description: `You saved $${discount_amount.toFixed(2)}!`
       });
     } catch (error) {
       setPromoDiscount(null);

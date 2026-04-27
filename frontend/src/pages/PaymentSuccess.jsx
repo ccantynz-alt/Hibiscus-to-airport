@@ -20,31 +20,32 @@ const PaymentSuccess = () => {
   const isCash = method === 'cash';
 
   useEffect(() => {
-    // Poll for booking data (Stripe webhook may take a moment to mark as paid)
-    const lookup = bookingRef || bookingId;
-    if (!lookup) {
-      setLoading(false);
-      setError('Missing booking reference. Check your email for confirmation.');
-      return;
-    }
-
+    // Poll for booking data (webhook may take a moment to process after Stripe redirect)
     const pollForBooking = async (attempts = 0) => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/bookings/${encodeURIComponent(lookup)}`);
-        if (response.ok) {
-          const data = await response.json();
-          setBooking(data.booking || data);
+        // For cash: bookingId (UUID) is in the URL. For Stripe: booking_ref is in the URL.
+        const lookup = bookingId || bookingRef;
+        if (!lookup) {
           setLoading(false);
+          setError('Could not load booking details. Your booking was confirmed — check your email.');
           return;
         }
-        if (attempts < 3) {
+
+        const response = await fetch(`${BACKEND_URL}/api/bookings/${lookup}`);
+
+        if (response.ok) {
+          const data = await response.json();
+          // Response shape: { ok: true, booking: {...} }
+          setBooking(data.booking || data);
+          setLoading(false);
+        } else if (attempts < 4) {
           setTimeout(() => pollForBooking(attempts + 1), 1500);
         } else {
           setLoading(false);
           setError('Could not load booking details. Your booking was confirmed — check your email.');
         }
       } catch {
-        if (attempts < 3) {
+        if (attempts < 4) {
           setTimeout(() => pollForBooking(attempts + 1), 1500);
         } else {
           setLoading(false);
@@ -54,7 +55,7 @@ const PaymentSuccess = () => {
     };
 
     // Cash bookings are instant; Stripe needs a moment for the webhook
-    const initialDelay = isCash ? 500 : 1500;
+    const initialDelay = isCash ? 500 : 2000;
     const timeoutId = setTimeout(() => pollForBooking(0), initialDelay);
     return () => clearTimeout(timeoutId);
   }, [sessionId, bookingId, bookingRef, isCash]);
