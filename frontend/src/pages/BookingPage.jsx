@@ -422,8 +422,12 @@ const BookingPage = () => {
           totalPrice: totalPrice
         });
       });
-    } catch {
-      // Error is non-critical here; user can retry via Calculate Price button
+    } catch (err) {
+      toast({
+        title: "Couldn't get price",
+        description: err.response?.data?.error || err.response?.data?.detail || "Check the addresses and try Calculate Price.",
+        variant: "destructive"
+      });
     } finally {
       setCalculating(false);
     }
@@ -460,7 +464,7 @@ const BookingPage = () => {
     } catch (err) {
       toast({
         title: "Calculation Error",
-        description: err.response?.data?.detail || "Could not calculate distance. Please check addresses.",
+        description: err.response?.data?.error || err.response?.data?.detail || "Could not calculate distance. Please check addresses.",
         variant: "destructive"
       });
     } finally {
@@ -525,7 +529,7 @@ const BookingPage = () => {
     } catch (error) {
       toast({
         title: "Booking Error",
-        description: error.response?.data?.detail || "Failed to create booking",
+        description: error.response?.data?.error || error.response?.data?.detail || "Failed to create booking",
         variant: "destructive"
       });
       setSubmitting(false);
