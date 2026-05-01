@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, Shield, Clock, Users, CheckCircle, MapPin } from 'lucide-react';
+import { ArrowRight, Star, Shield, Clock, Users, CheckCircle, MapPin, Phone } from 'lucide-react';
 
 const Hero = () => {
   return (
@@ -37,12 +37,13 @@ const Hero = () => {
                 Book Your Transfer
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
-              <Link
-                to="/pricing"
+              <a
+                href="tel:+64217433321"
                 className="inline-flex items-center justify-center border border-[#E2E8F0] hover:border-[#D4AF37] text-[#1E293B] px-8 py-4 text-base font-medium rounded-lg hover:bg-[#FAFBFC] transition-all duration-200"
               >
-                View Pricing
-              </Link>
+                <Phone className="mr-2 w-4 h-4" />
+                Call 021 743 321
+              </a>
             </div>
 
             {/* Trust row */}

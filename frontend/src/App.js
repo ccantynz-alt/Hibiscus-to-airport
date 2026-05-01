@@ -10,7 +10,6 @@ import BookingPage from "./pages/BookingPage";
 // --- Lazy loaded public pages ---
 const ServiceAreas = lazy(() => import("./pages/ServiceAreas"));
 const FAQ = lazy(() => import("./pages/FAQ"));
-const Pricing = lazy(() => import("./pages/Pricing"));
 
 // Suburb shuttle pages
 const OrewaShuttle = lazy(() => import("./pages/OrewaShuttle"));
@@ -224,9 +223,6 @@ function PublicRoutes() {
 
       {/* FAQ */}
       <Route path="/faq" element={<FAQ />} />
-
-      {/* Pricing */}
-      <Route path="/pricing" element={<Pricing />} />
 
       {/* Payment & Booking Lookup */}
       <Route path="/payment/success" element={<PaymentSuccess />} />
