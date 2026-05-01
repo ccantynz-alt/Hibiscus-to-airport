@@ -31,9 +31,6 @@ const Header = () => {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
-            <Link to="/pricing" className="text-[#64748B] hover:text-[#1E293B] transition-colors text-sm font-medium">
-              Pricing
-            </Link>
             <Link to="/service-areas" className="text-[#64748B] hover:text-[#1E293B] transition-colors text-sm font-medium">
               Service Areas
             </Link>
@@ -67,7 +64,6 @@ const Header = () => {
         <div className="md:hidden bg-white border-t border-[#E2E8F0]">
           <div className="px-4 py-3 space-y-1">
             {[
-              { to: '/pricing', label: 'Pricing' },
               { to: '/service-areas', label: 'Service Areas' },
               { to: '/faq', label: 'FAQ' },
               { to: '/my-booking', label: 'My Booking' },

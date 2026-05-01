@@ -135,7 +135,6 @@ const Footer = () => {
                 <Link to="/corporate-airport-transfers" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">Corporate Transfers</Link>
                 <Link to="/early-morning-airport-shuttle" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">Early Morning Shuttle</Link>
                 <Link to="/family-airport-shuttle" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">Family Shuttle</Link>
-                <Link to="/pricing" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">Pricing</Link>
               </div>
             </div>
           </div>
