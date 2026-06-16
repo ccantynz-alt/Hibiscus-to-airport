@@ -24,7 +24,8 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    await sendCustomerSms(booking);
+    const sent = await sendCustomerSms(booking);
+    if (!sent) return serverError(res, "Failed to send SMS — check Twilio configuration");
 
     await sql`UPDATE bookings SET last_sms_sent = ${new Date().toISOString()} WHERE id = ${id}`;
 

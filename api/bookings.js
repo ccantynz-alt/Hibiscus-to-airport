@@ -6,7 +6,7 @@ const { getDb } = require("./lib/db");
 const { authenticateRequest } = require("./lib/auth");
 const { sendCustomerConfirmation, sendAdminNotification } = require("./lib/email");
 const { sendCustomerSms, sendAdminSmsNotification, sendUrgentAdminSms } = require("./lib/sms");
-const { isUrgentBooking } = require("./lib/pricing");
+const { calculateDistance, calculatePrice, isUrgentBooking } = require("./lib/pricing");
 const {
   ok, created, badRequest, unauthorized, serverError, methodNotAllowed,
   uuid, isValidEmail, isValidPhone, rowToBooking, escapeHtml,
@@ -40,6 +40,53 @@ async function createBooking(req, res) {
     const sql = getDb();
     const bookingId = uuid();
 
+    // Server-side price calculation — never trust client-supplied totals
+    const distance = await calculateDistance(b.pickupAddress, b.dropoffAddress);
+    if (distance === null) {
+      return serverError(res, "Could not calculate distance for this route — price cannot be verified. Please try again.");
+    }
+
+    const passengers = Math.max(1, Math.min(parseInt(b.passengers, 10) || 1, 20));
+    const vipPickup = b.vipPickup === true;
+    const oversizedLuggage = b.oversizedLuggage === true;
+    const returnTrip = b.returnTrip === true;
+
+    const pricingResult = calculatePrice(distance, passengers, vipPickup, oversizedLuggage);
+    let totalPrice = returnTrip ? pricingResult.totalPrice * 2 : pricingResult.totalPrice;
+
+    // Validate and apply promo code server-side if provided
+    let appliedPromoCode = null;
+    if (b.promoCode) {
+      const promoRows = await sql`
+        SELECT * FROM promo_codes
+        WHERE code = ${b.promoCode.toUpperCase()}
+          AND active = true
+          AND (expiry_date IS NULL OR expiry_date > NOW())
+          AND (max_uses IS NULL OR uses_count < max_uses)
+      `;
+      if (promoRows.length > 0) {
+        const promo = promoRows[0];
+        const minAmount = parseFloat(promo.min_booking_amount) || 0;
+        if (totalPrice >= minAmount) {
+          const discountValue = parseFloat(promo.discount_value);
+          const discount = promo.discount_type === "percentage"
+            ? totalPrice * (discountValue / 100)
+            : discountValue;
+          totalPrice = Math.max(0, totalPrice - Math.min(discount, totalPrice));
+          appliedPromoCode = promo.code;
+          await sql`UPDATE promo_codes SET uses_count = uses_count + 1 WHERE id = ${promo.id}`;
+        }
+      }
+    }
+
+    totalPrice = Math.round(totalPrice * 100) / 100;
+    const pricing = {
+      ...pricingResult,
+      returnTrip,
+      appliedPromoCode,
+      totalPrice,
+    };
+
     // Generate booking reference (atomic — uses DB)
     const lastRef = await sql`
       SELECT booking_ref FROM bookings
@@ -50,9 +97,7 @@ async function createBooking(req, res) {
     const nextNum = lastRef.length > 0 ? parseInt(lastRef[0].booking_ref.slice(1), 10) + 1 : 1;
     const bookingRef = `H${nextNum}`;
 
-    const totalPrice = b.totalPrice != null ? b.totalPrice : (b.pricing?.totalPrice || 0);
     const createdAt = new Date().toISOString();
-    const pricing = b.pricing || {};
 
     await sql`
       INSERT INTO bookings (
@@ -63,8 +108,8 @@ async function createBooking(req, res) {
       ) VALUES (
         ${bookingId}, ${bookingRef}, ${b.name}, ${b.email}, ${b.phone},
         ${b.pickupAddress}, ${b.dropoffAddress}, ${b.date}, ${b.time},
-        ${String(b.passengers || "1")}, ${b.notes || ""}, ${JSON.stringify(pricing)},
-        ${totalPrice}, ${b.status || "pending"}, ${b.payment_status || "unpaid"},
+        ${String(passengers)}, ${b.notes || ""}, ${JSON.stringify(pricing)},
+        ${totalPrice}, ${"pending"}, ${b.payment_method === 'cash' ? 'pay_on_day' : 'unpaid'},
         ${b.payment_method || null}, ${b.departureFlightNumber || ""}, ${b.departureTime || ""},
         ${b.arrivalFlightNumber || ""}, ${b.arrivalTime || ""},
         ${b.serviceType || ""}, ${b.vipPickup || false}, ${b.oversizedLuggage || false},
@@ -82,12 +127,12 @@ async function createBooking(req, res) {
       dropoffAddress: b.dropoffAddress,
       date: b.date,
       time: b.time,
-      passengers: String(b.passengers || "1"),
+      passengers: String(passengers),
       notes: b.notes || "",
       pricing,
       totalPrice,
-      status: b.status || "pending",
-      payment_status: b.payment_status || "unpaid",
+      status: "pending",
+      payment_status: b.payment_method === 'cash' ? 'pay_on_day' : "unpaid",
       departureFlightNumber: b.departureFlightNumber || "",
       departureTime: b.departureTime || "",
       arrivalFlightNumber: b.arrivalFlightNumber || "",
@@ -104,11 +149,9 @@ async function createBooking(req, res) {
       try { await sendUrgentAdminSms(bookingDoc, hoursUntil); } catch (e) { console.error("Urgent SMS failed:", e.message); }
     }
 
-    // Send customer notifications for cash bookings (pay on day) and for
-    // any booking that is already confirmed+paid at creation time (e.g. admin-created)
-    const isCash = b.payment_status === "pay_on_day";
-    const isAlreadyPaid = b.status === "confirmed" && b.payment_status === "paid";
-    if (isCash || isAlreadyPaid) {
+    // Send customer confirmation for cash bookings only (Stripe bookings get confirmed via webhook)
+    const isCash = b.payment_method === "cash";
+    if (isCash) {
       try { await sendCustomerConfirmation(bookingDoc); } catch (e) { console.error("Customer email failed:", e.message); }
       try { await sendCustomerSms(bookingDoc); } catch (e) { console.error("Customer SMS failed:", e.message); }
     }
@@ -117,7 +160,7 @@ async function createBooking(req, res) {
       message: "Booking created successfully",
       booking_id: bookingId,
       booking_ref: bookingRef,
-      status: b.status || "pending",
+      status: "pending",
     });
   } catch (err) {
     return serverError(res, err.message);

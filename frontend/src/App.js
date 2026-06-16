@@ -297,7 +297,7 @@ function PublicRoutes() {
       <Route path="/driver/job/:id" element={<DriverJobResponse />} />
       <Route path="/driver-tracking" element={<DriverTracking />} />
       <Route path="/customer-tracking" element={<CustomerTracking />} />
-      <Route path="/tracking/:ref" element={<CustomerTracking />} />
+      <Route path="/tracking/:trackingRef" element={<CustomerTracking />} />
       <Route path="/flight-tracker" element={<FlightTracker />} />
 
       {/* Catch-all: redirect unknown routes to home */}

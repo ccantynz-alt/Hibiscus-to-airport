@@ -75,7 +75,11 @@ function sendAdminSmsNotification(booking) {
   const formattedDate = formatDateNz(booking.date);
   const total = booking.pricing?.totalPrice || booking.totalPrice || 0;
 
-  const message = `NEW BOOKING!\n\nRef: ${ref}\n${booking.name}\n${formattedDate} at ${booking.time}\n${booking.passengers} pax | $${Number(total).toFixed(2)}\n\nFrom: ${(booking.pickupAddress || "").slice(0, 40)}...\nTo: ${(booking.dropoffAddress || "").slice(0, 40)}...\n\nLogin to admin to manage.`;
+  const pickupRaw = booking.pickupAddress || booking.pickup_address || "";
+  const dropoffRaw = booking.dropoffAddress || booking.dropoff_address || "";
+  const pickupStr = pickupRaw.length > 40 ? pickupRaw.slice(0, 40) + "..." : pickupRaw;
+  const dropoffStr = dropoffRaw.length > 40 ? dropoffRaw.slice(0, 40) + "..." : dropoffRaw;
+  const message = `NEW BOOKING!\n\nRef: ${ref}\n${booking.name}\n${formattedDate} at ${booking.time}\n${booking.passengers} pax | $${Number(total).toFixed(2)}\n\nFrom: ${pickupStr}\nTo: ${dropoffStr}\n\nLogin to admin to manage.`;
 
   return sendSms(adminPhone, message);
 }
@@ -99,7 +103,8 @@ function sendReminderSms(booking) {
   const ref = booking.booking_ref;
   const formattedDate = formatDateNz(booking.date);
 
-  const message = `REMINDER: Your airport transfer is tomorrow!\nRef: ${ref}\nPickup: ${formattedDate} at ${booking.time}\nFrom: ${(booking.pickup_address || "").slice(0, 50)}\nBe ready 5-10 mins early. Questions? 021 743 321`;
+  const pickup = booking.pickupAddress || booking.pickup_address || "";
+  const message = `REMINDER: Your airport transfer is tomorrow!\nRef: ${ref}\nPickup: ${formattedDate} at ${booking.time}\nFrom: ${pickup.slice(0, 50)}\nBe ready 5-10 mins early. Questions? 021 743 321`;
 
   return sendSms(booking.phone, message);
 }

@@ -29,15 +29,15 @@ module.exports = async function handler(req, res) {
   }
   const rawBody = Buffer.concat(chunks);
 
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET not configured — rejecting webhook");
+    return res.status(500).json({ ok: false, error: "Webhook not configured" });
+  }
+
   let event;
   try {
-    if (webhookSecret) {
-      const sig = req.headers["stripe-signature"];
-      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-    } else {
-      event = JSON.parse(rawBody.toString());
-      console.warn("STRIPE_WEBHOOK_SECRET not set — webhook signature not verified");
-    }
+    const sig = req.headers["stripe-signature"];
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);
     return res.status(400).json({ ok: false, error: "Invalid signature" });
@@ -88,6 +88,7 @@ module.exports = async function handler(req, res) {
       console.log(`Payment confirmed for booking ${booking.booking_ref}`);
     } catch (err) {
       console.error("Webhook processing error:", err.message);
+      return res.status(500).json({ ok: false, error: "Processing failed — Stripe will retry" });
     }
   }
 

@@ -1,12 +1,16 @@
-// POST /api/bookings/:id/cancel — Cancel a booking
+// POST /api/bookings/:id/cancel — Cancel a booking (admin only)
 
 const { getDb } = require("../../lib/db");
+const { authenticateRequest } = require("../../lib/auth");
 const { sendCancellationEmail } = require("../../lib/email");
 const { sendCancellationSms } = require("../../lib/sms");
-const { ok, notFound, serverError, methodNotAllowed, rowToBooking } = require("../../lib/helpers");
+const { ok, notFound, unauthorized, serverError, methodNotAllowed, rowToBooking } = require("../../lib/helpers");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res, ["POST"]);
+
+  const user = authenticateRequest(req);
+  if (!user) return unauthorized(res);
 
   const { id } = req.query;
 
