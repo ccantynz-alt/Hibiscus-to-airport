@@ -122,7 +122,7 @@ function sendCustomerConfirmation(booking) {
           </table>
         </div>
         <div style="text-align: center; background: #f8fafc; border-radius: 12px; padding: 30px; margin: 30px 0;">
-          <p style="margin: 10px 0; color: #6b7280;"><strong>Email:</strong> <span style="color: #f59e0b;">bookings@bookaride.co.nz</span></p>
+          <p style="margin: 10px 0; color: #6b7280;"><strong>Email:</strong> <span style="color: #f59e0b;">info@bookaride.co.nz</span></p>
           <p style="margin: 10px 0; color: #6b7280;"><strong>Phone:</strong> <span style="color: #f59e0b;">021 743 321</span></p>
           <p style="margin: 10px 0; color: #6b7280;"><strong>Track:</strong> <span style="color: #f59e0b;">${escapeHtml(frontendUrl)}/tracking/${ref}</span></p>
         </div>
@@ -249,8 +249,8 @@ function sendPasswordResetEmail(email, resetToken) {
 function sendReminderEmail(booking) {
   const ref = escapeHtml(booking.booking_ref);
   const name = escapeHtml(booking.name);
-  const pickup = escapeHtml(booking.pickup_address);
-  const dropoff = escapeHtml(booking.dropoff_address);
+  const pickup = escapeHtml(booking.pickupAddress || booking.pickup_address || "");
+  const dropoff = escapeHtml(booking.dropoffAddress || booking.dropoff_address || "");
   const formattedDate = formatDateWithDay(booking.date);
   const time = escapeHtml(booking.time);
 
@@ -271,7 +271,7 @@ function sendReminderEmail(booking) {
           <p><strong>Pickup:</strong> ${pickup}</p>
           <p><strong>Drop-off:</strong> ${dropoff}</p>
         </div>
-        <p>Questions? Contact us at 021 743 321 or bookings@bookaride.co.nz</p>
+        <p>Questions? Contact us at 021 743 321 or info@bookaride.co.nz</p>
       </div>
     </div>`;
 

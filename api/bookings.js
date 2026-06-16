@@ -64,7 +64,7 @@ async function createBooking(req, res) {
         ${bookingId}, ${bookingRef}, ${b.name}, ${b.email}, ${b.phone},
         ${b.pickupAddress}, ${b.dropoffAddress}, ${b.date}, ${b.time},
         ${String(b.passengers || "1")}, ${b.notes || ""}, ${JSON.stringify(pricing)},
-        ${totalPrice}, ${b.status || "pending"}, ${b.payment_status || "unpaid"},
+        ${totalPrice}, ${"pending"}, ${b.payment_method === 'cash' ? 'pay_on_day' : 'unpaid'},
         ${b.payment_method || null}, ${b.departureFlightNumber || ""}, ${b.departureTime || ""},
         ${b.arrivalFlightNumber || ""}, ${b.arrivalTime || ""},
         ${b.serviceType || ""}, ${b.vipPickup || false}, ${b.oversizedLuggage || false},
@@ -86,8 +86,8 @@ async function createBooking(req, res) {
       notes: b.notes || "",
       pricing,
       totalPrice,
-      status: b.status || "pending",
-      payment_status: b.payment_status || "unpaid",
+      status: "pending",
+      payment_status: b.payment_method === 'cash' ? 'pay_on_day' : "unpaid",
       departureFlightNumber: b.departureFlightNumber || "",
       departureTime: b.departureTime || "",
       arrivalFlightNumber: b.arrivalFlightNumber || "",
@@ -104,11 +104,9 @@ async function createBooking(req, res) {
       try { await sendUrgentAdminSms(bookingDoc, hoursUntil); } catch (e) { console.error("Urgent SMS failed:", e.message); }
     }
 
-    // Send customer notifications for cash bookings (pay on day) and for
-    // any booking that is already confirmed+paid at creation time (e.g. admin-created)
-    const isCash = b.payment_status === "pay_on_day";
-    const isAlreadyPaid = b.status === "confirmed" && b.payment_status === "paid";
-    if (isCash || isAlreadyPaid) {
+    // Send customer confirmation for cash bookings only (Stripe bookings get confirmed via webhook)
+    const isCash = b.payment_method === "cash";
+    if (isCash) {
       try { await sendCustomerConfirmation(bookingDoc); } catch (e) { console.error("Customer email failed:", e.message); }
       try { await sendCustomerSms(bookingDoc); } catch (e) { console.error("Customer SMS failed:", e.message); }
     }
@@ -117,7 +115,7 @@ async function createBooking(req, res) {
       message: "Booking created successfully",
       booking_id: bookingId,
       booking_ref: bookingRef,
-      status: b.status || "pending",
+      status: "pending",
     });
   } catch (err) {
     return serverError(res, err.message);

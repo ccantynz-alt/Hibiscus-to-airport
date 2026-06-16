@@ -19,6 +19,15 @@ module.exports = async function handler(req, res) {
     return badRequest(res, "Provide status and/or payment_status");
   }
 
+  const VALID_STATUSES = ["pending", "confirmed", "completed", "cancelled", "no_show"];
+  const VALID_PAYMENT_STATUSES = ["unpaid", "paid", "pay_on_day", "refunded", "failed"];
+  if (status && !VALID_STATUSES.includes(status)) {
+    return badRequest(res, `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`);
+  }
+  if (payment_status && !VALID_PAYMENT_STATUSES.includes(payment_status)) {
+    return badRequest(res, `Invalid payment_status. Must be one of: ${VALID_PAYMENT_STATUSES.join(", ")}`);
+  }
+
   try {
     const sql = getDb();
     const now = new Date().toISOString();

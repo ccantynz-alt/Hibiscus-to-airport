@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useTransition } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -7,6 +7,9 @@ import Footer from '../components/Footer';
 import { Loader2, MapPin, Calendar, Clock, Users, Mail, Phone, User, FileText, Globe, DollarSign, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import axios from 'axios';
+import { useGoogleMaps, attachAutocomplete } from '../hooks/useGoogleMaps';
+import PageMeta from '../components/PageMeta';
+import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
 
 // Constants
 const VIP_PICKUP_FEE = 15;
@@ -16,11 +19,6 @@ const PRICE_DEBOUNCE_MS = 500;
 
 // Safety: prevent hung requests (no UI change)
 axios.defaults.timeout = API_TIMEOUT_MS;
-
-import { useGoogleMaps, attachAutocomplete } from '../hooks/useGoogleMaps';
-import PageMeta from '../components/PageMeta';
-
-import { BACKEND_URL, GOOGLE_MAPS_API_KEY } from '../config';
 
 // Compact Date Picker Modal - Clean iOS-style
 const DatePickerModal = ({ isOpen, onClose, onSelect, selectedDate }) => {
@@ -286,7 +284,7 @@ const BookingPage = () => {
     });
   };
 
-  // Debounced price recalculation when address or passenger fields change
+  // Debounced price recalculation when address, passenger, or add-on fields change
   useEffect(() => {
     if (formData.pickupAddress && formData.dropoffAddress) {
       const timer = setTimeout(() => {
@@ -294,7 +292,7 @@ const BookingPage = () => {
       }, PRICE_DEBOUNCE_MS);
       return () => clearTimeout(timer);
     }
-  }, [formData.pickupAddress, formData.dropoffAddress, formData.passengers]);
+  }, [formData.pickupAddress, formData.dropoffAddress, formData.passengers, formData.vipPickup, formData.oversizedLuggage, formData.returnTrip]);
 
   const addPickupLocation = () => {
     setFormData({
@@ -475,9 +473,16 @@ const BookingPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required fields that aren't covered by native `required`
+    if (!agreedTerms) {
+      toast({ title: "Terms Required", description: "Please agree to the terms and conditions", variant: "destructive" });
+      return;
+    }
     if (!formData.serviceType) {
       toast({ title: "Service Type Required", description: "Please select a service type", variant: "destructive" });
+      return;
+    }
+    if (!formData.pickupAddress || !formData.dropoffAddress) {
+      toast({ title: "Addresses Required", description: "Please enter pickup and drop-off addresses", variant: "destructive" });
       return;
     }
     if (!formData.date) {
@@ -501,6 +506,10 @@ const BookingPage = () => {
       return;
     }
 
+    // Use discounted price if a promo code was applied
+    const finalPrice = promoDiscount ? promoDiscount.final_amount : pricing.totalPrice;
+    const finalPricing = { ...pricing, totalPrice: finalPrice };
+
     setSubmitting(true);
 
     try {
@@ -508,9 +517,10 @@ const BookingPage = () => {
       const bookingResponse = await axios.post(`${BACKEND_URL}/api/bookings`, {
         ...formData,
         passengers: String(formData.passengers),
-        pricing: pricing,
+        pricing: finalPricing,
+        totalPrice: finalPrice,
+        promoCode: promoDiscount ? promoDiscount.code : undefined,
         payment_method: formData.paymentMethod === 'cash' ? 'cash' : 'stripe',
-        payment_status: formData.paymentMethod === 'cash' ? 'pay_on_day' : 'pending'
       });
 
       const newBookingId = bookingResponse.data.booking_id;
@@ -645,7 +655,7 @@ const BookingPage = () => {
                         ref={pickupInputRef}
                         type="text"
                         name="pickupAddress"
-                        defaultValue={formData.pickupAddress}
+                        value={formData.pickupAddress}
                         onChange={handleChange}
                         placeholder="Enter pickup address..."
                         required
@@ -695,7 +705,7 @@ const BookingPage = () => {
                         ref={dropoffInputRef}
                         type="text"
                         name="dropoffAddress"
-                        defaultValue={formData.dropoffAddress}
+                        value={formData.dropoffAddress}
                         onChange={handleChange}
                         placeholder="Enter drop-off address..."
                         required
@@ -927,7 +937,7 @@ const BookingPage = () => {
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
-                          placeholder="021 123 4567"
+                          placeholder="e.g. 021 555 0000"
                           required
                           className="h-11 rounded-md"
                         />

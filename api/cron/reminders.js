@@ -19,10 +19,9 @@ module.exports = async function handler(req, res) {
   try {
     const sql = getDb();
 
-    // Calculate tomorrow's date in UTC
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split("T")[0]; // YYYY-MM-DD
+    // Calculate tomorrow's date in NZ timezone (Pacific/Auckland)
+    const tomorrowStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" })
+      .format(new Date(Date.now() + 86400000));
 
     const rows = await sql`
       SELECT * FROM bookings
@@ -36,15 +35,19 @@ module.exports = async function handler(req, res) {
     let sentCount = 0;
     for (const booking of rows) {
       try {
-        await sendReminderEmail(booking);
-        await sendReminderSms(booking);
+        const emailOk = await sendReminderEmail(booking);
+        const smsOk = await sendReminderSms(booking);
 
-        await sql`
-          UPDATE bookings
-          SET reminder_sent = true, reminder_sent_at = ${new Date().toISOString()}
-          WHERE id = ${booking.id}
-        `;
-        sentCount++;
+        if (emailOk || smsOk) {
+          await sql`
+            UPDATE bookings
+            SET reminder_sent = true, reminder_sent_at = ${new Date().toISOString()}
+            WHERE id = ${booking.id}
+          `;
+          sentCount++;
+        } else {
+          console.error(`All reminders failed for ${booking.booking_ref} — will retry next run`);
+        }
       } catch (err) {
         console.error(`Reminder failed for ${booking.booking_ref}: ${err.message}`);
       }

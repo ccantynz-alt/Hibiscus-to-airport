@@ -175,14 +175,14 @@ const MyBooking = () => {
                   <MapPin className="w-5 h-5 text-gold mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-gray-400 text-xs uppercase tracking-wider">Pickup</p>
-                    <p className="text-white">{booking.pickupAddress}</p>
+                    <p className="text-white">{booking.pickupAddress || booking.pickup_address}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-gold mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-gray-400 text-xs uppercase tracking-wider">Drop-off</p>
-                    <p className="text-white">{booking.dropoffAddress}</p>
+                    <p className="text-white">{booking.dropoffAddress || booking.dropoff_address}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
@@ -213,7 +213,7 @@ const MyBooking = () => {
               {/* Price */}
               <div className="flex items-center justify-between py-4 border-t border-b border-gold/20 mb-6">
                 <span className="text-gray-300 font-medium">Total Price</span>
-                <span className="text-gold text-2xl font-bold">${Number(booking.totalPrice).toFixed(2)} NZD</span>
+                <span className="text-gold text-2xl font-bold">${Number(booking.totalPrice || booking.total_price || 0).toFixed(2)} NZD</span>
               </div>
 
               {/* Confirmation Info */}
