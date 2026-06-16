@@ -67,6 +67,7 @@ async function createBooking(req, res) {
 
     // Validate and apply promo code server-side if provided
     let appliedPromoCode = null;
+    let appliedPromoId = null;
     if (b.promoCode) {
       const promoRows = await sql`
         SELECT * FROM promo_codes
@@ -85,7 +86,8 @@ async function createBooking(req, res) {
             : discountValue;
           totalPrice = Math.max(0, totalPrice - Math.min(discount, totalPrice));
           appliedPromoCode = promo.code;
-          await sql`UPDATE promo_codes SET uses_count = uses_count + 1 WHERE id = ${promo.id}`;
+          appliedPromoId = promo.id;
+          // Increment deferred until after booking INSERT succeeds
         }
       }
     }
@@ -123,10 +125,15 @@ async function createBooking(req, res) {
         ${totalPrice}, ${"pending"}, ${b.payment_method === 'cash' ? 'pay_on_day' : 'unpaid'},
         ${b.payment_method || null}, ${b.departureFlightNumber || ""}, ${b.departureTime || ""},
         ${b.arrivalFlightNumber || ""}, ${b.arrivalTime || ""},
-        ${b.serviceType || ""}, ${b.vipPickup || false}, ${b.oversizedLuggage || false},
-        ${b.returnTrip || false}, ${JSON.stringify(b.additionalPickups || [])}, ${createdAt}
+        ${b.serviceType || ""}, ${vipPickup}, ${oversizedLuggage},
+        ${returnTrip}, ${JSON.stringify(b.additionalPickups || [])}, ${createdAt}
       )
     `;
+
+    // Increment promo usage only after a successful booking INSERT
+    if (appliedPromoId) {
+      await sql`UPDATE promo_codes SET uses_count = uses_count + 1 WHERE id = ${appliedPromoId}`;
+    }
 
     const bookingDoc = {
       id: bookingId,
