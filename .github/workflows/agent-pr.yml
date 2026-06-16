@@ -22,9 +22,6 @@ on:
         default: "false"
         type: string
 
-  pull_request:
-    types: [opened, synchronize, reopened]
-
 permissions:
   contents: write
   pull-requests: write

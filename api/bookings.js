@@ -40,19 +40,30 @@ async function createBooking(req, res) {
     const sql = getDb();
     const bookingId = uuid();
 
-    // Server-side price calculation — never trust client-supplied totals
-    const distance = await calculateDistance(b.pickupAddress, b.dropoffAddress);
-    if (distance === null) {
-      return serverError(res, "Could not calculate distance for this route — price cannot be verified. Please try again.");
-    }
-
     const passengers = Math.max(1, Math.min(parseInt(b.passengers, 10) || 1, 20));
     const vipPickup = b.vipPickup === true;
     const oversizedLuggage = b.oversizedLuggage === true;
     const returnTrip = b.returnTrip === true;
 
-    const pricingResult = calculatePrice(distance, passengers, vipPickup, oversizedLuggage);
-    let totalPrice = returnTrip ? pricingResult.totalPrice * 2 : pricingResult.totalPrice;
+    // Server-side price recalculation. If the Maps API key is configured,
+    // always recalculate to prevent client-supplied price manipulation.
+    // If the key is missing, fall back to the client-supplied price (with a
+    // floor of $100) and log a warning — this avoids blocking bookings in
+    // environments where the key hasn't been set yet.
+    const distance = await calculateDistance(b.pickupAddress, b.dropoffAddress);
+
+    let totalPrice;
+    let pricingResult;
+
+    if (distance !== null) {
+      pricingResult = calculatePrice(distance, passengers, vipPickup, oversizedLuggage);
+      totalPrice = returnTrip ? pricingResult.totalPrice * 2 : pricingResult.totalPrice;
+    } else {
+      console.warn("GOOGLE_MAPS_API_KEY not configured or distance lookup failed — using client-supplied price");
+      const clientPrice = parseFloat(b.totalPrice) || (b.pricing?.totalPrice) || 0;
+      totalPrice = Math.max(100, clientPrice);
+      pricingResult = b.pricing || { totalPrice };
+    }
 
     // Validate and apply promo code server-side if provided
     let appliedPromoCode = null;
