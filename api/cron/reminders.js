@@ -19,9 +19,11 @@ module.exports = async function handler(req, res) {
   try {
     const sql = getDb();
 
-    // Calculate tomorrow's date in NZ timezone (Pacific/Auckland)
-    const tomorrowStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" })
-      .format(new Date(Date.now() + 86400000));
+    // Calculate tomorrow's date in NZ timezone using calendar-level arithmetic
+    // (adding 86400000ms is wrong across DST transitions — NZ has 23/25-hour days)
+    const todayNzStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" }).format(new Date());
+    const [y, m, d] = todayNzStr.split("-").map(Number);
+    const tomorrowStr = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 
     const rows = await sql`
       SELECT * FROM bookings

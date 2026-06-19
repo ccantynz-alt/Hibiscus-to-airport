@@ -20,7 +20,7 @@ const Hero = () => {
               style={{ fontFamily: 'Playfair Display, serif' }}>
               Private Airport Transfers.
               <br />
-              <span className="text-[#64748B] font-normal">From $100. Book in 60 seconds.</span>
+              <span className="text-[#64748B] font-normal">Instant pricing. Book in 60 seconds.</span>
             </h1>
 
             <p className="text-[#64748B] text-base sm:text-lg mb-8 max-w-lg leading-relaxed">
@@ -92,7 +92,7 @@ const Hero = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-2 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-[#1E293B]" style={{ fontFamily: 'Playfair Display, serif' }}>5,000+</div>
                 <div className="text-[#94A3B8] text-xs font-medium uppercase tracking-wide mt-0.5">Customers</div>
@@ -100,10 +100,6 @@ const Hero = () => {
               <div>
                 <div className="text-2xl font-bold text-[#1E293B]" style={{ fontFamily: 'Playfair Display, serif' }}>24/7</div>
                 <div className="text-[#94A3B8] text-xs font-medium uppercase tracking-wide mt-0.5">Service</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#1E293B]" style={{ fontFamily: 'Playfair Display, serif' }}>$100</div>
-                <div className="text-[#94A3B8] text-xs font-medium uppercase tracking-wide mt-0.5">From</div>
               </div>
             </div>
           </div>

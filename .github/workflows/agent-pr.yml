@@ -1,4 +1,7 @@
 name: Agent PR (Apply Patch -> PR)
+# Intentionally workflow_dispatch only — no pull_request trigger.
+# Adding pull_request here caused the job to run on every PR push without
+# a patch_url input, so curl received an empty URL and failed with exit code 3.
 
 on:
   workflow_dispatch:
@@ -21,9 +24,6 @@ on:
         required: false
         default: "false"
         type: string
-
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
