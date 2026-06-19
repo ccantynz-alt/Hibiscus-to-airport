@@ -48,27 +48,24 @@ async function createBooking(req, res) {
     const oversizedLuggage = b.oversizedLuggage === true;
     const returnTrip = b.returnTrip === true;
 
-    // Price calculation:
-    // - Admin requests: trust supplied totalPrice/pricing to allow manual overrides
-    // - Public requests: always recalculate server-side to prevent price manipulation.
-    //   Falls back to client-supplied price (floor $100) if Maps API key is missing.
+    // Server-side price recalculation. If the Maps API key is configured,
+    // always recalculate to prevent client-supplied price manipulation.
+    // If the key is missing, fall back to the client-supplied price (with a
+    // floor of $100) and log a warning — this avoids blocking bookings in
+    // environments where the key hasn't been set yet.
+    const distance = await calculateDistance(b.pickupAddress, b.dropoffAddress);
+
     let totalPrice;
     let pricingResult;
 
-    if (adminUser && b.totalPrice != null) {
-      totalPrice = parseFloat(b.totalPrice);
-      pricingResult = b.pricing || { totalPrice };
+    if (distance !== null) {
+      pricingResult = calculatePrice(distance, passengers, vipPickup, oversizedLuggage);
+      totalPrice = returnTrip ? pricingResult.totalPrice * 2 : pricingResult.totalPrice;
     } else {
-      const distance = await calculateDistance(b.pickupAddress, b.dropoffAddress);
-      if (distance !== null) {
-        pricingResult = calculatePrice(distance, passengers, vipPickup, oversizedLuggage);
-        totalPrice = returnTrip ? pricingResult.totalPrice * 2 : pricingResult.totalPrice;
-      } else {
-        console.warn("GOOGLE_MAPS_API_KEY not configured or distance lookup failed — using client-supplied price");
-        const clientPrice = parseFloat(b.totalPrice) || (b.pricing?.totalPrice) || 0;
-        totalPrice = Math.max(100, clientPrice);
-        pricingResult = b.pricing || { totalPrice };
-      }
+      console.warn("GOOGLE_MAPS_API_KEY not configured or distance lookup failed — using client-supplied price");
+      const clientPrice = parseFloat(b.totalPrice) || (b.pricing?.totalPrice) || 0;
+      totalPrice = Math.max(100, clientPrice);
+      pricingResult = b.pricing || { totalPrice };
     }
 
     // Validate and apply promo code server-side if provided
@@ -97,18 +94,6 @@ async function createBooking(req, res) {
         }
       }
     }
-
-    // Status/payment_status:
-    // - Admin requests: honour supplied values so admin-created confirmed/paid bookings work
-    // - Public requests: always start pending/unpaid to prevent payment bypass
-    const VALID_STATUSES = ["pending", "confirmed", "completed", "cancelled", "no_show"];
-    const VALID_PAYMENT_STATUSES = ["unpaid", "paid", "pay_on_day", "refunded", "failed"];
-    const status = adminUser && b.status && VALID_STATUSES.includes(b.status)
-      ? b.status
-      : "pending";
-    const paymentStatus = adminUser && b.payment_status && VALID_PAYMENT_STATUSES.includes(b.payment_status)
-      ? b.payment_status
-      : (b.payment_method === "cash" ? "pay_on_day" : "unpaid");
 
     totalPrice = Math.round(totalPrice * 100) / 100;
     const pricing = {
@@ -140,7 +125,7 @@ async function createBooking(req, res) {
         ${bookingId}, ${bookingRef}, ${b.name}, ${b.email}, ${b.phone},
         ${b.pickupAddress}, ${b.dropoffAddress}, ${b.date}, ${b.time},
         ${String(passengers)}, ${b.notes || ""}, ${JSON.stringify(pricing)},
-        ${totalPrice}, ${status}, ${paymentStatus},
+        ${totalPrice}, ${"pending"}, ${b.payment_method === 'cash' ? 'pay_on_day' : 'unpaid'},
         ${b.payment_method || null}, ${b.departureFlightNumber || ""}, ${b.departureTime || ""},
         ${b.arrivalFlightNumber || ""}, ${b.arrivalTime || ""},
         ${b.serviceType || ""}, ${vipPickup}, ${oversizedLuggage},
@@ -167,8 +152,8 @@ async function createBooking(req, res) {
       notes: b.notes || "",
       pricing,
       totalPrice,
-      status,
-      payment_status: paymentStatus,
+      status: "pending",
+      payment_status: b.payment_method === 'cash' ? 'pay_on_day' : "unpaid",
       departureFlightNumber: b.departureFlightNumber || "",
       departureTime: b.departureTime || "",
       arrivalFlightNumber: b.arrivalFlightNumber || "",
@@ -196,7 +181,7 @@ async function createBooking(req, res) {
       message: "Booking created successfully",
       booking_id: bookingId,
       booking_ref: bookingRef,
-      status,
+      status: "pending",
     });
   } catch (err) {
     return serverError(res, err.message);
