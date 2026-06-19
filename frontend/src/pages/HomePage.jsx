@@ -69,8 +69,7 @@ const HomePage = () => {
             Ready to Book Your Airport Transfer?
           </h2>
           <p className="text-[#64748B] text-base sm:text-lg mb-8 max-w-xl mx-auto">
-            From $100. Private ride. Professional driver. Flat rates 24/7.
-            Book online in under 60 seconds.
+            Private ride. Professional driver. Price calculated by distance — get an instant quote when you book.
           </p>
           <Link
             to="/booking"

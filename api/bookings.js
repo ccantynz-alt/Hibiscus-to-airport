@@ -26,6 +26,9 @@ async function createBooking(req, res) {
   try {
     const b = req.body || {};
 
+    // Authenticated admin requests get elevated privileges (manual price + status override)
+    const adminUser = authenticateRequest(req);
+
     // Input validation
     if (!b.name || !b.email || !b.phone || !b.pickupAddress || !b.dropoffAddress || !b.date || !b.time) {
       return badRequest(res, "Missing required fields: name, email, phone, pickupAddress, dropoffAddress, date, time");
